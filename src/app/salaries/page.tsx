@@ -1,4 +1,6 @@
+'use client';
 
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -16,7 +18,7 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { PlusCircle, MoreHorizontal, Users, DollarSign, UserCheck } from "lucide-react"
-import { salaries } from "@/lib/data"
+import { salaries as initialSalaries, type Salary } from "@/lib/data"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,15 +27,28 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import { CreateSalaryDialog } from "@/components/salaries/create-salary-dialog";
 
 export default function SalariesPage() {
+  const [salaries, setSalaries] = useState<Salary[]>(initialSalaries);
+  const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
+
   const totalMonthlySalary = salaries.filter(s => s.status === 'Active').reduce((acc, salary) => acc + salary.amount, 0);
   const totalEmployees = salaries.length;
   const activeEmployees = salaries.filter(s => s.status === 'Active').length;
   const averageSalary = activeEmployees > 0 ? totalMonthlySalary / activeEmployees : 0;
 
+  const addSalary = (newSalary: Omit<Salary, 'id' | 'paymentDate'>) => {
+    const salaryWithId: Salary = {
+      ...newSalary,
+      id: `SAL-${String(salaries.length + 1).padStart(3, '0')}`,
+      paymentDate: new Date().toISOString().split('T')[0],
+    };
+    setSalaries(prev => [salaryWithId, ...prev]);
+  }
 
   return (
+    <>
     <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
@@ -86,7 +101,7 @@ export default function SalariesPage() {
                     Manage employee salaries and view monthly totals.
                     </CardDescription>
                 </div>
-                <Button size="sm" className="h-8 gap-1">
+                <Button size="sm" className="h-8 gap-1" onClick={() => setCreateDialogOpen(true)}>
                     <PlusCircle className="h-3.5 w-3.5" />
                     <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     Add Employee
@@ -144,5 +159,11 @@ export default function SalariesPage() {
         </CardContent>
         </Card>
     </div>
+    <CreateSalaryDialog
+        isOpen={isCreateDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onCreate={addSalary}
+    />
+    </>
   );
 }

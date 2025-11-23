@@ -1,4 +1,6 @@
+'use client';
 
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -8,17 +10,30 @@ import {
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { PlusCircle, MoreHorizontal, Users, Truck, DollarSign, TrendingUp, Award } from "lucide-react"
-import { distributors } from "@/lib/data"
+import { distributors as initialDistributors, type Distributor } from "@/lib/data"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { CreateDistributorDialog } from "@/components/distributors/create-distributor-dialog";
 
 export default function DistributorsPage() {
+    const [distributors, setDistributors] = useState<Distributor[]>(initialDistributors);
+    const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
+
     const totalDistributors = distributors.length;
     const totalSales = distributors.reduce((acc, dist) => acc + dist.totalSales, 0);
     const averageSales = totalDistributors > 0 ? totalSales / totalDistributors : 0;
-    const topDistributor = distributors.reduce((prev, current) => (prev.totalSales > current.totalSales) ? prev : current, distributors[0]);
+    const topDistributor = distributors.length > 0 ? distributors.reduce((prev, current) => (prev.totalSales > current.totalSales) ? prev : current) : null;
+
+    const addDistributor = (newDistributor: Omit<Distributor, 'id'>) => {
+        const distributorWithId: Distributor = {
+            ...newDistributor,
+            id: `DIST-${String(distributors.length + 1).padStart(2, '0')}`,
+        };
+        setDistributors(prev => [distributorWithId, ...prev]);
+    }
 
   return (
+    <>
     <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
@@ -57,8 +72,10 @@ export default function DistributorsPage() {
                     <Award className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{topDistributor?.name}</div>
-                    <p className="text-xs text-muted-foreground">BDT {topDistributor?.totalSales.toLocaleString()} in sales</p>
+                    <div className="text-2xl font-bold">{topDistributor?.name || 'N/A'}</div>
+                    <p className="text-xs text-muted-foreground">
+                        {topDistributor ? `BDT ${topDistributor.totalSales.toLocaleString()} in sales` : 'No distributors found'}
+                    </p>
                 </CardContent>
             </Card>
         </div>
@@ -71,7 +88,7 @@ export default function DistributorsPage() {
                     Manage your sales distributors.
                     </CardDescription>
                 </div>
-                <Button size="sm" className="h-8 gap-1">
+                <Button size="sm" className="h-8 gap-1" onClick={() => setCreateDialogOpen(true)}>
                     <PlusCircle className="h-3.5 w-3.5" />
                     <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     Add Distributor
@@ -121,5 +138,11 @@ export default function DistributorsPage() {
         </CardContent>
         </Card>
     </div>
+    <CreateDistributorDialog 
+        isOpen={isCreateDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onCreate={addDistributor}
+    />
+    </>
   );
 }

@@ -1,4 +1,6 @@
+'use client';
 
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -17,7 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { PlusCircle, MoreHorizontal, Package, ShoppingCart, List, CheckCircle } from "lucide-react"
-import { purchaseOrders, type PurchaseOrder } from "@/lib/data"
+import { purchaseOrders as initialPurchaseOrders, type PurchaseOrder, suppliers } from "@/lib/data"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,12 +28,24 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { CreatePurchaseOrderDialog } from "@/components/purchase-orders/create-purchase-order-dialog";
 
 export default function PurchaseOrdersPage() {
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(initialPurchaseOrders);
+  const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
+
   const totalPOValue = purchaseOrders.reduce((sum, order) => sum + order.amount, 0);
   const pendingPOValue = purchaseOrders.filter(o => o.status === 'Pending').reduce((sum, order) => sum + order.amount, 0);
   const totalOrders = purchaseOrders.length;
   const completedOrders = purchaseOrders.filter(o => o.status === 'Completed').length;
+
+  const addPurchaseOrder = (newOrder: Omit<PurchaseOrder, 'id'>) => {
+    const orderWithId: PurchaseOrder = {
+        ...newOrder,
+        id: `PO-${String(purchaseOrders.length + 1).padStart(3, '0')}`,
+    };
+    setPurchaseOrders(prev => [orderWithId, ...prev]);
+  }
 
   const renderPurchaseOrderTable = (orders: PurchaseOrder[]) => (
     <Card>
@@ -92,6 +106,7 @@ export default function PurchaseOrdersPage() {
   );
 
   return (
+    <>
     <div className="space-y-6">
        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -143,7 +158,7 @@ export default function PurchaseOrdersPage() {
             <TabsTrigger value="completed">Completed</TabsTrigger>
           </TabsList>
           <div className="ml-auto flex items-center gap-2">
-            <Button size="sm" className="h-8 gap-1">
+            <Button size="sm" className="h-8 gap-1" onClick={() => setCreateDialogOpen(true)}>
               <PlusCircle className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                 Create Purchase Order
@@ -162,5 +177,12 @@ export default function PurchaseOrdersPage() {
         </TabsContent>
       </Tabs>
     </div>
+    <CreatePurchaseOrderDialog
+        isOpen={isCreateDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onCreate={addPurchaseOrder}
+        suppliers={suppliers}
+    />
+    </>
   );
 }

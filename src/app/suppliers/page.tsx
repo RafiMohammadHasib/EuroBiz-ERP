@@ -1,4 +1,6 @@
+'use client';
 
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -8,19 +10,32 @@ import {
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { PlusCircle, MoreHorizontal, Building, Package, TrendingUp, UserCheck } from "lucide-react"
-import { suppliers } from "@/lib/data"
+import { suppliers as initialSuppliers, type Supplier } from "@/lib/data"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import { CreateSupplierDialog } from "@/components/suppliers/create-supplier-dialog";
 
 
 export default function SuppliersPage() {
+    const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
+    const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
+
     const totalSuppliers = suppliers.length;
     const activeSuppliers = suppliers.filter(s => s.status === 'Active').length;
     const totalPOValue = suppliers.reduce((acc, s) => acc + s.totalPOValue, 0);
     const averagePOValue = totalSuppliers > 0 ? totalPOValue / totalSuppliers : 0;
 
+    const addSupplier = (newSupplier: Omit<Supplier, 'id'>) => {
+        const supplierWithId: Supplier = {
+            ...newSupplier,
+            id: `SUP-${String(suppliers.length + 1).padStart(2, '0')}`,
+        };
+        setSuppliers(prev => [supplierWithId, ...prev]);
+    }
+
   return (
+    <>
     <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
@@ -73,7 +88,7 @@ export default function SuppliersPage() {
                     Manage your raw material suppliers.
                     </CardDescription>
                 </div>
-                <Button size="sm" className="h-8 gap-1">
+                <Button size="sm" className="h-8 gap-1" onClick={() => setCreateDialogOpen(true)}>
                     <PlusCircle className="h-3.5 w-3.5" />
                     <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     Add Supplier
@@ -125,5 +140,11 @@ export default function SuppliersPage() {
         </CardContent>
         </Card>
     </div>
+    <CreateSupplierDialog
+        isOpen={isCreateDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onCreate={addSupplier}
+    />
+    </>
   );
 }

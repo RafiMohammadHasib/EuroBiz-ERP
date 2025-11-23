@@ -1,4 +1,6 @@
+'use client';
 
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -8,17 +10,30 @@ import {
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { PlusCircle, CheckCircle, Clock, Package, Factory, DollarSign } from "lucide-react"
-import { productionOrders } from "@/lib/data"
+import { productionOrders as initialProductionOrders, type ProductionOrder, finishedGoods } from "@/lib/data"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { CreateProductionOrderDialog } from "@/components/production/create-production-order-dialog";
 
 export default function ProductionPage() {
+    const [productionOrders, setProductionOrders] = useState<ProductionOrder[]>(initialProductionOrders);
+    const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
+
     const wipOrders = productionOrders.filter(o => o.status === "In Progress").length;
     const completedOrders = productionOrders.filter(o => o.status === "Completed").length;
     const totalProductionCost = productionOrders.reduce((acc, order) => acc + order.totalCost, 0);
     const totalUnitsProduced = productionOrders.reduce((acc, order) => acc + order.quantity, 0);
 
+    const addProductionOrder = (newOrder: Omit<ProductionOrder, 'id'>) => {
+        const orderWithId: ProductionOrder = {
+            ...newOrder,
+            id: `PROD-${String(productionOrders.length + 1).padStart(3, '0')}`,
+        };
+        setProductionOrders(prev => [orderWithId, ...prev]);
+    }
+
   return (
+    <>
     <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
@@ -71,7 +86,7 @@ export default function ProductionPage() {
                     Manage production orders and calculate unit costs.
                     </CardDescription>
                 </div>
-                <Button size="sm" className="h-8 gap-1">
+                <Button size="sm" className="h-8 gap-1" onClick={() => setCreateDialogOpen(true)}>
                     <PlusCircle className="h-3.5 w-3.5" />
                     <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     New Production
@@ -113,5 +128,12 @@ export default function ProductionPage() {
         </CardContent>
         </Card>
     </div>
+    <CreateProductionOrderDialog
+        isOpen={isCreateDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onCreate={addProductionOrder}
+        products={finishedGoods}
+    />
+    </>
   );
 }

@@ -1,4 +1,6 @@
+'use client';
 
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -16,7 +18,7 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { PlusCircle, MoreHorizontal, Percent, BarChart } from "lucide-react"
-import { commissions } from "@/lib/data"
+import { commissions as initialCommissions, type Commission } from "@/lib/data"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,20 +26,31 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { CreateCommissionRuleDialog } from "@/components/commissions/create-commission-rule-dialog";
 
 export default function CommissionsPage() {
+    const [commissions, setCommissions] = useState<Commission[]>(initialCommissions);
+    const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
+
     const totalCommissionValue = commissions.reduce((acc, commission) => {
-        // This is a simplification. A real calculation would depend on actual sales data.
-        // For now, let's assume a mock sales amount for percentage based commissions.
         if (commission.type === 'Percentage') {
-            return acc + (10000 * (commission.rate / 100)); // Assume 10,000 base sale per rule
+            return acc + (10000 * (commission.rate / 100)); 
         }
         return acc + commission.rate;
     }, 0);
 
-    const averageCommissionRate = commissions.filter(c => c.type === 'Percentage').reduce((acc, c, _, arr) => acc + c.rate / arr.length, 0);
+    const averageCommissionRate = commissions.filter(c => c.type === 'Percentage').reduce((acc, c, _, arr) => arr.length > 0 ? acc + c.rate / arr.length : 0, 0);
+
+    const addCommissionRule = (newRule: Omit<Commission, 'id'>) => {
+        const ruleWithId: Commission = {
+            ...newRule,
+            id: `COM-${String(commissions.length + 1).padStart(2, '0')}`,
+        };
+        setCommissions(prev => [ruleWithId, ...prev]);
+    }
 
   return (
+    <>
     <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
              <Card>
@@ -70,7 +83,7 @@ export default function CommissionsPage() {
                     Manage product and distribution-based sales commissions.
                     </CardDescription>
                 </div>
-                <Button size="sm" className="h-8 gap-1">
+                <Button size="sm" className="h-8 gap-1" onClick={() => setCreateDialogOpen(true)}>
                     <PlusCircle className="h-3.5 w-3.5" />
                     <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     Add Rule
@@ -122,5 +135,11 @@ export default function CommissionsPage() {
         </CardContent>
         </Card>
     </div>
+    <CreateCommissionRuleDialog 
+        isOpen={isCreateDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onCreate={addCommissionRule}
+    />
+    </>
   );
 }

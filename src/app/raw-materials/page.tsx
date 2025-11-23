@@ -1,4 +1,6 @@
+'use client';
 
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -15,16 +17,57 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { rawMaterials } from "@/lib/data"
+import { rawMaterials as initialRawMaterials, type RawMaterial } from "@/lib/data"
 import { DollarSign, List, PackageCheck, Archive, PlusCircle, Download } from "lucide-react"
+import { CreateRawMaterialDialog } from "@/components/raw-materials/create-raw-material-dialog";
 
 export default function RawMaterialsPage() {
+  const [rawMaterials, setRawMaterials] = useState<RawMaterial[]>(initialRawMaterials);
+  const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
+
   const totalInventoryValue = rawMaterials.reduce((acc, item) => acc + item.quantity * item.unitCost, 0);
   const materialTypes = rawMaterials.length;
   const totalUnits = rawMaterials.reduce((acc, item) => acc + item.quantity, 0);
-  const mostStocked = rawMaterials.reduce((prev, current) => (prev.quantity > current.quantity) ? prev : current);
+  const mostStocked = rawMaterials.length > 0 ? rawMaterials.reduce((prev, current) => (prev.quantity > current.quantity) ? prev : current) : null;
+
+  const addRawMaterial = (newMaterial: Omit<RawMaterial, 'id'>) => {
+    const materialWithId: RawMaterial = {
+        ...newMaterial,
+        id: `RM-${String(rawMaterials.length + 1).padStart(3, '0')}`,
+    };
+    setRawMaterials(prev => [materialWithId, ...prev]);
+  }
+
+  const handleExport = () => {
+    const headers = ["ID", "Name", "Category", "Quantity", "Unit", "Unit Cost"];
+    const csvRows = [
+      headers.join(','),
+      ...rawMaterials.map(material => 
+        [
+          material.id,
+          `"${material.name.replace(/"/g, '""')}"`,
+          material.category,
+          material.quantity,
+          material.unit,
+          material.unitCost
+        ].join(',')
+      )
+    ];
+    
+    const csvString = csvRows.join('\\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'raw_materials.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
 
   return (
+    <>
     <div className="space-y-6">
        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -63,8 +106,10 @@ export default function RawMaterialsPage() {
             <Archive className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mostStocked.name}</div>
-            <p className="text-xs text-muted-foreground">{mostStocked.quantity.toLocaleString()} {mostStocked.unit} in stock</p>
+            <div className="text-2xl font-bold">{mostStocked?.name || 'N/A'}</div>
+            <p className="text-xs text-muted-foreground">
+                {mostStocked ? `${mostStocked.quantity.toLocaleString()} ${mostStocked.unit} in stock` : 'No materials found'}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -79,13 +124,13 @@ export default function RawMaterialsPage() {
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" className="h-8 gap-1">
+              <Button size="sm" variant="outline" className="h-8 gap-1" onClick={handleExport}>
                   <Download className="h-3.5 w-3.5" />
                   <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                   Export to Excel
                   </span>
               </Button>
-              <Button size="sm" className="h-8 gap-1">
+              <Button size="sm" className="h-8 gap-1" onClick={() => setCreateDialogOpen(true)}>
                   <PlusCircle className="h-3.5 w-3.5" />
                   <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                   Add Raw Material
@@ -120,5 +165,11 @@ export default function RawMaterialsPage() {
         </CardContent>
       </Card>
     </div>
+    <CreateRawMaterialDialog
+        isOpen={isCreateDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onCreate={addRawMaterial}
+    />
+    </>
   );
 }
