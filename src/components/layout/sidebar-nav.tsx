@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -28,7 +29,8 @@ import {
   Database,
   Icon,
   ShoppingCart,
-  DollarSign
+  DollarSign,
+  Users as UsersIcon,
 } from "lucide-react";
 
 interface NavItem {
@@ -41,6 +43,7 @@ export const navItems: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/invoices", label: "Sales", icon: DollarSign },
   { href: "/purchase-orders", label: "Purchase Orders", icon: ShoppingCart },
+  { href: "/salaries", label: "Salaries", icon: UsersIcon },
   { href: "/commissions", label: "Commissions", icon: CreditCard },
   { href: "/returns", label: "Returns", icon: Undo2 },
   { href: "/dues", label: "Outstanding Dues", icon: Landmark },

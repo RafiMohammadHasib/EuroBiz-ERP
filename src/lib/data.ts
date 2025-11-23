@@ -1,3 +1,4 @@
+
 export type Invoice = {
   id: string;
   customer: string;
@@ -60,4 +61,18 @@ export const purchaseOrders: PurchaseOrder[] = [
     { id: 'PO-002', supplier: 'Globex Corporation', date: '2023-10-10', amount: 350.50, status: 'Completed' },
     { id: 'PO-003', supplier: 'Soylent Corp', date: '2023-10-15', amount: 2000.00, status: 'Pending' },
     { id: 'PO-004', supplier: 'InGen', date: '2023-10-20', amount: 500.00, status: 'Cancelled' },
+];
+
+export type Salary = {
+    id: string;
+    name: string;
+    position: string;
+    amount: number;
+};
+
+export const salaries: Salary[] = [
+    { id: 'SAL-001', name: 'John Doe', position: 'Factory Manager', amount: 5000 },
+    { id: 'SAL-002', name: 'Jane Smith', position: 'Sales Lead', amount: 4500 },
+    { id: 'SAL-003', name: 'Peter Jones', position: 'Accountant', amount: 4000 },
+    { id: 'SAL-004', name: 'Susan Williams', position: 'Lead Developer', amount: 6000 },
 ];

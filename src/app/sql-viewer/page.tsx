@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -11,6 +12,8 @@ import {
   invoices,
   salesData,
   commissions,
+  purchaseOrders,
+  salaries,
 } from '@/lib/data';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -75,7 +78,9 @@ export default function SqlExporterPage() {
   const allSql = [
       generateSqlForTable('invoices', invoices),
       generateSqlForTable('commissions', commissions),
-      generateSqlForTable('sales_data', salesData)
+      generateSqlForTable('sales_data', salesData),
+      generateSqlForTable('purchase_orders', purchaseOrders),
+      generateSqlForTable('salaries', salaries),
   ].join('\n\n');
 
 
