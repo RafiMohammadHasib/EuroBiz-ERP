@@ -14,12 +14,14 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import SalesChart from "@/components/dashboard/sales-chart"
-import { DollarSign, CreditCard, Users, Activity } from "lucide-react"
+import { DollarSign, CreditCard, Users, Undo, Truck } from "lucide-react"
 import { invoices } from "@/lib/data"
 
 export default function Home() {
   const totalRevenue = invoices.filter(i => i.status === 'Paid').reduce((acc, i) => acc + i.amount, 0);
   const outstandingDues = invoices.filter(i => i.status !== 'Paid').reduce((acc, i) => acc + i.amount, 0);
+  const paidInvoices = invoices.filter(i => i.status === 'Paid').length;
+  const uniqueCustomers = new Set(invoices.map(i => i.customer)).size;
   
   return (
     <div className="flex flex-col gap-6">
@@ -31,7 +33,7 @@ export default function Home() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${totalRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+            <p className="text-xs text-muted-foreground">Based on {paidInvoices} paid invoices</p>
           </CardContent>
         </Card>
         <Card>
@@ -41,27 +43,27 @@ export default function Home() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${outstandingDues.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">+12.2% from last month</p>
+            <p className="text-xs text-muted-foreground">Across all unpaid invoices</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">New Customers</CardTitle>
+            <CardTitle className="text-sm font-medium">Active Customers</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+23</div>
-            <p className="text-xs text-muted-foreground">+5 since last week</p>
+            <div className="text-2xl font-bold">+{uniqueCustomers}</div>
+            <p className="text-xs text-muted-foreground">Unique customers this period</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sales Activity</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Active Distributors</CardTitle>
+            <Truck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+573</div>
-            <p className="text-xs text-muted-foreground">+201 since last hour</p>
+            <div className="text-2xl font-bold">+5</div>
+            <p className="text-xs text-muted-foreground">+2 since last month</p>
           </CardContent>
         </Card>
       </div>
