@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, File, MoreHorizontal, DollarSign, CreditCard } from "lucide-react"
+import { PlusCircle, File, MoreHorizontal, DollarSign, CreditCard, AlertCircle, Hourglass } from "lucide-react"
 import { invoices } from "@/lib/data"
 import {
   DropdownMenu,
@@ -29,7 +29,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function InvoicesPage() {
   const totalInvoiceValue = invoices.reduce((sum, invoice) => sum + invoice.amount, 0);
-  const totalDues = invoices.filter(i => i.status !== 'Paid').reduce((sum, invoice) => sum + invoice.amount, 0);
+  const totalUnpaid = invoices.filter(i => i.status === 'Unpaid').reduce((sum, invoice) => sum + invoice.amount, 0);
+  const totalOverdue = invoices.filter(i => i.status === 'Overdue').reduce((sum, invoice) => sum + invoice.amount, 0);
+  const totalDues = totalUnpaid + totalOverdue;
+
 
   const renderInvoiceTable = (invoiceList: typeof invoices) => (
     <Table>
@@ -100,7 +103,27 @@ export default function InvoicesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${totalDues.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Across all unpaid invoices</p>
+            <p className="text-xs text-muted-foreground">Across all unpaid & overdue invoices</p>
+          </CardContent>
+        </Card>
+         <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Unpaid</CardTitle>
+            <Hourglass className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${totalUnpaid.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Invoices currently pending payment</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Overdue</CardTitle>
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">${totalOverdue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Invoices past their due date</p>
           </CardContent>
         </Card>
       </div>
