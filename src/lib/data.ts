@@ -1,4 +1,5 @@
 
+
 export type Invoice = {
   id: string;
   customer: string;
@@ -120,4 +121,18 @@ export const productionOrders: ProductionOrder[] = [
     { id: 'PROD-001', productName: 'Premium Wall Paint (1L)', quantity: 500, status: 'Completed', startDate: '2023-10-01' },
     { id: 'PROD-002', productName: 'Weather-Proof Exterior (5L)', quantity: 250, status: 'In Progress', startDate: '2023-10-15' },
     { id: 'PROD-003', productName: 'Standard Emulsion (1L)', quantity: 1000, status: 'Pending', startDate: '2023-10-25' },
-]
+];
+
+export type FinishedGood = {
+    id: string;
+    productName: string;
+    quantity: number;
+    unitCost: number;
+    sellingPrice: number | null;
+}
+
+export const finishedGoods: FinishedGood[] = [
+    { id: 'FG-001', productName: 'Premium Wall Paint (1L)', quantity: 500, unitCost: 12.50, sellingPrice: 22.99 },
+    { id: 'FG-002', productName: 'Weather-Proof Exterior (5L)', quantity: 150, unitCost: 45.00, sellingPrice: 79.99 },
+    { id: 'FG-003', productName: 'Standard Emulsion (1L)', quantity: 800, unitCost: 8.00, sellingPrice: null },
+];

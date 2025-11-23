@@ -1,7 +1,6 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -9,42 +8,109 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Package } from 'lucide-react';
-
-const initialInventory = 150; // Starting mock inventory
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, Package, DollarSign, TrendingUp, Boxes } from 'lucide-react';
+import { finishedGoods } from '@/lib/data';
 
 export default function FinishedGoodsPage() {
-  const [inventory, setInventory] = useState(initialInventory);
-
-  useEffect(() => {
-    const handleDataUpdate = (event: Event) => {
-        const customEvent = event as CustomEvent;
-        setInventory(customEvent.detail.finishedGoodsInventory);
-    };
-
-    window.addEventListener('data-updated', handleDataUpdate);
-
-    return () => {
-        window.removeEventListener('data-updated', handleDataUpdate);
-    };
-  }, []);
-
-
+  const totalInventoryValue = finishedGoods.reduce((acc, item) => acc + item.quantity * item.unitCost, 0);
+  const potentialRevenue = finishedGoods.reduce((acc, item) => acc + item.quantity * (item.sellingPrice ?? 0), 0);
+  const productLines = finishedGoods.length;
+  
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Finished Goods Inventory</CardTitle>
-        <CardDescription>
-          Manage your inventory of finished products. This will update if a sales return is processed.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12">
-          <Package className="w-12 h-12 text-muted-foreground" />
-          <h3 className="text-4xl font-bold mt-4">{inventory} Units</h3>
-          <p className="text-muted-foreground mt-2">in stock</p>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Inventory Value</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${totalInventoryValue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Based on unit cost</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Potential Revenue</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${potentialRevenue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Based on selling price</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Product Lines</CardTitle>
+            <Boxes className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{productLines}</div>
+            <p className="text-xs text-muted-foreground">Number of unique products</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Finished Goods Inventory</CardTitle>
+          <CardDescription>
+            Manage your inventory of finished products, including costs and selling prices.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Product Name</TableHead>
+                <TableHead className="text-right">Quantity</TableHead>
+                <TableHead className="text-right">Unit Cost</TableHead>
+                <TableHead className="text-right">Selling Price</TableHead>
+                <TableHead>
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {finishedGoods.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">{item.productName}</TableCell>
+                  <TableCell className="text-right">{item.quantity.toLocaleString()}</TableCell>
+                  <TableCell className="text-right">${item.unitCost.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">
+                    {item.sellingPrice ? `$${item.sellingPrice.toFixed(2)}` : <span className="text-muted-foreground">Not set</span>}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem>Edit Selling Price</DropdownMenuItem>
+                        <DropdownMenuItem>View History</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
