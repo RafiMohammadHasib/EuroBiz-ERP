@@ -11,6 +11,8 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarSeparator,
+  SidebarGroup,
+  SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard,
@@ -31,6 +33,7 @@ import {
   ShoppingCart,
   DollarSign,
   Users as UsersIcon,
+  ChevronDown,
 } from "lucide-react";
 
 interface NavItem {
@@ -39,33 +42,62 @@ interface NavItem {
     icon: Icon;
 }
 
+interface NavGroup {
+    label: string;
+    items: NavItem[];
+}
+
 export const navItems: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/invoices", label: "Sales", icon: DollarSign },
-  { href: "/purchase-orders", label: "Purchase Orders", icon: ShoppingCart },
-  { href: "/salaries", label: "Salaries", icon: UsersIcon },
-  { href: "/commissions", label: "Commissions", icon: CreditCard },
-  { href: "/returns", label: "Returns", icon: Undo2 },
-  { href: "/dues", label: "Outstanding Dues", icon: Landmark },
-  { href: "/suppliers", label: "Suppliers", icon: Building },
-  { href: "/raw-materials", label: "Raw Materials", icon: Package },
-  { href: "/production", label: "Production", icon: Factory },
-  { href: "/finished-goods", label: "Finished Goods", icon: Package },
-  { href: "/distributors", label: "Distributors", icon: Truck },
-  { href: "/reports", label: "Reports", icon: PieChart },
-  { href: "/forecast", label: "AI Forecast", icon: BrainCircuit },
-  { href: "/sql-viewer", label: "SQL Viewer", icon: Database },
 ];
+
+export const navGroups: NavGroup[] = [
+    {
+        label: "Sales & Purchasing",
+        items: [
+            { href: "/invoices", label: "Sales", icon: DollarSign },
+            { href: "/purchase-orders", label: "Purchase Orders", icon: ShoppingCart },
+            { href: "/distributors", label: "Distributors", icon: Truck },
+            { href: "/suppliers", label: "Suppliers", icon: Building },
+        ]
+    },
+    {
+        label: "Inventory & Production",
+        items: [
+            { href: "/raw-materials", label: "Raw Materials", icon: Package },
+            { href: "/production", label: "Production", icon: Factory },
+            { href: "/finished-goods", label: "Finished Goods", icon: Package },
+            { href: "/returns", label: "Returns", icon: Undo2 },
+        ]
+    },
+    {
+        label: "Financials",
+        items: [
+            { href: "/dues", label: "Outstanding Dues", icon: Landmark },
+            { href: "/salaries", label: "Salaries", icon: UsersIcon },
+            { href: "/commissions", label: "Commissions", icon: CreditCard },
+        ]
+    },
+    {
+        label: "Analysis & Tools",
+        items: [
+            { href: "/reports", label: "Reports", icon: PieChart },
+            { href: "/forecast", label: "AI Forecast", icon: BrainCircuit },
+            { href: "/sql-viewer", label: "SQL Viewer", icon: Database },
+        ]
+    }
+]
 
 const bottomNavItems: NavItem[] = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 interface SidebarNavProps {
-    navItems: NavItem[];
+    navItems: NavItem[]; // This will now be used for the core items like Dashboard
+    navGroups: NavGroup[];
 }
 
-export default function SidebarNav({ navItems: itemsToRender }: SidebarNavProps) {
+export default function SidebarNav({ navItems: itemsToRender, navGroups: groupsToRender }: SidebarNavProps) {
   const pathname = usePathname();
 
   return (
@@ -86,6 +118,7 @@ export default function SidebarNav({ navItems: itemsToRender }: SidebarNavProps)
                 <SidebarMenuButton
                   isActive={pathname === item.href}
                   tooltip={item.label}
+                  size="sm"
                 >
                   <item.icon />
                   <span>{item.label}</span>
@@ -94,6 +127,31 @@ export default function SidebarNav({ navItems: itemsToRender }: SidebarNavProps)
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
+
+        <div className="flex flex-col gap-4">
+        {groupsToRender.map((group) => (
+            <SidebarGroup key={group.label}>
+                <SidebarGroupLabel className="group-data-[collapsible=icon]:-mt-6">{group.label}</SidebarGroupLabel>
+                <SidebarMenu>
+                    {group.items.map((item) => (
+                         <SidebarMenuItem key={item.href}>
+                            <Link href={item.href}>
+                                <SidebarMenuButton
+                                isActive={pathname === item.href}
+                                tooltip={item.label}
+                                size="sm"
+                                >
+                                <item.icon />
+                                <span>{item.label}</span>
+                                </SidebarMenuButton>
+                            </Link>
+                        </SidebarMenuItem>
+                    ))}
+                </SidebarMenu>
+            </SidebarGroup>
+        ))}
+        </div>
+
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
@@ -103,6 +161,7 @@ export default function SidebarNav({ navItems: itemsToRender }: SidebarNavProps)
                   <SidebarMenuButton
                     isActive={pathname === item.href}
                     tooltip={item.label}
+                    size="sm"
                   >
                     <item.icon />
                     <span>{item.label}</span>
@@ -112,7 +171,7 @@ export default function SidebarNav({ navItems: itemsToRender }: SidebarNavProps)
           ))}
           <SidebarSeparator className="my-2"/>
            <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Logout">
+            <SidebarMenuButton tooltip="Logout" size="sm">
               <LogOut />
               <span>Logout</span>
             </SidebarMenuButton>
