@@ -79,7 +79,7 @@ export default function SidebarNav({ navItems: itemsToRender }: SidebarNavProps)
         <SidebarMenu>
           {itemsToRender.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <Link href={item.href} legacyBehavior passHref>
+              <Link href={item.href}>
                 <SidebarMenuButton
                   isActive={pathname === item.href}
                   tooltip={item.label}
@@ -96,7 +96,7 @@ export default function SidebarNav({ navItems: itemsToRender }: SidebarNavProps)
         <SidebarMenu>
           {bottomNavItems.map((item) => (
              <SidebarMenuItem key={item.href}>
-                <Link href={item.href} legacyBehavior passHref>
+                <Link href={item.href}>
                   <SidebarMenuButton
                     isActive={pathname === item.href}
                     tooltip={item.label}
