@@ -88,8 +88,8 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">{item.description}</TableCell>
                   <TableCell className="text-center">{item.quantity}</TableCell>
-                  <TableCell className="text-right">${item.unitPrice.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">${item.total.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">BDT {item.unitPrice.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">BDT {item.total.toFixed(2)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -101,16 +101,16 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             <div className="grid gap-2 w-full sm:w-[250px]">
                 <div className="flex justify-between">
                     <span className="text-muted-foreground">Subtotal</span>
-                    <span>${invoice.amount.toFixed(2)}</span>
+                    <span>BDT {invoice.amount.toFixed(2)}</span>
                 </div>
                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Taxes & Fees</span>
-                    <span>$0.00</span>
+                    <span>BDT 0.00</span>
                 </div>
                 <Separator />
                  <div className="flex justify-between font-bold text-lg">
                     <span>Total Due</span>
-                    <span>${invoice.amount.toFixed(2)}</span>
+                    <span>BDT {invoice.amount.toFixed(2)}</span>
                 </div>
             </div>
           </div>

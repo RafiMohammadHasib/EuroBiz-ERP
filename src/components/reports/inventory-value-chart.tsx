@@ -39,7 +39,7 @@ export default function InventoryValueChart() {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => `$${Number(value) / 1000}K`}
+                tickFormatter={(value) => `BDT ${Number(value) / 1000}K`}
             />
             <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
             <Bar dataKey="totalValue" fill="var(--color-totalValue)" radius={[0, 4, 4, 0]} layout="vertical" />

@@ -60,7 +60,7 @@ export default function InvoicesPage() {
               </Badge>
             </TableCell>
             <TableCell>{new Date(invoice.date).toLocaleDateString()}</TableCell>
-            <TableCell className="text-right">${invoice.amount.toLocaleString()}</TableCell>
+            <TableCell className="text-right">BDT {invoice.amount.toLocaleString()}</TableCell>
             <TableCell>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -95,7 +95,7 @@ export default function InvoicesPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalInvoiceValue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">BDT {totalInvoiceValue.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">From all invoices</p>
           </CardContent>
         </Card>
@@ -105,7 +105,7 @@ export default function InvoicesPage() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalDues.toLocaleString()}</div>
+            <div className="text-2xl font-bold">BDT {totalDues.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Across all unpaid & overdue invoices</p>
           </CardContent>
         </Card>
@@ -115,7 +115,7 @@ export default function InvoicesPage() {
             <Hourglass className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalUnpaid.toLocaleString()}</div>
+            <div className="text-2xl font-bold">BDT {totalUnpaid.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Invoices currently pending payment</p>
           </CardContent>
         </Card>
@@ -125,7 +125,7 @@ export default function InvoicesPage() {
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">${totalOverdue.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-destructive">BDT {totalOverdue.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Invoices past their due date</p>
           </CardContent>
         </Card>

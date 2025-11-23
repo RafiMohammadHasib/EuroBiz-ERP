@@ -42,7 +42,7 @@ export default function SalariesPage() {
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">${totalMonthlySalary.toLocaleString()}</div>
+                    <div className="text-2xl font-bold">BDT {totalMonthlySalary.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">For active employees</p>
                 </CardContent>
             </Card>
@@ -72,7 +72,7 @@ export default function SalariesPage() {
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">${averageSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                    <div className="text-2xl font-bold">BDT {averageSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     <p className="text-xs text-muted-foreground">For active employees</p>
                 </CardContent>
             </Card>
@@ -120,7 +120,7 @@ export default function SalariesPage() {
                     </TableCell>
                     <TableCell>{new Date(salary.paymentDate).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
-                    ${salary.amount.toLocaleString()}
+                    BDT {salary.amount.toLocaleString()}
                     </TableCell>
                     <TableCell>
                     <DropdownMenu>

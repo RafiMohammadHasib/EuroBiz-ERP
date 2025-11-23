@@ -46,7 +46,7 @@ export default function CommissionsPage() {
                     <BarChart className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">${totalCommissionValue.toLocaleString()}</div>
+                    <div className="text-2xl font-bold">BDT {totalCommissionValue.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">Based on current rules</p>
                 </CardContent>
             </Card>
@@ -98,7 +98,7 @@ export default function CommissionsPage() {
                     <TableCell>{commission.appliesTo}</TableCell>
                     <TableCell>{commission.type}</TableCell>
                     <TableCell className="text-right">
-                    {commission.type === 'Percentage' ? `${commission.rate}%` : `$${commission.rate.toLocaleString()}`}
+                    {commission.type === 'Percentage' ? `${commission.rate}%` : `BDT ${commission.rate.toLocaleString()}`}
                     </TableCell>
                     <TableCell>
                     <DropdownMenu>

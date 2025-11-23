@@ -73,7 +73,7 @@ export default function DuesPage() {
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">${totalSalesDue.toLocaleString()}</div>
+                    <div className="text-2xl font-bold">BDT {totalSalesDue.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">Total money to be received</p>
                 </CardContent>
             </Card>
@@ -83,7 +83,7 @@ export default function DuesPage() {
                     <Landmark className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">${totalPurchaseDue.toLocaleString()}</div>
+                    <div className="text-2xl font-bold">BDT {totalPurchaseDue.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">Total money to be paid</p>
                 </CardContent>
             </Card>

@@ -35,7 +35,7 @@ export default function FinishedGoodsPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalInventoryValue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">BDT {totalInventoryValue.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Based on unit cost</p>
           </CardContent>
         </Card>
@@ -45,7 +45,7 @@ export default function FinishedGoodsPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${potentialRevenue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">BDT {potentialRevenue.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Based on selling price</p>
           </CardContent>
         </Card>
@@ -86,9 +86,9 @@ export default function FinishedGoodsPage() {
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">{item.productName}</TableCell>
                   <TableCell className="text-right">{item.quantity.toLocaleString()}</TableCell>
-                  <TableCell className="text-right">${item.unitCost.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">BDT {item.unitCost.toFixed(2)}</TableCell>
                   <TableCell className="text-right">
-                    {item.sellingPrice ? `$${item.sellingPrice.toFixed(2)}` : <span className="text-muted-foreground">Not set</span>}
+                    {item.sellingPrice ? `BDT ${item.sellingPrice.toFixed(2)}` : <span className="text-muted-foreground">Not set</span>}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>

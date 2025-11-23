@@ -1,3 +1,4 @@
+
 "use client";
 
 import { salesData } from "@/lib/data";
@@ -28,7 +29,7 @@ export default function SalesChart() {
             fontSize={12}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(value) => `$${Number(value) / 1000}K`}
+            tickFormatter={(value) => `BDT ${Number(value) / 1000}K`}
           />
           <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
           <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[4, 4, 0, 0]} />

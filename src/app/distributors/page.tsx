@@ -35,7 +35,7 @@ export default function DistributorsPage() {
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">${totalSales.toLocaleString()}</div>
+                    <div className="text-2xl font-bold">BDT {totalSales.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">From all distributors</p>
                 </CardContent>
             </Card>
@@ -76,7 +76,7 @@ export default function DistributorsPage() {
                             <TableCell className="font-medium">{dist.name}</TableCell>
                             <TableCell>{dist.location}</TableCell>
                             <TableCell>{dist.tier}</TableCell>
-                            <TableCell className="text-right">${dist.totalSales.toLocaleString()}</TableCell>
+                            <TableCell className="text-right">BDT {dist.totalSales.toLocaleString()}</TableCell>
                             <TableCell>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>

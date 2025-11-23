@@ -37,7 +37,7 @@ export default function SuppliersPage() {
                     <Package className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">${totalPOValue.toLocaleString()}</div>
+                    <div className="text-2xl font-bold">BDT {totalPOValue.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">Across all suppliers</p>
                 </CardContent>
             </Card>
@@ -80,7 +80,7 @@ export default function SuppliersPage() {
                             <TableCell>
                                 <Badge variant={supplier.status === 'Active' ? 'secondary' : 'outline'}>{supplier.status}</Badge>
                             </TableCell>
-                            <TableCell className="text-right">${supplier.totalPOValue.toLocaleString()}</TableCell>
+                            <TableCell className="text-right">BDT {supplier.totalPOValue.toLocaleString()}</TableCell>
                             <TableCell>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>

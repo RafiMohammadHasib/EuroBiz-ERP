@@ -49,7 +49,7 @@ export default function PurchaseAnalysisChart() {
             fontSize={12}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(value) => `$${Number(value) / 1000}K`}
+            tickFormatter={(value) => `BDT ${Number(value) / 1000}K`}
           />
           <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
           <Bar dataKey="amount" fill="var(--color-amount)" radius={[4, 4, 0, 0]} />
