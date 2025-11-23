@@ -89,7 +89,7 @@ export default function DuesPage() {
             </Card>
         </div>
         <Tabs defaultValue="receivable">
-        <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
+        <TabsList className="grid w-full grid-cols-1 md:grid-cols-2 md:w-[500px]">
             <TabsTrigger value="receivable">Accounts Receivable (Sales Dues)</TabsTrigger>
             <TabsTrigger value="payable">Accounts Payable (Purchase Dues)</TabsTrigger>
         </TabsList>
