@@ -132,16 +132,20 @@ export type PurchaseOrder = {
     id: string;
     supplier: string;
     date: string;
-    amount: number;
+    amount: number; // This will now be the grand total
     status: 'Pending' | 'Completed' | 'Cancelled';
     items: PurchaseOrderItem[];
+    discount: number;
+    tax: number;
+    paidAmount: number;
+    dueAmount: number;
 }
 
 export const purchaseOrders: PurchaseOrder[] = [
-    { id: 'PO-001', supplier: 'Chemical Supply Inc.', date: '2023-11-02', amount: 12000, status: 'Completed', items: [{ id: 'po-item-1', rawMaterialId: 'RM-001', quantity: 200, unitCost: 60}] },
-    { id: 'PO-002', supplier: 'Global Minerals Co.', date: '2023-11-10', amount: 25000, status: 'Completed', items: [{ id: 'po-item-2', rawMaterialId: 'RM-002', quantity: 100, unitCost: 250}] },
-    { id: 'PO-003', supplier: 'Advanced Polymers', date: '2023-11-20', amount: 8000, status: 'Pending', items: [{ id: 'po-item-3', rawMaterialId: 'RM-003', quantity: 50, unitCost: 160}] },
-    { id: 'PO-004', supplier: 'Chemical Supply Inc.', date: '2023-12-01', amount: 18000, status: 'Pending', items: [{ id: 'po-item-4', rawMaterialId: 'RM-001', quantity: 300, unitCost: 60}] },
+    { id: 'PO-001', supplier: 'Chemical Supply Inc.', date: '2023-11-02', amount: 12000, status: 'Completed', items: [{ id: 'po-item-1', rawMaterialId: 'RM-001', quantity: 80, unitCost: 150}], discount: 0, tax: 0, paidAmount: 12000, dueAmount: 0 },
+    { id: 'PO-002', supplier: 'Global Minerals Co.', date: '2023-11-10', amount: 25000, status: 'Completed', items: [{ id: 'po-item-2', rawMaterialId: 'RM-002', quantity: 100, unitCost: 250}], discount: 1000, tax: 500, paidAmount: 24500, dueAmount: 0 },
+    { id: 'PO-003', supplier: 'Advanced Polymers', date: '2023-11-20', amount: 8000, status: 'Pending', items: [{ id: 'po-item-3', rawMaterialId: 'RM-003', quantity: 1600, unitCost: 5}], discount: 0, tax: 0, paidAmount: 0, dueAmount: 8000 },
+    { id: 'PO-004', supplier: 'Chemical Supply Inc.', date: '2023-12-01', amount: 18000, status: 'Pending', items: [{ id: 'po-item-4', rawMaterialId: 'RM-001', quantity: 120, unitCost: 150}], discount: 500, tax: 200, paidAmount: 10000, dueAmount: 7700 },
 ];
 
 export type Salary = {
@@ -270,5 +274,6 @@ export const suppliers: Supplier[] = [
     { id: 'SUP-02', name: 'Global Minerals Co.', category: 'Minerals', status: 'Active' },
     { id: 'SUP-03', name: 'Advanced Polymers', category: 'Polymers', status: 'Inactive' },
 ]
+
 
 

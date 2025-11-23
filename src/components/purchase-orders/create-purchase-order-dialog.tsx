@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { PurchaseOrder, Supplier, RawMaterial, PurchaseOrderItem } from '@/lib/data';
 import { PlusCircle, Trash2 } from 'lucide-react';
+import { Separator } from '../ui/separator';
 
 interface CreatePurchaseOrderDialogProps {
   isOpen: boolean;
@@ -30,6 +31,9 @@ export function CreatePurchaseOrderDialog({ isOpen, onOpenChange, onCreate, supp
   const [supplier, setSupplier] = useState('');
   const [status, setStatus] = useState<'Pending' | 'Completed' | 'Cancelled'>('Pending');
   const [items, setItems] = useState<Omit<PurchaseOrderItem, 'id'>[]>([]);
+  const [discount, setDiscount] = useState(0);
+  const [tax, setTax] = useState(0);
+  const [paidAmount, setPaidAmount] = useState(0);
 
   const handleAddItem = () => {
     setItems([...items, { rawMaterialId: '', quantity: 1, unitCost: 0 }]);
@@ -39,10 +43,10 @@ export function CreatePurchaseOrderDialog({ isOpen, onOpenChange, onCreate, supp
     const newItems = [...items];
     const material = rawMaterials.find(rm => rm.id === value);
     
+    const item = newItems[index] as any;
     if (field === 'rawMaterialId' && material) {
-        newItems[index] = { ...newItems[index], rawMaterialId: material.id, unitCost: material.unitCost };
+        item[field] = material.id;
     } else {
-        const item = newItems[index] as any;
         item[field] = value;
     }
     setItems(newItems);
@@ -53,18 +57,24 @@ export function CreatePurchaseOrderDialog({ isOpen, onOpenChange, onCreate, supp
     setItems(newItems);
   };
 
-  const calculateTotalAmount = () => {
-    return items.reduce((total, item) => total + item.quantity * item.unitCost, 0);
-  };
+  const { subTotal, grandTotal, dueAmount } = useMemo(() => {
+    const subTotal = items.reduce((total, item) => total + item.quantity * item.unitCost, 0);
+    const grandTotal = subTotal - discount + tax;
+    const dueAmount = grandTotal - paidAmount;
+    return { subTotal, grandTotal, dueAmount };
+  }, [items, discount, tax, paidAmount]);
+
 
   const resetForm = () => {
     setSupplier('');
     setStatus('Pending');
     setItems([]);
+    setDiscount(0);
+    setTax(0);
+    setPaidAmount(0);
   }
 
   const handleSubmit = () => {
-    const totalAmount = calculateTotalAmount();
     if (!supplier || items.length === 0 || items.some(i => !i.rawMaterialId || i.quantity <= 0 || i.unitCost < 0)) {
       toast({
         variant: 'destructive',
@@ -81,10 +91,14 @@ export function CreatePurchaseOrderDialog({ isOpen, onOpenChange, onCreate, supp
 
     onCreate({
       supplier,
-      amount: totalAmount,
+      amount: grandTotal,
       status,
       date: new Date().toISOString().split('T')[0],
       items: newOrderItems,
+      discount,
+      tax,
+      paidAmount,
+      dueAmount,
     });
     
     toast({
@@ -98,88 +112,118 @@ export function CreatePurchaseOrderDialog({ isOpen, onOpenChange, onCreate, supp
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>Create New Purchase Order</DialogTitle>
           <DialogDescription>
             Select a supplier and add the raw materials you want to purchase.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="supplier" className="text-right">
-              Supplier
-            </Label>
-            <Select value={supplier} onValueChange={setSupplier}>
-                <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select a supplier" />
-                </SelectTrigger>
-                <SelectContent>
-                    {suppliers.map(s => (
-                        <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-4">
-            <Label>Items</Label>
-            {items.map((item, index) => (
-              <div key={index} className="flex gap-2 items-center">
-                <Select
-                    value={item.rawMaterialId}
-                    onValueChange={(value) => handleItemChange(index, 'rawMaterialId', value)}
-                >
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select Material" />
+        <div className="grid gap-6 py-4">
+          <div className="grid grid-cols-2 gap-4">
+             <div className="grid gap-2">
+                <Label htmlFor="supplier">Supplier</Label>
+                <Select value={supplier} onValueChange={setSupplier}>
+                    <SelectTrigger id="supplier">
+                        <SelectValue placeholder="Select a supplier" />
                     </SelectTrigger>
                     <SelectContent>
-                        {rawMaterials.map(m => (
-                            <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                        {suppliers.map(s => (
+                            <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
-                <Input
-                  type="number"
-                  placeholder="Quantity"
-                  value={item.quantity}
-                  onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 0)}
-                  className="w-24"
-                />
-                <Input
-                  type="number"
-                  placeholder="Unit Cost"
-                  value={item.unitCost}
-                  onChange={(e) => handleItemChange(index, 'unitCost', parseFloat(e.target.value) || 0)}
-                  className="w-28"
-                />
-                <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(index)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-            <Button variant="outline" size="sm" onClick={handleAddItem}>
+            </div>
+             <div className="grid gap-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={status} onValueChange={(value) => setStatus(value as 'Pending' | 'Completed' | 'Cancelled')}>
+                    <SelectTrigger id="status">
+                        <SelectValue placeholder="Select Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="Completed">Completed</SelectItem>
+                        <SelectItem value="Cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Items</Label>
+            <div className="rounded-md border">
+                <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-2 p-2 bg-muted/50 text-sm font-medium">
+                    <div>Material</div>
+                    <div>Quantity</div>
+                    <div>Unit Cost</div>
+                    <div className="w-9"></div>
+                </div>
+                <Separator />
+                {items.map((item, index) => (
+                <div key={index} className="grid grid-cols-[2fr_1fr_1fr_auto] gap-2 items-center p-2">
+                    <Select
+                        value={item.rawMaterialId}
+                        onValueChange={(value) => handleItemChange(index, 'rawMaterialId', value)}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select Material" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {rawMaterials.map(m => (
+                                <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Input
+                    type="number"
+                    placeholder="Quantity"
+                    value={item.quantity}
+                    onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 0)}
+                    />
+                    <Input
+                    type="number"
+                    placeholder="Unit Cost"
+                    value={item.unitCost}
+                    onChange={(e) => handleItemChange(index, 'unitCost', parseFloat(e.target.value) || 0)}
+                    />
+                    <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(index)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                </div>
+                ))}
+            </div>
+            <Button variant="outline" size="sm" onClick={handleAddItem} className="mt-2">
               <PlusCircle className="mr-2 h-4 w-4" /> Add Item
             </Button>
           </div>
 
-           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="status" className="text-right">
-              Status
-            </Label>
-            <Select value={status} onValueChange={(value) => setStatus(value as 'Pending' | 'Completed' | 'Cancelled')}>
-                <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select Status" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                    <SelectItem value="Completed">Completed</SelectItem>
-                    <SelectItem value="Cancelled">Cancelled</SelectItem>
-                </SelectContent>
-            </Select>
-          </div>
-          <div className="text-right font-semibold text-lg">
-            Total Amount: BDT {calculateTotalAmount().toLocaleString()}
+          <Separator />
+          
+          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+             <div className="grid grid-cols-2 items-center gap-2">
+                <Label htmlFor="discount">Discount</Label>
+                <Input id="discount" type="number" value={discount} onChange={e => setDiscount(parseFloat(e.target.value) || 0)} placeholder="0.00" className="text-right" />
+            </div>
+             <div className="space-y-2 text-right">
+                <div className="text-sm text-muted-foreground">Subtotal</div>
+                <div className="font-medium">BDT {subTotal.toLocaleString()}</div>
+            </div>
+            <div className="grid grid-cols-2 items-center gap-2">
+                <Label htmlFor="tax">VAT/Tax</Label>
+                <Input id="tax" type="number" value={tax} onChange={e => setTax(parseFloat(e.target.value) || 0)} placeholder="0.00" className="text-right" />
+            </div>
+             <div className="space-y-2 text-right">
+                <div className="text-sm text-muted-foreground">Grand Total</div>
+                <div className="font-semibold text-lg">BDT {grandTotal.toLocaleString()}</div>
+            </div>
+             <div className="grid grid-cols-2 items-center gap-2">
+                <Label htmlFor="paidAmount">Paid Amount</Label>
+                <Input id="paidAmount" type="number" value={paidAmount} onChange={e => setPaidAmount(parseFloat(e.target.value) || 0)} placeholder="0.00" className="text-right" />
+            </div>
+             <div className="space-y-2 text-right">
+                <div className="text-sm text-muted-foreground">Due Amount</div>
+                <div className="font-semibold text-destructive text-lg">BDT {dueAmount.toLocaleString()}</div>
+            </div>
           </div>
         </div>
         <DialogFooter>
