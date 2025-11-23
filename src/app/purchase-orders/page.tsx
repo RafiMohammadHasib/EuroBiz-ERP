@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, MoreHorizontal, Package, ShoppingCart } from "lucide-react"
+import { PlusCircle, MoreHorizontal, Package, ShoppingCart, List, CheckCircle } from "lucide-react"
 import { purchaseOrders } from "@/lib/data"
 import {
   DropdownMenu,
@@ -30,6 +30,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 export default function PurchaseOrdersPage() {
   const totalPOValue = purchaseOrders.reduce((sum, order) => sum + order.amount, 0);
   const pendingPOValue = purchaseOrders.filter(o => o.status === 'Pending').reduce((sum, order) => sum + order.amount, 0);
+  const totalOrders = purchaseOrders.length;
+  const completedOrders = purchaseOrders.filter(o => o.status === 'Completed').length;
 
   return (
     <div className="space-y-6">
@@ -52,6 +54,26 @@ export default function PurchaseOrdersPage() {
           <CardContent>
             <div className="text-2xl font-bold">BDT {pendingPOValue.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">For all pending orders</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+            <List className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalOrders}</div>
+            <p className="text-xs text-muted-foreground">Across all statuses</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completed Orders</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{completedOrders}</div>
+            <p className="text-xs text-muted-foreground">Successfully fulfilled POs</p>
           </CardContent>
         </Card>
       </div>
