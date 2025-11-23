@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -29,6 +30,55 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 export default function InvoicesPage() {
   const totalInvoiceValue = invoices.reduce((sum, invoice) => sum + invoice.amount, 0);
   const totalDues = invoices.filter(i => i.status !== 'Paid').reduce((sum, invoice) => sum + invoice.amount, 0);
+
+  const renderInvoiceTable = (invoiceList: typeof invoices) => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Invoice ID</TableHead>
+          <TableHead>Customer</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead>Date</TableHead>
+          <TableHead className="text-right">Amount</TableHead>
+          <TableHead>
+            <span className="sr-only">Actions</span>
+          </TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {invoiceList.map((invoice) => (
+          <TableRow key={invoice.id}>
+            <TableCell className="font-medium">{invoice.id}</TableCell>
+            <TableCell>{invoice.customer}</TableCell>
+            <TableCell>
+              <Badge variant={invoice.status === 'Paid' ? 'secondary' : invoice.status === 'Unpaid' ? 'outline' : 'destructive'}>
+                {invoice.status}
+              </Badge>
+            </TableCell>
+            <TableCell>{new Date(invoice.date).toLocaleDateString()}</TableCell>
+            <TableCell className="text-right">${invoice.amount.toLocaleString()}</TableCell>
+            <TableCell>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button aria-haspopup="true" size="icon" variant="ghost">
+                    <MoreHorizontal className="h-4 w-4" />
+                    <span className="sr-only">Toggle menu</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                  <DropdownMenuItem>View Details</DropdownMenuItem>
+                  <DropdownMenuItem>Mark as Paid</DropdownMenuItem>
+                  <DropdownMenuItem>Delete</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+
 
   return (
     <div className="space-y-6">
@@ -78,8 +128,7 @@ export default function InvoicesPage() {
             </Button>
           </div>
         </div>
-        <TabsContent value="all">
-          <Card>
+        <Card className="mt-4">
             <CardHeader>
               <CardTitle>Invoices</CardTitle>
               <CardDescription>
@@ -87,54 +136,20 @@ export default function InvoicesPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Invoice ID</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>
-                      <span className="sr-only">Actions</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {invoices.map((invoice) => (
-                    <TableRow key={invoice.id}>
-                      <TableCell className="font-medium">{invoice.id}</TableCell>
-                      <TableCell>{invoice.customer}</TableCell>
-                      <TableCell>
-                        <Badge variant={invoice.status === 'Paid' ? 'secondary' : invoice.status === 'Unpaid' ? 'outline' : 'destructive'}>
-                          {invoice.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{new Date(invoice.date).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-right">${invoice.amount.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>View Details</DropdownMenuItem>
-                            <DropdownMenuItem>Mark as Paid</DropdownMenuItem>
-                            <DropdownMenuItem>Delete</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                <TabsContent value="all" className="mt-0">
+                  {renderInvoiceTable(invoices)}
+                </TabsContent>
+                <TabsContent value="paid" className="mt-0">
+                  {renderInvoiceTable(invoices.filter(i => i.status === 'Paid'))}
+                </TabsContent>
+                <TabsContent value="unpaid" className="mt-0">
+                  {renderInvoiceTable(invoices.filter(i => i.status === 'Unpaid'))}
+                </TabsContent>
+                <TabsContent value="overdue" className="mt-0">
+                  {renderInvoiceTable(invoices.filter(i => i.status === 'Overdue'))}
+                </TabsContent>
             </CardContent>
           </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );

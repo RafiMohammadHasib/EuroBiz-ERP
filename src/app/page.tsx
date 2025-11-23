@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -15,7 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import SalesChart from "@/components/dashboard/sales-chart"
 import { DollarSign, CreditCard, Users, Undo, Truck, ShoppingCart, Building, Package } from "lucide-react"
-import { invoices, purchaseOrders } from "@/lib/data"
+import { invoices, purchaseOrders, distributors, suppliers } from "@/lib/data"
 
 export default function Home() {
   const totalRevenue = invoices.filter(i => i.status === 'Paid').reduce((acc, i) => acc + i.amount, 0);
@@ -26,7 +27,8 @@ export default function Home() {
   
   const pendingPurchaseOrders = purchaseOrders.filter(p => p.status === 'Pending').length;
   const totalPurchaseValue = purchaseOrders.reduce((acc, p) => acc + p.amount, 0);
-  const totalSuppliers = new Set(purchaseOrders.map(p => p.supplier)).size;
+  const totalSuppliers = new Set(suppliers.map(p => p.name)).size;
+  const totalDistributors = new Set(distributors.map(d => d.name)).size;
 
 
   return (
@@ -68,8 +70,8 @@ export default function Home() {
             <Truck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+5</div>
-            <p className="text-xs text-muted-foreground">+2 since last month</p>
+            <div className="text-2xl font-bold">+{totalDistributors}</div>
+            <p className="text-xs text-muted-foreground">From your distributor network</p>
           </CardContent>
         </Card>
         <Card>
