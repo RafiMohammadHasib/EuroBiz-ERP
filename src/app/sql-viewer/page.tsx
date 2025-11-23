@@ -17,6 +17,9 @@ import {
   salesReturns,
   rawMaterials,
   finishedGoods,
+  distributors,
+  suppliers,
+  productionOrders,
 } from '@/lib/data';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -96,6 +99,9 @@ export default function SqlExporterPage() {
       generateSqlForTable('sales_returns', salesReturns),
       generateSqlForTable('raw_materials', rawMaterials),
       generateSqlForTable('finished_goods', finishedGoods),
+      generateSqlForTable('distributors', distributors),
+      generateSqlForTable('suppliers', suppliers),
+      generateSqlForTable('production_orders', productionOrders),
   ].join('\n\n');
 
 
