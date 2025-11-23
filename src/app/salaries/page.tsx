@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, MoreHorizontal } from "lucide-react"
+import { PlusCircle, MoreHorizontal, Users, DollarSign } from "lucide-react"
 import { salaries } from "@/lib/data"
 import {
   DropdownMenu,
@@ -29,20 +29,44 @@ import { Separator } from "@/components/ui/separator"
 
 export default function SalariesPage() {
   const totalMonthlySalary = salaries.reduce((acc, salary) => acc + salary.amount, 0);
+  const totalEmployees = salaries.length;
+  const averageSalary = totalEmployees > 0 ? totalMonthlySalary / totalEmployees : 0;
+
 
   return (
     <div className="space-y-6">
-        <Card>
-            <CardHeader>
-                <CardTitle>Total Monthly Salary</CardTitle>
-                <CardDescription>
-                An overview of the total salary expense for the current month.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <p className="text-3xl font-bold">${totalMonthlySalary.toLocaleString()}</p>
-            </CardContent>
-        </Card>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Monthly Salary</CardTitle>
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">${totalMonthlySalary.toLocaleString()}</div>
+                    <p className="text-xs text-muted-foreground">Total payroll expense for the month</p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{totalEmployees}</div>
+                    <p className="text-xs text-muted-foreground">Number of active employees</p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Average Salary</CardTitle>
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">${averageSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                    <p className="text-xs text-muted-foreground">Average monthly salary per employee</p>
+                </CardContent>
+            </Card>
+        </div>
         <Card>
         <CardHeader>
             <div className="flex items-center justify-between">
