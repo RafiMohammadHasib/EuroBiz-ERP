@@ -34,6 +34,7 @@ import {
   DollarSign,
   Users as UsersIcon,
   ChevronDown,
+  Percent,
 } from "lucide-react";
 
 interface NavItem {
@@ -74,6 +75,7 @@ export const navGroups: NavGroup[] = [
         label: "Financials",
         items: [
             { href: "/dues", label: "Outstanding Dues", icon: Landmark },
+            { href: "/commissions", label: "Commissions", icon: Percent },
             { href: "/salaries", label: "Salaries", icon: UsersIcon },
         ]
     },
