@@ -17,7 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { PlusCircle, MoreHorizontal, Package, ShoppingCart, List, CheckCircle } from "lucide-react"
-import { purchaseOrders } from "@/lib/data"
+import { purchaseOrders, type PurchaseOrder } from "@/lib/data"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +32,64 @@ export default function PurchaseOrdersPage() {
   const pendingPOValue = purchaseOrders.filter(o => o.status === 'Pending').reduce((sum, order) => sum + order.amount, 0);
   const totalOrders = purchaseOrders.length;
   const completedOrders = purchaseOrders.filter(o => o.status === 'Completed').length;
+
+  const renderPurchaseOrderTable = (orders: PurchaseOrder[]) => (
+    <Card>
+      <CardHeader>
+        <CardTitle>Purchase Orders</CardTitle>
+        <CardDescription>
+          Manage your purchase orders and track their status.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Order ID</TableHead>
+              <TableHead>Supplier</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
+              <TableHead>
+                <span className="sr-only">Actions</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {orders.map((order) => (
+              <TableRow key={order.id}>
+                <TableCell className="font-medium">{order.id}</TableCell>
+                <TableCell>{order.supplier}</TableCell>
+                <TableCell>
+                  <Badge variant={order.status === 'Completed' ? 'secondary' : order.status === 'Pending' ? 'outline' : 'destructive'}>
+                    {order.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
+                <TableCell className="text-right">BDT {order.amount.toLocaleString()}</TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button aria-haspopup="true" size="icon" variant="ghost">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Toggle menu</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem>View Details</DropdownMenuItem>
+                      <DropdownMenuItem>Mark as Completed</DropdownMenuItem>
+                      <DropdownMenuItem>Cancel</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="space-y-6">
@@ -93,62 +151,14 @@ export default function PurchaseOrdersPage() {
             </Button>
           </div>
         </div>
-        <TabsContent value="all">
-          <Card>
-            <CardHeader>
-              <CardTitle>Purchase Orders</CardTitle>
-              <CardDescription>
-                Manage your purchase orders and track their status.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Order ID</TableHead>
-                    <TableHead>Supplier</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>
-                      <span className="sr-only">Actions</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {purchaseOrders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">{order.id}</TableCell>
-                      <TableCell>{order.supplier}</TableCell>
-                      <TableCell>
-                        <Badge variant={order.status === 'Completed' ? 'secondary' : order.status === 'Pending' ? 'outline' : 'destructive'}>
-                          {order.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-right">BDT {order.amount.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>View Details</DropdownMenuItem>
-                            <DropdownMenuItem>Mark as Completed</DropdownMenuItem>
-                            <DropdownMenuItem>Cancel</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+        <TabsContent value="all" className="mt-4">
+          {renderPurchaseOrderTable(purchaseOrders)}
+        </TabsContent>
+        <TabsContent value="pending" className="mt-4">
+          {renderPurchaseOrderTable(purchaseOrders.filter(o => o.status === 'Pending'))}
+        </TabsContent>
+        <TabsContent value="completed" className="mt-4">
+          {renderPurchaseOrderTable(purchaseOrders.filter(o => o.status === 'Completed'))}
         </TabsContent>
       </Tabs>
     </div>
