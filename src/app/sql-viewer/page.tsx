@@ -14,6 +14,9 @@ import {
   commissions,
   purchaseOrders,
   salaries,
+  salesReturns,
+  rawMaterials,
+  finishedGoods,
 } from '@/lib/data';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -31,28 +34,34 @@ export default function SqlExporterPage() {
     const columns = Object.keys(firstItem);
 
     columns.forEach((column, index) => {
-      const dataType = typeof firstItem[column];
+      const value = firstItem[column];
+      const dataType = typeof value;
       let sqlType: string;
-      switch (dataType) {
-        case 'number':
-          sqlType = Number.isInteger(firstItem[column]) ? 'INTEGER' : 'DECIMAL(10, 2)';
-          break;
-        case 'string':
-           if (column === 'id') {
-             sqlType = 'VARCHAR(255) PRIMARY KEY';
-           } else if (firstItem[column].length > 100) {
-             sqlType = 'TEXT';
-           } else {
-             sqlType = 'VARCHAR(255)';
-           }
-          break;
-        case 'boolean':
-          sqlType = 'BOOLEAN';
-          break;
-        default:
-          sqlType = 'TEXT';
+
+      if (Array.isArray(value) || (value !== null && dataType === 'object')) {
+        sqlType = 'TEXT'; // JSON objects or arrays stored as text
+      } else {
+        switch (dataType) {
+            case 'number':
+            sqlType = Number.isInteger(value) ? 'INTEGER' : 'DECIMAL(10, 2)';
+            break;
+            case 'string':
+            if (column === 'id') {
+                sqlType = 'VARCHAR(255) PRIMARY KEY';
+            } else if (value.length > 100) {
+                sqlType = 'TEXT';
+            } else {
+                sqlType = 'VARCHAR(255)';
+            }
+            break;
+            case 'boolean':
+            sqlType = 'BOOLEAN';
+            break;
+            default:
+            sqlType = 'TEXT';
+        }
       }
-      if (column === 'date') sqlType = 'DATE';
+      if (column.toLowerCase().includes('date')) sqlType = 'DATE';
       createTableStatement += `  "${column}" ${sqlType}${index === columns.length - 1 ? '' : ','}\n`;
     });
     createTableStatement += ');\n\n';
@@ -63,6 +72,9 @@ export default function SqlExporterPage() {
         const value = item[column];
         if (value === null || value === undefined) {
             return 'NULL';
+        }
+        if (Array.isArray(value) || (value !== null && typeof value === 'object')) {
+            return `'${JSON.stringify(value).replace(/'/g, "''")}'`;
         }
         if (typeof value === 'string') {
           return `'${value.replace(/'/g, "''")}'`;
@@ -81,6 +93,9 @@ export default function SqlExporterPage() {
       generateSqlForTable('sales_data', salesData),
       generateSqlForTable('purchase_orders', purchaseOrders),
       generateSqlForTable('salaries', salaries),
+      generateSqlForTable('sales_returns', salesReturns),
+      generateSqlForTable('raw_materials', rawMaterials),
+      generateSqlForTable('finished_goods', finishedGoods),
   ].join('\n\n');
 
 
