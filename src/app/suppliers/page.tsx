@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, MoreHorizontal, Building, Package } from "lucide-react"
+import { PlusCircle, MoreHorizontal, Building, Package, TrendingUp, UserCheck } from "lucide-react"
 import { suppliers } from "@/lib/data"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -16,7 +16,9 @@ import { Badge } from "@/components/ui/badge"
 
 export default function SuppliersPage() {
     const totalSuppliers = suppliers.length;
+    const activeSuppliers = suppliers.filter(s => s.status === 'Active').length;
     const totalPOValue = suppliers.reduce((acc, s) => acc + s.totalPOValue, 0);
+    const averagePOValue = totalSuppliers > 0 ? totalPOValue / totalSuppliers : 0;
 
   return (
     <div className="space-y-6">
@@ -28,7 +30,17 @@ export default function SuppliersPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{totalSuppliers}</div>
-                    <p className="text-xs text-muted-foreground">Active suppliers</p>
+                    <p className="text-xs text-muted-foreground">Including active and inactive</p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Active Suppliers</CardTitle>
+                    <UserCheck className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{activeSuppliers}</div>
+                    <p className="text-xs text-muted-foreground">Currently supplying materials</p>
                 </CardContent>
             </Card>
             <Card>
@@ -39,6 +51,16 @@ export default function SuppliersPage() {
                 <CardContent>
                     <div className="text-2xl font-bold">BDT {totalPOValue.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">Across all suppliers</p>
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Average PO Value</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">BDT {averagePOValue.toLocaleString(undefined, {maximumFractionDigits: 0})}</div>
+                    <p className="text-xs text-muted-foreground">Per supplier</p>
                 </CardContent>
             </Card>
         </div>
