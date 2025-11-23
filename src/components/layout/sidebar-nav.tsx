@@ -83,7 +83,6 @@ export default function SidebarNav({ navItems: itemsToRender }: SidebarNavProps)
                 <SidebarMenuButton
                   isActive={pathname === item.href}
                   tooltip={item.label}
-                  size="lg"
                 >
                   <item.icon />
                   <span>{item.label}</span>
@@ -101,7 +100,6 @@ export default function SidebarNav({ navItems: itemsToRender }: SidebarNavProps)
                   <SidebarMenuButton
                     isActive={pathname === item.href}
                     tooltip={item.label}
-                    size="lg"
                   >
                     <item.icon />
                     <span>{item.label}</span>
@@ -111,7 +109,7 @@ export default function SidebarNav({ navItems: itemsToRender }: SidebarNavProps)
           ))}
           <SidebarSeparator className="my-2"/>
            <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Logout" size="lg">
+            <SidebarMenuButton tooltip="Logout">
               <LogOut />
               <span>Logout</span>
             </SidebarMenuButton>
