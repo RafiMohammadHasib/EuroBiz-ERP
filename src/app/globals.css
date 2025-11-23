@@ -6,7 +6,7 @@
   :root {
     --background: 223 33% 92%;
     --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
+    --card: 0 0% 100% / 0.6;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
@@ -20,7 +20,7 @@
     --accent-foreground: 222.2 84% 4.9%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 223 33% 86%;
+    --border: 223 33% 86% / 0.4;
     --input: 223 33% 86%;
     --ring: 225 100% 58%;
     --radius: 0.5rem;
@@ -42,7 +42,7 @@
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    --card: 222.2 84% 4.9% / 0.6;
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
@@ -56,7 +56,7 @@
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
+    --border: 217.2 32.6% 17.5% / 0.4;
     --input: 217.2 32.6% 17.5%;
     --ring: 225 100% 58%;
     --chart-1: 225 100% 58%;
@@ -83,4 +83,10 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@layer components {
+    .glass-card {
+        @apply backdrop-blur-lg;
+    }
 }

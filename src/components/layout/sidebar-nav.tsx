@@ -21,14 +21,20 @@ import {
   BrainCircuit,
   LogOut,
   Landmark,
-  Users,
   Building,
   Package,
   Factory,
   Truck,
+  Icon,
 } from "lucide-react";
 
-const navItems = [
+interface NavItem {
+    href: string;
+    label: string;
+    icon: Icon;
+}
+
+export const navItems: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/invoices", label: "Invoices", icon: FileText },
   { href: "/commissions", label: "Commissions", icon: CreditCard },
@@ -43,11 +49,15 @@ const navItems = [
   { href: "/forecast", label: "AI Forecast", icon: BrainCircuit },
 ];
 
-const bottomNavItems = [
+const bottomNavItems: NavItem[] = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-export default function SidebarNav() {
+interface SidebarNavProps {
+    navItems: NavItem[];
+}
+
+export default function SidebarNav({ navItems: itemsToRender }: SidebarNavProps) {
   const pathname = usePathname();
 
   return (
@@ -62,7 +72,7 @@ export default function SidebarNav() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {navItems.map((item) => (
+          {itemsToRender.map((item) => (
             <SidebarMenuItem key={item.href}>
               <Link href={item.href} legacyBehavior passHref>
                 <SidebarMenuButton

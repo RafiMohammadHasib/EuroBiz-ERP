@@ -20,7 +20,12 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Bell, Search } from 'lucide-react';
 import Link from 'next/link';
 
-export default function Header() {
+interface HeaderProps {
+    searchQuery: string;
+    setSearchQuery: (query: string) => void;
+}
+
+export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
   const userAvatar = placeholder.placeholderImages.find(p => p.id === 'user-avatar') as ImagePlaceholder | undefined;
 
   return (
@@ -32,6 +37,8 @@ export default function Header() {
           type="search"
           placeholder="Search..."
           className="w-full rounded-lg bg-card pl-8 md:w-[200px] lg:w-[320px]"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
       <Button variant="ghost" size="icon" className="rounded-full">
