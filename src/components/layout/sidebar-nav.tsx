@@ -21,6 +21,11 @@ import {
   BrainCircuit,
   LogOut,
   Landmark,
+  Users,
+  Building,
+  Package,
+  Factory,
+  Truck,
 } from "lucide-react";
 
 const navItems = [
@@ -29,6 +34,11 @@ const navItems = [
   { href: "/commissions", label: "Commissions", icon: CreditCard },
   { href: "/returns", label: "Returns", icon: Undo2 },
   { href: "/dues", label: "Outstanding Dues", icon: Landmark },
+  { href: "/suppliers", label: "Suppliers", icon: Building },
+  { href: "/raw-materials", label: "Raw Materials", icon: Package },
+  { href: "/production", label: "Production", icon: Factory },
+  { href: "/finished-goods", label: "Finished Goods", icon: Package },
+  { href: "/distributors", label: "Distributors", icon: Truck },
   { href: "/reports", label: "Reports", icon: PieChart },
   { href: "/forecast", label: "AI Forecast", icon: BrainCircuit },
 ];
