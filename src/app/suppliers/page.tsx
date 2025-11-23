@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -10,7 +11,7 @@ import {
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { PlusCircle, MoreHorizontal, Building, Package, TrendingUp, UserCheck } from "lucide-react"
-import { suppliers as initialSuppliers, type Supplier } from "@/lib/data"
+import { suppliers as initialSuppliers, type Supplier, purchaseOrders as initialPurchaseOrders } from "@/lib/data"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
@@ -19,11 +20,23 @@ import { CreateSupplierDialog } from "@/components/suppliers/create-supplier-dia
 
 export default function SuppliersPage() {
     const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
+    const [purchaseOrders, setPurchaseOrders] = useState(initialPurchaseOrders);
     const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
 
-    const totalSuppliers = suppliers.length;
-    const activeSuppliers = suppliers.filter(s => s.status === 'Active').length;
-    const totalPOValue = suppliers.reduce((acc, s) => acc + s.totalPOValue, 0);
+    const supplierData = useMemo(() => {
+        return suppliers.map(supplier => {
+            const supplierPOs = purchaseOrders.filter(po => po.supplier === supplier.name);
+            const totalPOValue = supplierPOs.reduce((acc, po) => acc + po.amount, 0);
+            return {
+                ...supplier,
+                totalPOValue,
+            }
+        });
+    }, [suppliers, purchaseOrders]);
+
+    const totalSuppliers = supplierData.length;
+    const activeSuppliers = supplierData.filter(s => s.status === 'Active').length;
+    const totalPOValue = supplierData.reduce((acc, s) => acc + s.totalPOValue, 0);
     const averagePOValue = totalSuppliers > 0 ? totalPOValue / totalSuppliers : 0;
 
     const addSupplier = (newSupplier: Omit<Supplier, 'id'>) => {
@@ -110,7 +123,7 @@ export default function SuppliersPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {suppliers.map((supplier) => (
+                    {supplierData.map((supplier) => (
                         <TableRow key={supplier.id}>
                             <TableCell className="font-medium">{supplier.name}</TableCell>
                             <TableCell>{supplier.category}</TableCell>

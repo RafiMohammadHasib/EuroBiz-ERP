@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from "react";
@@ -19,7 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { PlusCircle, MoreHorizontal, Package, ShoppingCart, List, CheckCircle } from "lucide-react"
-import { purchaseOrders as initialPurchaseOrders, type PurchaseOrder, suppliers } from "@/lib/data"
+import { purchaseOrders as initialPurchaseOrders, type PurchaseOrder, suppliers, rawMaterials as initialRawMaterials } from "@/lib/data"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,10 +30,14 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CreatePurchaseOrderDialog } from "@/components/purchase-orders/create-purchase-order-dialog";
+import { useToast } from "@/hooks/use-toast";
+
 
 export default function PurchaseOrdersPage() {
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(initialPurchaseOrders);
+  const [rawMaterials, setRawMaterials] = useState(initialRawMaterials);
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   const totalPOValue = purchaseOrders.reduce((sum, order) => sum + order.amount, 0);
   const pendingPOValue = purchaseOrders.filter(o => o.status === 'Pending').reduce((sum, order) => sum + order.amount, 0);
@@ -46,6 +51,34 @@ export default function PurchaseOrdersPage() {
     };
     setPurchaseOrders(prev => [orderWithId, ...prev]);
   }
+
+  const handleMarkAsCompleted = (orderId: string) => {
+    let orderToUpdate: PurchaseOrder | undefined;
+    const updatedPOs = purchaseOrders.map(po => {
+        if (po.id === orderId) {
+            orderToUpdate = po;
+            return { ...po, status: 'Completed' as const };
+        }
+        return po;
+    });
+
+    if (orderToUpdate) {
+        const updatedRawMaterials = [...rawMaterials];
+        orderToUpdate.items.forEach(item => {
+            const materialIndex = updatedRawMaterials.findIndex(rm => rm.id === item.rawMaterialId);
+            if (materialIndex !== -1) {
+                updatedRawMaterials[materialIndex].quantity += item.quantity;
+            }
+        });
+        setRawMaterials(updatedRawMaterials);
+        setPurchaseOrders(updatedPOs);
+        toast({
+            title: "Purchase Order Completed",
+            description: `Order ${orderId} has been marked as completed and stock has been updated.`
+        });
+    }
+  }
+
 
   const renderPurchaseOrderTable = (orders: PurchaseOrder[]) => (
     <Card>
@@ -92,7 +125,9 @@ export default function PurchaseOrdersPage() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuItem>View Details</DropdownMenuItem>
-                      <DropdownMenuItem>Mark as Completed</DropdownMenuItem>
+                      {order.status === 'Pending' && (
+                        <DropdownMenuItem onClick={() => handleMarkAsCompleted(order.id)}>Mark as Completed</DropdownMenuItem>
+                      )}
                       <DropdownMenuItem>Cancel</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -182,6 +217,7 @@ export default function PurchaseOrdersPage() {
         onOpenChange={setCreateDialogOpen}
         onCreate={addPurchaseOrder}
         suppliers={suppliers}
+        rawMaterials={rawMaterials}
     />
     </>
   );
