@@ -5,18 +5,116 @@ export type Invoice = {
   customer: string;
   customerEmail: string;
   date: string;
+  dueDate: string;
   amount: number;
   status: 'Paid' | 'Unpaid' | 'Overdue';
+  items: InvoiceItem[];
 };
 
+export type InvoiceItem = {
+    id: string;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    total: number;
+}
+
+export const companyDetails = {
+    name: 'BizFin Inc.',
+    address: '123 Innovation Drive, Tech City, 12345',
+    email: 'accounts@bizfin.com',
+    phone: '+1 (555) 123-4567',
+    logoUrl: '/logo.png' // You can add a logo here
+}
+
 export const invoices: Invoice[] = [
-  { id: 'INV-001', customer: 'Stark Industries', customerEmail: 'tony@stark.com', date: '2023-10-01', amount: 2500.00, status: 'Paid' },
-  { id: 'INV-002', customer: 'Wayne Enterprises', customerEmail: 'bruce@wayne.com', date: '2023-10-05', amount: 1500.75, status: 'Paid' },
-  { id: 'INV-003', customer: 'Oscorp', customerEmail: 'norman@oscorp.com', date: '2023-10-12', amount: 3000.00, status: 'Unpaid' },
-  { id: 'INV-004', customer: 'Queen Consolidated', customerEmail: 'oliver@queen.com', date: '2023-09-15', amount: 750.00, status: 'Overdue' },
-  { id: 'INV-005', customer: 'Stark Industries', customerEmail: 'tony@stark.com', date: '2023-10-20', amount: 5500.50, status: 'Unpaid' },
-  { id: 'INV-006', customer: 'Daily Planet', customerEmail: 'clark@dailyplanet.com', date: '2023-10-22', amount: 850.00, status: 'Paid' },
-  { id: 'INV-007', customer: 'Kord Industries', customerEmail: 'ted@kord.com', date: '2023-08-30', amount: 1250.25, status: 'Overdue' },
+  { 
+    id: 'INV-001', 
+    customer: 'Stark Industries', 
+    customerEmail: 'tony@stark.com', 
+    date: '2023-10-01', 
+    dueDate: '2023-10-31',
+    amount: 2500.00, 
+    status: 'Paid',
+    items: [
+        { id: 'item-1', description: 'Premium Wall Paint (1L)', quantity: 100, unitPrice: 20.00, total: 2000.00 },
+        { id: 'item-2', description: 'Painting Supplies Kit', quantity: 20, unitPrice: 25.00, total: 500.00 },
+    ]
+  },
+  { 
+    id: 'INV-002', 
+    customer: 'Wayne Enterprises', 
+    customerEmail: 'bruce@wayne.com', 
+    date: '2023-10-05', 
+    dueDate: '2023-11-04',
+    amount: 1500.75, 
+    status: 'Paid',
+    items: [
+        { id: 'item-3', description: 'Weather-Proof Exterior (5L)', quantity: 15, unitPrice: 75.50, total: 1132.50 },
+        { id: 'item-4', description: 'Primer (1L)', quantity: 50, unitPrice: 7.365, total: 368.25 },
+    ]
+  },
+  { 
+    id: 'INV-003', 
+    customer: 'Oscorp', 
+    customerEmail: 'norman@oscorp.com', 
+    date: '2023-10-12', 
+    dueDate: '2023-11-11',
+    amount: 3000.00, 
+    status: 'Unpaid',
+    items: [
+        { id: 'item-5', description: 'Standard Emulsion (1L)', quantity: 300, unitPrice: 10.00, total: 3000.00 },
+    ]
+  },
+  { 
+    id: 'INV-004', 
+    customer: 'Queen Consolidated', 
+    customerEmail: 'oliver@queen.com', 
+    date: '2023-09-15', 
+    dueDate: '2023-10-15',
+    amount: 750.00, 
+    status: 'Overdue',
+    items: [
+        { id: 'item-6', description: 'Wood Varnish (0.5L)', quantity: 50, unitPrice: 15.00, total: 750.00 },
+    ]
+  },
+  { 
+    id: 'INV-005', 
+    customer: 'Stark Industries', 
+    customerEmail: 'tony@stark.com', 
+    date: '2023-10-20', 
+    dueDate: '2023-11-19',
+    amount: 5500.50, 
+    status: 'Unpaid',
+    items: [
+        { id: 'item-1', description: 'Premium Wall Paint (1L)', quantity: 200, unitPrice: 20.00, total: 4000.00 },
+        { id: 'item-7', description: 'Luxury Finish Additive', quantity: 50, unitPrice: 30.01, total: 1500.50 },
+    ]
+  },
+  { 
+    id: 'INV-006', 
+    customer: 'Daily Planet', 
+    customerEmail: 'clark@dailyplanet.com', 
+    date: '2023-10-22', 
+    dueDate: '2023-11-21',
+    amount: 850.00, 
+    status: 'Paid',
+    items: [
+        { id: 'item-3', description: 'Standard Emulsion (1L)', quantity: 85, unitPrice: 10.00, total: 850.00 },
+    ]
+  },
+  { 
+    id: 'INV-007', 
+    customer: 'Kord Industries', 
+    customerEmail: 'ted@kord.com', 
+    date: '2023-08-30', 
+    dueDate: '2023-09-29',
+    amount: 1250.25, 
+    status: 'Overdue',
+    items: [
+        { id: 'item-8', description: 'Industrial Degreaser (10L)', quantity: 25, unitPrice: 50.01, total: 1250.25 },
+    ]
+  },
 ];
 
 export const salesData = [

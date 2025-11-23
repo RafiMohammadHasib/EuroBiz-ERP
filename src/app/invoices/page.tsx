@@ -1,4 +1,5 @@
 
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -70,7 +71,9 @@ export default function InvoicesPage() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                  <DropdownMenuItem>View Details</DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={`/invoices/${invoice.id}`}>View Details</Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem>Mark as Paid</DropdownMenuItem>
                   <DropdownMenuItem>Delete</DropdownMenuItem>
                 </DropdownMenuContent>
