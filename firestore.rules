@@ -1,0 +1,231 @@
+/**
+ * This ruleset enforces a security model for the BizFin Sales ERP application.
+ *
+ * Core Philosophy:
+ * The security model is built around user ownership. It assumes that an authenticated
+ * user's UID corresponds directly to either a `salespersonId` or a `customerId`.
+ * This allows for a strict separation of data: salespeople can only manage their own
+ * profiles and commissions, and customers can only manage their own profiles,
+
+ * invoices, and related documents. Business-wide data is readable by all signed-in
+ * users but is not writable by clients, assuming it's managed by a backend process.
+ *
+ * Data Structure:
+ * The data is organized into top-level collections for core business entities
+ * (`products`, `distribution_channels`) and primary user types (`salespeople`,
+ * `customers`). All user-specific data, such as commissions or invoices, is stored
+ * in subcollections under the corresponding user's document (e.g.,
+ * `/salespeople/{salespersonId}/commissions/...`). This hierarchical structure
+ * simplifies ownership-based security rules.
+ *
+ * Key Security Decisions:
+ * - User/Owner Mapping: It is assumed that `request.auth.uid` directly maps to the
+ *   document ID in the `/salespeople` or `/customers` collections. This is the
+ *   foundation of the ownership model.
+ * - Restricted Writes on Business Data: Top-level collections like `products` and
+ *   `distribution_channels` are readable by any authenticated user but are not
+ *   writable. This prevents unauthorized modification of shared business data and
+ *   implies management via a trusted backend service or admin tool.
+ * - Read-Only Reporting Collections: The commission data duplicated under `/products`
+ *   and `/distribution_channels` is treated as a read-only view for reporting.
+ *   This prevents data integrity issues that could arise from client-side writes.
+ * - No User Listing: The rules do not permit listing the top-level `/salespeople`
+ *   or `/customers` collections to protect user privacy.
+ *
+ * Denormalization for Authorization:
+ * The ruleset leverages denormalized fields (e.g., `salespersonId` on a commission
+ * document) to enforce path integrity and security without needing expensive `get()`
+ * calls to parent documents. On creation, these fields are validated to ensure they
+ * match the document's path, creating a secure link. On update, these fields are
+ * enforced as immutable.
+ *
+ * Structural Segregation:
+ * User-specific data (commissions, invoices) is segregated into subcollections
+ * under the owner's document path. This ensures that all documents within a given
+ * collection path share the same ownership and security context, enabling secure
+ * and efficient list operations for the owner.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------------------------
+    // --- Helper Functions ---
+    // ---------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the authenticated user's UID matches the provided userId.
+     * This is the core of the ownership model.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks for ownership on an existing document. Used for update and delete
+     * operations to prevent acting on non-existent data.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    // ---------------------------
+    // --- Business-Wide Data ---
+    // ---------------------------
+
+    /**
+     * @description Controls access to product information.
+     * @path /products/{productId}
+     * @allow (get) Any authenticated user can read a specific product.
+     * @deny (create) Anonymous users or authenticated users cannot create products.
+     * @principle Public read for signed-in users, with writes disabled pending an admin role.
+     */
+    match /products/{productId} {
+      allow get, list: if isSignedIn();
+      // CRITICAL: Cannot implement owner-only writes. The 'Product' entity is missing an 'ownerId' or 'authorId' field.
+      allow create, update, delete: if false; // TODO: Add owner/admin validation once the schema is updated.
+    }
+
+    /**
+     * @description Controls access to distribution channel information.
+     * @path /distribution_channels/{distributionChannelId}
+     * @allow (get) Any authenticated user can read a specific distribution channel.
+     * @deny (create) Anonymous users or authenticated users cannot create channels.
+     * @principle Public read for signed-in users, with writes disabled pending an admin role.
+     */
+    match /distribution_channels/{distributionChannelId} {
+      allow get, list: if isSignedIn();
+      // CRITICAL: Cannot implement owner-only writes. The 'DistributionChannel' entity is missing an 'ownerId' or 'authorId' field.
+      allow create, update, delete: if false; // TODO: Add owner/admin validation once the schema is updated.
+    }
+
+    // ---------------------------
+    // --- User Profiles ---
+    // ---------------------------
+
+    /**
+     * @description Controls access to salesperson profiles.
+     * @path /salespeople/{salespersonId}
+     * @allow (create) A new salesperson can create their own profile document if their UID matches the document ID.
+     * @deny (get) Another salesperson cannot read a different salesperson's profile.
+     * @principle Enforces self-creation and ownership of personal profile data.
+     */
+    match /salespeople/{salespersonId} {
+      allow get, update, delete: if isOwner(salespersonId);
+      allow create: if isOwner(salespersonId) && request.resource.data.id == salespersonId;
+      allow list: if false; // Disallow listing of all salespeople for privacy.
+    }
+
+    /**
+     * @description Controls access to customer profiles.
+     * @path /customers/{customerId}
+     * @allow (create) A new customer can create their own profile document if their UID matches the document ID.
+     * @deny (get) Another customer cannot read a different customer's profile.
+     * @principle Enforces self-creation and ownership of personal profile data.
+     */
+    match /customers/{customerId} {
+      allow get, update, delete: if isOwner(customerId);
+      allow create: if isOwner(customerId) && request.resource.data.id == customerId;
+      allow list: if false; // Disallow listing of all customers for privacy.
+    }
+
+    // ---------------------------
+    // --- Salesperson Data ---
+    // ---------------------------
+
+    /**
+     * @description Secures a salesperson's commission records.
+     * @path /salespeople/{salespersonId}/commissions/{commissionId}
+     * @allow (create) A salesperson can create a commission record for themselves.
+     * @deny (get) A salesperson cannot read another salesperson's commissions.
+     * @principle Restricts access to a user's own data tree and validates relational integrity.
+     */
+    match /salespeople/{salespersonId}/commissions/{commissionId} {
+      allow get, list: if isOwner(salespersonId);
+      allow create: if isOwner(salespersonId) && request.resource.data.salespersonId == salespersonId;
+      allow update: if isExistingOwner(salespersonId) && request.resource.data.salespersonId == resource.data.salespersonId;
+      allow delete: if isExistingOwner(salespersonId);
+    }
+
+    // ---------------------------
+    // --- Customer Data ---
+    // ---------------------------
+
+    /**
+     * @description Secures a customer's invoice records.
+     * @path /customers/{customerId}/invoices/{invoiceId}
+     * @allow (get) A customer can read their own invoices.
+     * @deny (list) Another customer cannot list a different customer's invoices.
+     * @principle Restricts access to a user's own data tree and validates relational integrity.
+     */
+    match /customers/{customerId}/invoices/{invoiceId} {
+      allow get, list: if isOwner(customerId);
+      allow create: if isOwner(customerId) && request.resource.data.customerId == customerId;
+      allow update: if isExistingOwner(customerId) && request.resource.data.customerId == resource.data.customerId;
+      allow delete: if isExistingOwner(customerId);
+
+      /**
+       * @description Secures sales returns associated with a customer's invoice.
+       * @path /customers/{customerId}/invoices/{invoiceId}/returns/{returnId}
+       * @allow (create) A customer can log a return for their own invoice.
+       * @deny (get) Another customer cannot view return data for an invoice that is not theirs.
+       * @principle Inherits ownership from the path and validates the invoice link.
+       */
+      match /returns/{returnId} {
+        allow get, list: if isOwner(customerId);
+        allow create: if isOwner(customerId) && request.resource.data.invoiceId == invoiceId;
+        allow update: if isExistingOwner(customerId) && request.resource.data.invoiceId == resource.data.invoiceId;
+        allow delete: if isExistingOwner(customerId);
+      }
+
+      /**
+       * @description Secures outstanding due records for a customer's invoice.
+       * @path /customers/{customerId}/invoices/{invoiceId}/outstanding_dues/{outstandingDueId}
+       * @allow (get) A customer can view outstanding dues for their own invoices.
+       * @deny (create) A customer cannot create an outstanding due record for another customer's invoice.
+       * @principle Inherits ownership from the path and validates the invoice link.
+       */
+      match /outstanding_dues/{outstandingDueId} {
+        allow get, list: if isOwner(customerId);
+        allow create: if isOwner(customerId) && request.resource.data.invoiceId == invoiceId;
+        allow update: if isExistingOwner(customerId) && request.resource.data.invoiceId == resource.data.invoiceId;
+        allow delete: if isExistingOwner(customerId);
+      }
+    }
+
+    // --------------------------------
+    // --- Reporting Subcollections ---
+    // --------------------------------
+
+    /**
+     * @description Provides read-only access to commission data under products for reporting.
+     * @path /products/{productId}/commissions/{commissionId}
+     * @allow (get) Any signed-in user can read commission data related to a product.
+     * @deny (create, update, delete) No client can write to this path to maintain data integrity.
+     * @principle Secures reporting data by making it read-only for clients.
+     */
+    match /products/{productId}/commissions/{commissionId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Provides read-only access to commission data under channels for reporting.
+     * @path /distribution_channels/{distributionChannelId}/commissions/{commissionId}
+     * @allow (get) Any signed-in user can read commission data related to a distribution channel.
+     * @deny (create, update, delete) No client can write to this path to maintain data integrity.
+     * @principle Secures reporting data by making it read-only for clients.
+     */
+    match /distribution_channels/{distributionChannelId}/commissions/{commissionId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if false;
+    }
+  }
+}
