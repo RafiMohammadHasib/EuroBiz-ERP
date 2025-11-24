@@ -41,10 +41,42 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
-      <Button variant="ghost" size="icon" className="rounded-full">
-        <Bell className="h-5 w-5" />
-        <span className="sr-only">Toggle notifications</span>
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="rounded-full">
+            <Bell className="h-5 w-5" />
+            <span className="sr-only">Toggle notifications</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-[320px]">
+          <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="flex-col items-start gap-1">
+            <p className="font-medium">New invoice #INV-005 created</p>
+            <p className="text-xs text-muted-foreground">
+              A new invoice for Queen Consolidated has been added.
+            </p>
+          </DropdownMenuItem>
+           <DropdownMenuItem className="flex-col items-start gap-1">
+            <p className="font-medium text-destructive">Invoice #INV-004 is overdue</p>
+            <p className="text-xs text-muted-foreground">
+              Invoice for Cyberdyne Systems is past its due date.
+            </p>
+          </DropdownMenuItem>
+           <DropdownMenuItem className="flex-col items-start gap-1">
+            <p className="font-medium">Production order completed</p>
+            <p className="text-xs text-muted-foreground">
+              Order #PROD-001 for Premium Wall Paint is complete.
+            </p>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="text-center">
+            <Link href="#" className="text-sm text-primary">
+              View all notifications
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="rounded-full">
