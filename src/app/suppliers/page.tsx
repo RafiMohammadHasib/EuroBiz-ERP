@@ -11,19 +11,24 @@ import {
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { PlusCircle, MoreHorizontal, Building, Package, TrendingUp, UserCheck } from "lucide-react"
-import { suppliers as initialSuppliers, type Supplier, purchaseOrders as initialPurchaseOrders } from "@/lib/data"
+import { type Supplier, purchaseOrders as initialPurchaseOrders } from "@/lib/data"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { CreateSupplierDialog } from "@/components/suppliers/create-supplier-dialog";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection } from "firebase/firestore";
 
 
 export default function SuppliersPage() {
-    const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
+    const firestore = useFirestore();
+    const suppliersCollection = useMemoFirebase(() => collection(firestore, 'suppliers'), [firestore]);
+    const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersCollection);
     const [purchaseOrders, setPurchaseOrders] = useState(initialPurchaseOrders);
     const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
 
     const supplierData = useMemo(() => {
+        if (!suppliers) return [];
         return suppliers.map(supplier => {
             const supplierPOs = purchaseOrders.filter(po => po.supplier === supplier.name);
             const totalPOValue = supplierPOs.reduce((acc, po) => acc + po.amount, 0);
@@ -40,11 +45,8 @@ export default function SuppliersPage() {
     const averagePOValue = totalSuppliers > 0 ? totalPOValue / totalSuppliers : 0;
 
     const addSupplier = (newSupplier: Omit<Supplier, 'id'>) => {
-        const supplierWithId: Supplier = {
-            ...newSupplier,
-            id: `SUP-${String(suppliers.length + 1).padStart(2, '0')}`,
-        };
-        setSuppliers(prev => [supplierWithId, ...prev]);
+        // In a real app, this would be a Firestore call
+        console.log("New supplier to add (simulated):", newSupplier);
     }
 
   return (
@@ -123,31 +125,37 @@ export default function SuppliersPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {supplierData.map((supplier) => (
-                        <TableRow key={supplier.id}>
-                            <TableCell className="font-medium">{supplier.name}</TableCell>
-                            <TableCell>{supplier.category}</TableCell>
-                            <TableCell>
-                                <Badge variant={supplier.status === 'Active' ? 'secondary' : 'outline'}>{supplier.status}</Badge>
-                            </TableCell>
-                            <TableCell className="text-right">BDT {supplier.totalPOValue.toLocaleString()}</TableCell>
-                            <TableCell>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                    <Button aria-haspopup="true" size="icon" variant="ghost">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                        <span className="sr-only">Toggle menu</span>
-                                    </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                    <DropdownMenuItem>Edit</DropdownMenuItem>
-                                    <DropdownMenuItem>Delete</DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </TableCell>
+                    {isLoadingSuppliers ? (
+                        <TableRow>
+                            <TableCell colSpan={5} className="text-center">Loading...</TableCell>
                         </TableRow>
-                    ))}
+                    ) : (
+                        supplierData.map((supplier) => (
+                            <TableRow key={supplier.id}>
+                                <TableCell className="font-medium">{supplier.name}</TableCell>
+                                <TableCell>{supplier.category}</TableCell>
+                                <TableCell>
+                                    <Badge variant={supplier.status === 'Active' ? 'secondary' : 'outline'}>{supplier.status}</Badge>
+                                </TableCell>
+                                <TableCell className="text-right">BDT {supplier.totalPOValue.toLocaleString()}</TableCell>
+                                <TableCell>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                            <span className="sr-only">Toggle menu</span>
+                                        </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                        <DropdownMenuItem>Edit</DropdownMenuItem>
+                                        <DropdownMenuItem>Delete</DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
+                            </TableRow>
+                        ))
+                    )}
                 </TableBody>
             </Table>
         </CardContent>

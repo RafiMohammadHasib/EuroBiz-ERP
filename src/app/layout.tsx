@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import './globals.css';
+import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'BizFin Sales ERP',
@@ -24,7 +25,9 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <DashboardLayout>{children}</DashboardLayout>
+        <FirebaseClientProvider>
+          <DashboardLayout>{children}</DashboardLayout>
+        </FirebaseClientProvider>
         <Toaster />
       </body>
     </html>
