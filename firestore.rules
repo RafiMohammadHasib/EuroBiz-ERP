@@ -106,6 +106,20 @@ service cloud.firestore {
       allow create, update, delete: if false; // TODO: Add owner/admin validation once the schema is updated.
     }
 
+    /**
+     * @description Controls access to supplier information.
+     * @path /suppliers/{supplierId}
+     * @allow (get) Any authenticated user can read supplier data.
+     * @deny (create) Anonymous users cannot create suppliers.
+     * @principle Public read for signed-in users, with writes disabled pending an admin role.
+     */
+    match /suppliers/{supplierId} {
+      allow get, list: if isSignedIn();
+      // CRITICAL: Cannot implement owner-only writes. The 'Supplier' entity is missing an 'ownerId' or 'authorId' field.
+      allow create, update, delete: if false; // TODO: Add owner/admin validation once the schema is updated.
+    }
+
+
     // ---------------------------
     // --- User Profiles ---
     // ---------------------------
