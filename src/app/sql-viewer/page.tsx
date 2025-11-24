@@ -32,6 +32,20 @@ type ForeignKey = {
   referencesColumn: string;
 };
 
+// Mock data for users and roles for SQL generation
+const roles = [
+    { id: 'role-01', name: 'admin', description: 'Full access to all system features.' },
+    { id: 'role-02', name: 'sales_manager', description: 'Access to sales, invoices, and customer data.' },
+    { id: 'role-03', name: 'production_staff', description: 'Access to production and inventory data.' },
+];
+
+const users = [
+    { id: 'user-01', email: 'admin@bizfin.com', password_hash: 'placeholder_hash_admin', role_id: 'role-01' },
+    { id: 'user-02', email: 'sales@bizfin.com', password_hash: 'placeholder_hash_sales', role_id: 'role-02' },
+    { id: 'user-03', email: 'prod@bizfin.com', password_hash: 'placeholder_hash_prod', role_id: 'role-03' },
+];
+
+
 export default function SqlExporterPage() {
   const [copied, setCopied] = useState(false);
 
@@ -47,18 +61,22 @@ export default function SqlExporterPage() {
       const value = firstItem[column];
       let sqlType: string;
 
-      if (column === 'id') {
-        sqlType = 'VARCHAR(255) PRIMARY KEY NOT NULL';
-      } else if (foreignKeys.some(fk => fk.column === column)) {
+      const fk = foreignKeys.find(fk => fk.column === column);
+
+      if (column.endsWith('_id') || column === 'id' || fk) {
         sqlType = 'VARCHAR(255)';
-      }
-      else {
+        if(column === 'id') {
+            sqlType += ' PRIMARY KEY NOT NULL';
+        }
+      } else {
         switch (typeof value) {
             case 'number':
                 sqlType = Number.isInteger(value) ? 'INTEGER' : 'DECIMAL(10, 2)';
                 break;
             case 'string':
-                if (value.length > 255) {
+                if (column.toLowerCase().includes('date')) {
+                    sqlType = 'DATE';
+                } else if (value.length > 255 || column.toLowerCase().includes('description')) {
                     sqlType = 'TEXT';
                 } else {
                     sqlType = 'VARCHAR(255)';
@@ -70,10 +88,12 @@ export default function SqlExporterPage() {
             default:
                 sqlType = 'TEXT'; // For arrays, objects, etc.
         }
-        if (column.toLowerCase().includes('date')) sqlType = 'DATE';
+        if(!column.endsWith('description')) { // Descriptions can be nullable
+            sqlType += ' NOT NULL';
+        }
       }
       
-      createTableStatement += `  "${column}" ${sqlType}${column !== 'id' ? ' NOT NULL' : ''},\n`;
+      createTableStatement += `  "${column}" ${sqlType},\n`;
     });
 
     foreignKeys.forEach(fk => {
@@ -81,19 +101,24 @@ export default function SqlExporterPage() {
     });
 
     // Remove last comma
-    createTableStatement = createTableStatement.trim().slice(0, -1);
+    if(createTableStatement.trim().endsWith(',')) {
+        createTableStatement = createTableStatement.trim().slice(0, -1);
+    }
+    
     createTableStatement += '\n);\n\n';
 
 
     let insertStatements = `INSERT INTO "${tableName}" ("${columns.join('", "')}") VALUES\n`;
     data.forEach((item, itemIndex) => {
       const values = columns.map(column => {
-        const value = item[column];
+        let value = item[column];
         if (value === null || value === undefined) {
             return 'NULL';
         }
-        if (Array.isArray(value) || (value !== null && typeof value === 'object')) {
-            return `'${JSON.stringify(value).replace(/'/g, "''")}'`;
+         if (Array.isArray(value) || (value !== null && typeof value === 'object')) {
+            // Sanitize JSON string for SQL
+            value = JSON.stringify(value).replace(/'/g, "''");
+             return `'${value}'`;
         }
         if (typeof value === 'string') {
           return `'${value.replace(/'/g, "''")}'`;
@@ -107,12 +132,14 @@ export default function SqlExporterPage() {
   };
   
   const allSql = [
+      generateSqlForTable('roles', roles),
+      generateSqlForTable('users', users, [
+          { column: 'role_id', referencesTable: 'roles', referencesColumn: 'id' }
+      ]),
       generateSqlForTable('suppliers', suppliers),
       generateSqlForTable('distributors', distributors),
       generateSqlForTable('raw_materials', rawMaterials),
-      generateSqlForTable('finished_goods', finishedGoods, [
-          { column: 'components', referencesTable: 'raw_materials', referencesColumn: 'id'} // Note: This is a simplified relation for TEXT field
-      ]),
+      generateSqlForTable('finished_goods', finishedGoods),
       generateSqlForTable('production_orders', productionOrders, [
           { column: 'productName', referencesTable: 'finished_goods', referencesColumn: 'productName' }
       ]),
@@ -140,7 +167,7 @@ export default function SqlExporterPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'schema.sql';
+    a.download = 'schema_with_security.sql';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -166,7 +193,7 @@ export default function SqlExporterPage() {
             <CardHeader>
                 <CardTitle>Generated SQL Schema</CardTitle>
                 <CardDescription>
-                This SQL schema is generated from your project's data entities. It will refresh automatically if you change your data structure and revisit this tab.
+                This SQL schema is generated from your project's data entities, including user roles for security. It will refresh automatically if you change your data structure and revisit this tab.
                 </CardDescription>
             </CardHeader>
             <CardContent>
