@@ -35,6 +35,7 @@ import {
   Users as UsersIcon,
   ChevronDown,
   Percent,
+  Bell,
 } from "lucide-react";
 
 interface NavItem {
@@ -84,6 +85,7 @@ export const navGroups: NavGroup[] = [
         items: [
             { href: "/reports", label: "Reports", icon: PieChart },
             { href: "/forecast", label: "AI Forecast", icon: BrainCircuit },
+            { href: "/notifications", label: "Notifications", icon: Bell },
             { href: "/sql-viewer", label: "SQL Viewer", icon: Database },
         ]
     }

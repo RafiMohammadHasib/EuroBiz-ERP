@@ -71,7 +71,7 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem className="text-center">
-            <Link href="#" className="text-sm text-primary">
+            <Link href="/notifications" className="text-sm text-primary">
               View all notifications
             </Link>
           </DropdownMenuItem>
