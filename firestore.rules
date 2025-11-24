@@ -2,30 +2,28 @@
  * This ruleset enforces a security model for the BizFin Sales ERP application.
  *
  * Core Philosophy:
- * The security model is built around user ownership. It assumes that an authenticated
- * user's UID corresponds directly to either a `salespersonId` or a `customerId`.
+ * The security model is built around user ownership and roles. It assumes that an authenticated
+ * user's UID corresponds directly to a `salespersonId` or a `customerId`.
  * This allows for a strict separation of data: salespeople can only manage their own
  * profiles and commissions, and customers can only manage their own profiles,
-
  * invoices, and related documents. Business-wide data is readable by all signed-in
- * users but is not writable by clients, assuming it's managed by a backend process.
+ * users but is writable only by users with an 'admin' role.
  *
  * Data Structure:
  * The data is organized into top-level collections for core business entities
  * (`products`, `distribution_channels`) and primary user types (`salespeople`,
  * `customers`). All user-specific data, such as commissions or invoices, is stored
  * in subcollections under the corresponding user's document (e.g.,
- * `/salespeople/{salespersonId}/commissions/...`). This hierarchical structure
- * simplifies ownership-based security rules.
+ * `/salespeople/{salespersonId}/commissions/...`). A `user_roles` collection
+ * maps user UIDs to roles (e.g., 'admin').
  *
  * Key Security Decisions:
  * - User/Owner Mapping: It is assumed that `request.auth.uid` directly maps to the
  *   document ID in the `/salespeople` or `/customers` collections. This is the
  *   foundation of the ownership model.
- * - Restricted Writes on Business Data: Top-level collections like `products` and
- *   `distribution_channels` are readable by any authenticated user but are not
- *   writable. This prevents unauthorized modification of shared business data and
- *   implies management via a trusted backend service or admin tool.
+ * - Admin Role for Writes on Business Data: Top-level collections like `products` and
+ *   `distribution_channels` are readable by any authenticated user but are only
+ *   writable by users with an 'admin' role, checked via the `isAdmin()` function.
  * - Read-Only Reporting Collections: The commission data duplicated under `/products`
  *   and `/distribution_channels` is treated as a read-only view for reporting.
  *   This prevents data integrity issues that could arise from client-side writes.
@@ -61,6 +59,14 @@ service cloud.firestore {
     }
 
     /**
+     * Checks if the authenticated user has an 'admin' role document.
+     * This function performs a single document read to check the user's role.
+     */
+    function isAdmin() {
+      return isSignedIn() && get(/databases/$(database)/documents/user_roles/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    /**
      * Checks if the authenticated user's UID matches the provided userId.
      * This is the core of the ownership model.
      */
@@ -77,6 +83,22 @@ service cloud.firestore {
     }
 
     // ---------------------------
+    // --- Role Management ---
+    // ---------------------------
+
+    /**
+     * @description Controls access to user role documents.
+     * @path /user_roles/{uid}
+     * @allow (read) Only admins can read user roles.
+     * @allow (write) Only admins can create or modify user roles.
+     * @principle Centralizes role management to be controlled by administrators.
+     */
+    match /user_roles/{uid} {
+      allow read, write: if isAdmin();
+    }
+
+
+    // ---------------------------
     // --- Business-Wide Data ---
     // ---------------------------
 
@@ -84,26 +106,24 @@ service cloud.firestore {
      * @description Controls access to product information.
      * @path /products/{productId}
      * @allow (get) Any authenticated user can read a specific product.
-     * @deny (create) Anonymous users or authenticated users cannot create products.
-     * @principle Public read for signed-in users, with writes disabled pending an admin role.
+     * @allow (write) Only users with an 'admin' role can create, update, or delete products.
+     * @principle Public read for signed-in users, with writes restricted to admins.
      */
     match /products/{productId} {
       allow get, list: if isSignedIn();
-      // CRITICAL: Cannot implement owner-only writes. The 'Product' entity is missing an 'ownerId' or 'authorId' field.
-      allow create, update, delete: if false; // TODO: Add owner/admin validation once the schema is updated.
+      allow create, update, delete: if isAdmin();
     }
 
     /**
      * @description Controls access to distribution channel information.
      * @path /distribution_channels/{distributionChannelId}
      * @allow (get) Any authenticated user can read a specific distribution channel.
-     * @deny (create) Anonymous users or authenticated users cannot create channels.
-     * @principle Public read for signed-in users, with writes disabled pending an admin role.
+     * @allow (write) Only users with an 'admin' role can create, update, or delete channels.
+     * @principle Public read for signed-in users, with writes restricted to admins.
      */
     match /distribution_channels/{distributionChannelId} {
       allow get, list: if isSignedIn();
-      // CRITICAL: Cannot implement owner-only writes. The 'DistributionChannel' entity is missing an 'ownerId' or 'authorId' field.
-      allow create, update, delete: if false; // TODO: Add owner/admin validation once the schema is updated.
+      allow create, update, delete: if isAdmin();
     }
 
     /**
@@ -243,3 +263,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
