@@ -1,8 +1,9 @@
 
+
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   SidebarContent,
   SidebarFooter,
@@ -23,6 +24,7 @@ import {
   Settings,
   BrainCircuit,
   LogOut,
+  LogIn,
   Landmark,
   Building,
   Package,
@@ -37,6 +39,8 @@ import {
   Percent,
   Bell,
 } from "lucide-react";
+import { useAuth, useUser } from "@/firebase";
+import { signOut } from "firebase/auth";
 
 interface NavItem {
     href: string;
@@ -102,6 +106,20 @@ interface SidebarNavProps {
 
 export default function SidebarNav({ navItems: itemsToRender, navGroups: groupsToRender }: SidebarNavProps) {
   const pathname = usePathname();
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/login');
+  };
+
+  const isLoginPage = pathname === '/login';
+
+  if (isLoginPage) {
+      return null;
+  }
 
   return (
     <>
@@ -173,12 +191,23 @@ export default function SidebarNav({ navItems: itemsToRender, navGroups: groupsT
               </SidebarMenuItem>
           ))}
           <SidebarSeparator className="my-2"/>
-           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Logout" size="sm">
-              <LogOut />
-              <span>Logout</span>
-            </SidebarMenuButton>
-           </SidebarMenuItem>
+            {!isUserLoading && (
+                 <SidebarMenuItem>
+                    {user ? (
+                        <SidebarMenuButton tooltip="Logout" size="sm" onClick={handleLogout}>
+                            <LogOut />
+                            <span>Logout</span>
+                        </SidebarMenuButton>
+                    ) : (
+                        <Link href="/login">
+                             <SidebarMenuButton tooltip="Login" size="sm">
+                                <LogIn />
+                                <span>Login</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    )}
+                </SidebarMenuItem>
+            )}
         </SidebarMenu>
       </SidebarFooter>
     </>

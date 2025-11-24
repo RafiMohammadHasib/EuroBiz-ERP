@@ -3,6 +3,7 @@ import { Toaster } from '@/components/ui/toaster';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import './globals.css';
 import { FirebaseClientProvider } from '@/firebase';
+import AuthHandler from '@/components/layout/auth-handler';
 
 export const metadata: Metadata = {
   title: 'BizFin Sales ERP',
@@ -26,7 +27,9 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          <DashboardLayout>{children}</DashboardLayout>
+           <AuthHandler>
+              <DashboardLayout>{children}</DashboardLayout>
+           </AuthHandler>
         </FirebaseClientProvider>
         <Toaster />
       </body>
