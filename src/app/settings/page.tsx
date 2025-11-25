@@ -244,8 +244,8 @@ export default function SettingsPage() {
             <TabsContent value="business" className="mt-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Business Settings</CardTitle>
-                        <CardDescription>Manage general business information and branding.</CardDescription>
+                        <CardTitle>Business Details</CardTitle>
+                        <CardDescription>Manage general business information used across the application, like on invoices.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid md:grid-cols-2 gap-4">
@@ -254,7 +254,7 @@ export default function SettingsPage() {
                                 <Input id="name" value={companyDetails.name} onChange={handleCompanyDetailsChange} />
                             </div>
                              <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
+                                <Label htmlFor="email">Company Email</Label>
                                 <Input id="email" type="email" value={companyDetails.email} onChange={handleCompanyDetailsChange} />
                             </div>
                         </div>
@@ -374,3 +374,5 @@ export default function SettingsPage() {
     </>
   );
 }
+
+    
