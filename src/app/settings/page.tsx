@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlusCircle } from 'lucide-react';
-import { collection, doc, setDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, addDoc } from 'firebase/firestore';
 import type { Commission, FinishedGood, RawMaterial } from '@/lib/data';
 import { CreateCommissionRuleDialog } from '@/components/commissions/create-commission-rule-dialog';
 import { CreateFormulaDialog } from '@/components/settings/create-formula-dialog';
@@ -162,12 +163,39 @@ export default function SettingsPage() {
     }
 
   const addCommissionRule = async (newRule: Omit<Commission, 'id'>) => {
-    // This functionality is already connected to Firestore via `commissions/page.tsx` logic
-    // but we can add it here too if direct creation from settings is needed.
+     if (!commissionsCollection) return;
+    try {
+      await addDoc(commissionsCollection, newRule);
+      toast({
+        title: 'Commission Rule Added',
+        description: `New rule "${newRule.ruleName}" has been added.`,
+      });
+    } catch (error) {
+      console.error("Error adding commission rule:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not create the commission rule.",
+      });
+    }
   };
 
   const addFormula = async (newFormula: Omit<FinishedGood, 'id'>) => {
-    // Similar to commissions, this is handled elsewhere but can be added here.
+    if (!finishedGoodsCollection) return;
+    try {
+        await addDoc(finishedGoodsCollection, newFormula);
+        toast({
+            title: 'Production Formula Created',
+            description: `New formula for "${newFormula.productName}" has been added.`,
+        });
+    } catch (error) {
+        console.error("Error adding formula:", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not create the production formula.",
+        });
+    }
   };
 
   return (
