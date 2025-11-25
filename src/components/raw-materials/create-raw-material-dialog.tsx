@@ -27,7 +27,7 @@ export function CreateRawMaterialDialog({ isOpen, onOpenChange, onCreate }: Crea
   const { toast } = useToast();
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
-  const [unit, setUnit] = useState<'kg' | 'litre' | 'pcs'>('kg');
+  const [unit, setUnit] = useState<'kg' | 'litre' | 'pcs' | 'ml' | 'gm'>('kg');
   const [unitCost, setUnitCost] = useState('');
   const [quantity, setQuantity] = useState('0');
 
@@ -95,13 +95,15 @@ export function CreateRawMaterialDialog({ isOpen, onOpenChange, onCreate }: Crea
             <Label htmlFor="mat-unit" className="text-right">
               Unit
             </Label>
-             <Select value={unit} onValueChange={(value) => setUnit(value as 'kg' | 'litre' | 'pcs')}>
+             <Select value={unit} onValueChange={(value) => setUnit(value as 'kg' | 'litre' | 'pcs' | 'ml' | 'gm')}>
                 <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select Unit" />
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="kg">kg</SelectItem>
+                    <SelectItem value="gm">gm</SelectItem>
                     <SelectItem value="litre">litre</SelectItem>
+                    <SelectItem value="ml">ml</SelectItem>
                     <SelectItem value="pcs">pcs</SelectItem>
                 </SelectContent>
             </Select>
@@ -140,3 +142,5 @@ export function CreateRawMaterialDialog({ isOpen, onOpenChange, onCreate }: Crea
     </Dialog>
   );
 }
+
+    

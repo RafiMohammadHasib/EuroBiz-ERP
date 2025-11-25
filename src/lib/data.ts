@@ -183,7 +183,7 @@ export type RawMaterial = {
     name: string;
     category: string;
     quantity: number;
-    unit: 'kg' | 'litre' | 'pcs';
+    unit: 'kg' | 'litre' | 'pcs' | 'ml' | 'gm';
     unitCost: number;
 };
 
@@ -313,3 +313,5 @@ export const notifications: Notification[] = [
     type: "info",
   },
 ];
+
+    
