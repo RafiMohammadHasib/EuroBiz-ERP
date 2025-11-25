@@ -135,8 +135,22 @@ service cloud.firestore {
      */
     match /suppliers/{supplierId} {
       allow get, list: if isSignedIn();
-      // CRITICAL: Cannot implement owner-only writes. The 'Supplier' entity is missing an 'ownerId' or 'authorId' field.
-      allow create, update, delete: if false; // TODO: Add owner/admin validation once the schema is updated.
+      allow create, update, delete: if isAdmin();
+    }
+    
+    match /purchaseOrders/{purchaseOrderId} {
+        allow get, list: if isSignedIn();
+        allow write: if isAdmin();
+    }
+
+    match /sales_returns/{returnId} {
+        allow get, list: if isSignedIn();
+        allow write: if isAdmin();
+    }
+
+    match /invoices/{invoiceId} {
+        allow get, list: if isSignedIn();
+        allow write: if isAdmin();
     }
 
 
