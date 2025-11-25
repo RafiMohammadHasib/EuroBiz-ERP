@@ -44,14 +44,14 @@ export default function LoginPage() {
 
   return (
     <div className="w-full lg:grid lg:min-h-[100vh] lg:grid-cols-2 xl:min-h-[100vh]">
-      <div className="hidden bg-muted lg:flex items-center justify-center">
+      <div className="hidden bg-gray-900 lg:flex items-center justify-center p-12">
         {authIllustration && (
              <Image
                 src={authIllustration.imageUrl}
                 alt="Illustration"
                 width="1280"
                 height="853"
-                className="w-[80%] h-auto object-contain"
+                className="w-full h-auto object-contain rounded-lg shadow-2xl"
                 data-ai-hint={authIllustration.imageHint}
              />
         )}
@@ -59,12 +59,12 @@ export default function LoginPage() {
       <div className="flex items-center justify-center py-12">
         <div className="mx-auto grid w-[350px] gap-6">
           <div className="grid gap-2 text-center">
-             <div className="inline-flex items-center justify-center gap-2 mb-2">
+             <div className="inline-flex items-center justify-center gap-2 mb-4">
                 <Landmark className="h-8 w-8 text-primary" />
                 <h1 className="text-3xl font-bold">BizFin</h1>
             </div>
             <p className="text-balance text-muted-foreground">
-              Login to your account
+              Login to access your ERP dashboard
             </p>
           </div>
           <div className="grid gap-4">
