@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
 type Currency = 'BDT' | 'USD';
@@ -22,7 +22,16 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [currency, setCurrency] = useState<Currency>('BDT');
   const firestore = useFirestore();
-  const settingsDocRef = useMemoFirebase(() => firestore ? doc(firestore, 'settings', 'business') : null, [firestore]);
+  const { user } = useUser(); // Get the user status
+
+  // Only attempt to fetch settings if the user is logged in
+  const settingsDocRef = useMemoFirebase(() => {
+    if (firestore && user) {
+      return doc(firestore, 'settings', 'business');
+    }
+    return null; // Return null if not authenticated
+  }, [firestore, user]);
+
   const { data: settingsData } = useDoc<BusinessSettings>(settingsDocRef);
   
   useEffect(() => {
