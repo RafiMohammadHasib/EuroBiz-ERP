@@ -1,9 +1,13 @@
 
 "use client";
 
-import { salesData } from "@/lib/data";
+import { useMemo } from "react";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection } from "firebase/firestore";
+import type { Invoice } from "@/lib/data";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
+import { Skeleton } from "../ui/skeleton";
 
 const chartConfig = {
   revenue: {
@@ -13,6 +17,38 @@ const chartConfig = {
 };
 
 export default function SalesChart() {
+  const firestore = useFirestore();
+  const invoicesCollection = useMemoFirebase(() => collection(firestore, 'invoices'), [firestore]);
+  const { data: invoices, isLoading } = useCollection<Invoice>(invoicesCollection);
+
+  const salesData = useMemo(() => {
+    const monthlyRevenue: { [key: string]: number } = {};
+    const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    
+    monthOrder.forEach(month => {
+        monthlyRevenue[month] = 0;
+    });
+
+    invoices?.forEach(invoice => {
+      if (invoice.status === 'Paid') {
+        const date = new Date(invoice.date);
+        const month = monthOrder[date.getMonth()];
+        if (month) {
+            monthlyRevenue[month] += invoice.amount;
+        }
+      }
+    });
+
+    return monthOrder.map(month => ({
+      month,
+      revenue: monthlyRevenue[month],
+    }));
+  }, [invoices]);
+
+  if (isLoading) {
+    return <Skeleton className="h-[350px] w-full" />;
+  }
+
   return (
     <div className="h-[350px]">
       <ChartContainer config={chartConfig} className="w-full h-full">
