@@ -170,6 +170,11 @@ service cloud.firestore {
       allow create, update, delete: if isSignedIn();
     }
 
+    match /finishedGoods/{goodId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isSignedIn();
+    }
+
 
     // ---------------------------
     // --- User Profiles ---
