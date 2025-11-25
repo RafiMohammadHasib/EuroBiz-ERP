@@ -15,6 +15,7 @@ import { PlusCircle } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import type { Commission, FinishedGood, RawMaterial } from '@/lib/data';
+import { companyDetails as initialCompanyDetails } from '@/lib/data';
 import { CreateCommissionRuleDialog } from '@/components/commissions/create-commission-rule-dialog';
 import { CreateFormulaDialog } from '@/components/settings/create-formula-dialog';
 
@@ -37,6 +38,10 @@ export default function SettingsPage() {
   const commissionsCollection = useMemoFirebase(() => collection(firestore, 'commissions'), [firestore]);
   const finishedGoodsCollection = useMemoFirebase(() => collection(firestore, 'finishedGoods'), [firestore]);
   const rawMaterialsCollection = useMemoFirebase(() => collection(firestore, 'rawMaterials'), [firestore]);
+  
+  const [companyDetails, setCompanyDetails] = useState(initialCompanyDetails);
+  const [isSavingBusiness, setIsSavingBusiness] = useState(false);
+
 
   const { data: commissions, isLoading: commissionsLoading } = useCollection<Commission>(commissionsCollection);
   const { data: finishedGoods, isLoading: fgLoading } = useCollection<FinishedGood>(finishedGoodsCollection);
@@ -102,6 +107,24 @@ export default function SettingsPage() {
       setIsSavingPassword(false);
     }
   };
+
+    const handleBusinessDetailsUpdate = () => {
+        setIsSavingBusiness(true);
+        // In a real app, you'd save this to a Firestore document, e.g., in a 'settings' collection.
+        console.log("Saving business details:", companyDetails);
+        setTimeout(() => {
+            toast({
+                title: 'Business Details Updated',
+                description: 'Your company information has been saved.',
+            });
+            setIsSavingBusiness(false);
+        }, 1000);
+    };
+
+    const handleCompanyDetailsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { id, value } = e.target;
+        setCompanyDetails(prev => ({ ...prev, [id]: value }));
+    }
 
   const addCommissionRule = async (newRule: Omit<Commission, 'id'>) => {
     try {
@@ -222,14 +245,39 @@ export default function SettingsPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Business Settings</CardTitle>
-                        <CardDescription>Manage general business information.</CardDescription>
+                        <CardDescription>Manage general business information and branding.</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                         <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 h-64">
-                            <h3 className="text-xl font-semibold">Business settings coming soon</h3>
-                            <p className="text-muted-foreground mt-2">Manage company details, currency, and more.</p>
+                    <CardContent className="space-y-4">
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="name">Company Name</Label>
+                                <Input id="name" value={companyDetails.name} onChange={handleCompanyDetailsChange} />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="email">Email</Label>
+                                <Input id="email" type="email" value={companyDetails.email} onChange={handleCompanyDetailsChange} />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="address">Address</Label>
+                            <Input id="address" value={companyDetails.address} onChange={handleCompanyDetailsChange} />
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="phone">Phone</Label>
+                                <Input id="phone" value={companyDetails.phone} onChange={handleCompanyDetailsChange} />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="logoUrl">Logo URL</Label>
+                                <Input id="logoUrl" value={companyDetails.logoUrl} onChange={handleCompanyDetailsChange} />
+                            </div>
                         </div>
                     </CardContent>
+                    <CardFooter>
+                        <Button onClick={handleBusinessDetailsUpdate} disabled={isSavingBusiness}>
+                            {isSavingBusiness ? 'Saving...' : 'Save Business Details'}
+                        </Button>
+                    </CardFooter>
                 </Card>
             </TabsContent>
             <TabsContent value="production" className="mt-6">
@@ -326,5 +374,3 @@ export default function SettingsPage() {
     </>
   );
 }
-
-    
