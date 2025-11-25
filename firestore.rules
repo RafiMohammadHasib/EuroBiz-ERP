@@ -1,3 +1,4 @@
+
 /**
  * This ruleset enforces a security model for the BizFin Sales ERP application.
  *
@@ -113,6 +114,11 @@ service cloud.firestore {
       allow get, list: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
+    
+    match /settings/{settingId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
 
     /**
      * @description Controls access to distribution channel information.
@@ -135,7 +141,7 @@ service cloud.firestore {
      */
     match /distributors/{distributorId} {
         allow get, list: if isSignedIn();
-        allow write: if isAdmin();
+        allow write: if isSignedIn();
     }
 
     /**
@@ -162,7 +168,7 @@ service cloud.firestore {
 
     match /invoices/{invoiceId} {
         allow get, list: if isSignedIn();
-        allow write: if isAdmin();
+        allow write: if isSignedIn();
     }
 
     match /rawMaterials/{materialId} {
