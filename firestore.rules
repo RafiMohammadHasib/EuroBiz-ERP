@@ -180,6 +180,10 @@ service cloud.firestore {
         allow write: if isSignedIn();
     }
 
+    match /commissions/{commissionId} {
+      allow read, write: if isSignedIn();
+    }
+
 
     // ---------------------------
     // --- User Profiles ---
