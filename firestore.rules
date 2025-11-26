@@ -28,8 +28,8 @@
  * - Read-Only Reporting Collections: The commission data duplicated under `/products`
  *   and `/distribution_channels` is treated as a read-only view for reporting.
  *   This prevents data integrity issues that could arise from client-side writes.
- * - No User Listing: The rules do not permit listing the top-level `/salespeople`
- *   or `/customers` collections to protect user privacy.
+ * - Customer Listing: The rules allow listing the top-level `/customers` collection for authenticated users
+ *   to enable functionality like creating invoices for any customer.
  *
  * Denormalization for Authorization:
  * The ruleset leverages denormalized fields (e.g., `salespersonId` on a commission
@@ -217,13 +217,13 @@ service cloud.firestore {
      * @description Controls access to customer profiles.
      * @path /customers/{customerId}
      * @allow (create) A new customer can create their own profile document if their UID matches the document ID.
-     * @deny (get) Another customer cannot read a different customer's profile.
-     * @principle Enforces self-creation and ownership of personal profile data.
+     * @allow (list) Authenticated users can list customers for creating invoices.
+     * @principle Enforces self-creation and ownership of personal profile data, but allows listing for internal use.
      */
     match /customers/{customerId} {
       allow get, update, delete: if isOwner(customerId);
       allow create: if isOwner(customerId) && request.resource.data.id == customerId;
-      allow list: if false; // Disallow listing of all customers for privacy.
+      allow list: if isSignedIn();
     }
 
     // ---------------------------
