@@ -21,15 +21,21 @@ import { useSettings } from '@/context/settings-context';
 import { companyDetails as initialCompanyDetails } from '@/lib/data';
 
 
-// Define a type for your settings document
+type ProfileSettings = {
+    displayName: string;
+};
+
+type SystemSettings = {
+    language: string;
+    currency: 'BDT' | 'USD';
+};
+
 type BusinessSettings = {
     name: string;
     address: string;
     email: string;
     phone: string;
     logoUrl: string;
-    language: string;
-    currency: 'BDT' | 'USD';
 };
 
 export default function SettingsPage() {
@@ -37,38 +43,44 @@ export default function SettingsPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const { currency, setCurrency, currencySymbol } = useSettings();
+  const { setCurrency } = useSettings();
 
   // --- Firestore References ---
-  const settingsDocRef = useMemoFirebase(() => doc(firestore, 'settings', 'business'), [firestore]);
+  const profileSettingsDocRef = useMemoFirebase(() => doc(firestore, 'settings', 'profile'), [firestore]);
+  const systemSettingsDocRef = useMemoFirebase(() => doc(firestore, 'settings', 'system'), [firestore]);
+  const businessSettingsDocRef = useMemoFirebase(() => doc(firestore, 'settings', 'business'), [firestore]);
+  
   const commissionsCollection = useMemoFirebase(() => collection(firestore, 'commissions'), [firestore]);
   const finishedGoodsCollection = useMemoFirebase(() => collection(firestore, 'finishedGoods'), [firestore]);
   const rawMaterialsCollection = useMemoFirebase(() => collection(firestore, 'rawMaterials'), [firestore]);
   
   // --- Data Hooks ---
-  const { data: settingsData, isLoading: settingsLoading } = useDoc<BusinessSettings>(settingsDocRef);
+  const { data: profileSettingsData, isLoading: profileLoading } = useDoc<ProfileSettings>(profileSettingsDocRef);
+  const { data: systemSettingsData, isLoading: systemLoading } = useDoc<SystemSettings>(systemSettingsDocRef);
+  const { data: businessSettingsData, isLoading: businessLoading } = useDoc<BusinessSettings>(businessSettingsDocRef);
+  
   const { data: commissions, isLoading: commissionsLoading } = useCollection<Commission>(commissionsCollection);
   const { data: finishedGoods, isLoading: fgLoading } = useCollection<FinishedGood>(finishedGoodsCollection);
   const { data: rawMaterials, isLoading: rmLoading } = useCollection<RawMaterial>(rawMaterialsCollection);
 
   // --- Component State ---
-  const [displayName, setDisplayName] = useState('');
+  const [profileSettings, setProfileSettings] = useState<ProfileSettings>({ displayName: '' });
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  const [systemSettings, setSystemSettings] = useState<SystemSettings>({ language: 'English', currency: 'BDT' });
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings>({
       name: initialCompanyDetails.name, 
       address: initialCompanyDetails.address, 
       email: initialCompanyDetails.email, 
       phone: initialCompanyDetails.phone, 
       logoUrl: initialCompanyDetails.logoUrl,
-      language: 'English', 
-      currency: 'BDT', 
   });
 
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [isSavingSystem, setIsSavingSystem] = useState(false);
   const [isSavingBusiness, setIsSavingBusiness] = useState(false);
 
   const [isCommissionRuleDialogOpen, setCommissionRuleDialogOpen] = useState(false);
@@ -76,25 +88,35 @@ export default function SettingsPage() {
 
   // --- Effects to sync state with data from hooks ---
   useEffect(() => {
-    if (user) {
-      setDisplayName(user.displayName || '');
+    if (user && user.displayName) {
+        setProfileSettings(prev => ({...prev, displayName: user.displayName!}));
     }
-  }, [user]);
+    if (profileSettingsData) {
+      setProfileSettings(profileSettingsData);
+    }
+  }, [user, profileSettingsData]);
 
   useEffect(() => {
-    if (settingsData) {
-      setBusinessSettings(settingsData);
-      setCurrency(settingsData.currency || 'BDT');
+    if (systemSettingsData) {
+      setSystemSettings(systemSettingsData);
+      setCurrency(systemSettingsData.currency || 'BDT');
     }
-  }, [settingsData, setCurrency]);
+  }, [systemSettingsData, setCurrency]);
+
+  useEffect(() => {
+    if (businessSettingsData) {
+      setBusinessSettings(businessSettingsData);
+    }
+  }, [businessSettingsData]);
 
 
   // --- Handlers ---
-  const handleProfileUpdate = async () => {
+  const handleProfileSave = async () => {
     if (!user) return;
     setIsSavingProfile(true);
     try {
-      await updateProfile(user, { displayName });
+      await updateProfile(user, { displayName: profileSettings.displayName });
+      await setDoc(profileSettingsDocRef, profileSettings, { merge: true });
       toast({
         title: 'Profile Updated',
         description: 'Your display name has been successfully updated.',
@@ -137,26 +159,43 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSettingsUpdate = async () => {
-    setIsSavingBusiness(true);
+  const handleSystemSave = async () => {
+    setIsSavingSystem(true);
     try {
-        await setDoc(settingsDocRef, businessSettings, { merge: true });
-        setCurrency(businessSettings.currency);
-        toast({ title: 'Settings Updated', description: 'Your new settings have been saved.' });
+        await setDoc(systemSettingsDocRef, systemSettings, { merge: true });
+        setCurrency(systemSettings.currency);
+        toast({ title: 'System Settings Updated', description: 'Your new system settings have been saved.' });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error Saving Settings', description: error.message });
+    } finally {
+        setIsSavingSystem(false);
+    }
+  };
+
+  const handleBusinessSave = async () => {
+    setIsSavingBusiness(true);
+    try {
+        await setDoc(businessSettingsDocRef, businessSettings, { merge: true });
+        toast({ title: 'Business Details Updated', description: 'Your new business details have been saved.' });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error Saving Details', description: error.message });
     } finally {
         setIsSavingBusiness(false);
     }
   };
 
+    const handleProfileDetailsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { id, value } = e.target;
+        setProfileSettings(prev => ({ ...prev, [id]: value }));
+    }
+
+    const handleSystemSettingsChange = (field: keyof SystemSettings, value: string) => {
+        setSystemSettings(prev => ({...prev, [field]: value as any}));
+    }
+
     const handleBusinessDetailsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
         setBusinessSettings(prev => ({ ...prev, [id]: value }));
-    }
-
-    const handleSettingsSelectChange = (field: keyof BusinessSettings, value: string) => {
-        setBusinessSettings(prev => ({...prev, [field]: value as any}));
     }
 
   const addCommissionRule = async (newRule: Omit<Commission, 'id'>) => {
@@ -180,7 +219,14 @@ export default function SettingsPage() {
   const addFormula = async (newFormula: Omit<FinishedGood, 'id'>) => {
     if (!finishedGoodsCollection) return;
     try {
-        await addDoc(finishedGoodsCollection, newFormula);
+        const formulaWithCost = {
+          ...newFormula,
+          unitCost: newFormula.components.reduce((acc, comp) => {
+            const material = rawMaterials?.find(rm => rm.id === comp.materialId);
+            return acc + (material ? material.unitCost * comp.quantity : 0);
+          }, 0)
+        };
+        await addDoc(finishedGoodsCollection, formulaWithCost);
         toast({
             title: 'Production Formula Created',
             description: `New formula for "${newFormula.productName}" has been added.`,
@@ -221,7 +267,7 @@ export default function SettingsPage() {
                       <CardContent className="space-y-4">
                           <div className="space-y-2">
                               <Label htmlFor="displayName">Display Name</Label>
-                              <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+                              <Input id="displayName" value={profileSettings.displayName} onChange={handleProfileDetailsChange} />
                           </div>
                           <div className="space-y-2">
                               <Label htmlFor="email">Email Address</Label>
@@ -229,7 +275,7 @@ export default function SettingsPage() {
                           </div>
                       </CardContent>
                       <CardFooter>
-                          <Button onClick={handleProfileUpdate} disabled={isSavingProfile}>
+                          <Button onClick={handleProfileSave} disabled={isSavingProfile}>
                               {isSavingProfile ? 'Saving...' : 'Save Profile'}
                           </Button>
                       </CardFooter>
@@ -266,13 +312,13 @@ export default function SettingsPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>System Configuration</CardTitle>
-                    <CardDescription>Manage system-wide preferences like localization and taxes.</CardDescription>
+                    <CardDescription>Manage system-wide preferences like localization.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                    <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="language">Language</Label>
-                            <Select value={businessSettings.language} onValueChange={(value) => handleSettingsSelectChange('language', value)}>
+                            <Select value={systemSettings.language} onValueChange={(value) => handleSystemSettingsChange('language', value)}>
                                 <SelectTrigger id="language">
                                     <SelectValue placeholder="Select Language" />
                                 </SelectTrigger>
@@ -284,7 +330,7 @@ export default function SettingsPage() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="currency">Currency</Label>
-                            <Select value={businessSettings.currency} onValueChange={(value) => handleSettingsSelectChange('currency', value)}>
+                            <Select value={systemSettings.currency} onValueChange={(value) => handleSystemSettingsChange('currency', value)}>
                                 <SelectTrigger id="currency">
                                     <SelectValue placeholder="Select Currency" />
                                 </SelectTrigger>
@@ -297,8 +343,8 @@ export default function SettingsPage() {
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button onClick={handleSettingsUpdate} disabled={isSavingBusiness}>
-                        {isSavingBusiness ? 'Saving...' : 'Save System Settings'}
+                    <Button onClick={handleSystemSave} disabled={isSavingSystem}>
+                        {isSavingSystem ? 'Saving...' : 'Save System Settings'}
                     </Button>
                 </CardFooter>
             </Card>
@@ -365,7 +411,7 @@ export default function SettingsPage() {
                                         <p className="text-sm text-muted-foreground">{rule.appliesTo}</p>
                                     </div>
                                     <div className="font-semibold text-primary">
-                                        {rule.type === 'Percentage' ? `${rule.rate}%` : `${currencySymbol}${rule.rate.toLocaleString()}`}
+                                        {rule.type === 'Percentage' ? `${rule.rate}%` : `৳${rule.rate.toLocaleString()}`}
                                     </div>
                                 </div>
                             ))}
@@ -413,7 +459,7 @@ export default function SettingsPage() {
                       </div>
                   </CardContent>
                   <CardFooter>
-                      <Button onClick={handleSettingsUpdate} disabled={isSavingBusiness}>
+                      <Button onClick={handleBusinessSave} disabled={isSavingBusiness}>
                           {isSavingBusiness ? 'Saving...' : 'Save Business Details'}
                       </Button>
                   </CardFooter>
