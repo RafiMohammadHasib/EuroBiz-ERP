@@ -1,5 +1,5 @@
 
-'use client';
+'use-client';
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
@@ -140,10 +140,15 @@ export default function PurchaseOrdersPage() {
     const newPaidAmount = poToUpdate.paidAmount + paymentAmount;
     const newDueAmount = poToUpdate.amount - newPaidAmount;
     
-    let newPaymentStatus: PurchaseOrder['paymentStatus'] = 'Partially Paid';
-    if (newDueAmount <= 0) {
+    let newPaymentStatus: PurchaseOrder['paymentStatus'];
+    if (newDueAmount <= 0.001) { // Using a small epsilon for floating point comparison
       newPaymentStatus = 'Paid';
+    } else if (newPaidAmount > 0) {
+      newPaymentStatus = 'Partially Paid';
+    } else {
+      newPaymentStatus = 'Unpaid';
     }
+
 
     try {
         const poRef = doc(firestore, 'purchaseOrders', poId);
