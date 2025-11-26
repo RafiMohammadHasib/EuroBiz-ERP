@@ -123,7 +123,7 @@ export default function FinishedGoodsPage() {
                       <TableRow className="cursor-pointer">
                         <TableCell>
                           <CollapsibleTrigger asChild>
-                            <Button variant="ghost" size="sm" className="w-9 p-0 data-[state=open]:rotate-180">
+                            <Button variant="ghost" size="sm" className="w-9 p-0 data-[state=open]:-rotate-180">
                               <ChevronDown className="h-4 w-4" />
                               <span className="sr-only">Toggle</span>
                             </Button>
@@ -156,16 +156,20 @@ export default function FinishedGoodsPage() {
                           <td colSpan={6} className="p-0">
                             <div className="p-4 pl-16">
                               <h4 className="font-semibold text-sm mb-2">Production Formula:</h4>
-                              <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
-                                {item.components.map(comp => {
-                                  const material = safeRawMaterials.find(rm => rm.id === comp.materialId);
-                                  return material ? (
-                                    <li key={comp.materialId}>
-                                      {material.name}: {comp.quantity} {material.unit}
-                                    </li>
-                                  ) : null;
-                                })}
-                              </ul>
+                              {item.components && item.components.length > 0 ? (
+                                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                                  {item.components.map(comp => {
+                                    const material = safeRawMaterials.find(rm => rm.id === comp.materialId);
+                                    return material ? (
+                                      <li key={comp.materialId}>
+                                        {material.name}: {comp.quantity} {material.unit}
+                                      </li>
+                                    ) : null;
+                                  })}
+                                </ul>
+                              ) : (
+                                <p className="text-sm text-muted-foreground">No formula defined for this product.</p>
+                              )}
                             </div>
                           </td>
                         </tr>
