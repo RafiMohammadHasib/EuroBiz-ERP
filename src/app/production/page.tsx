@@ -39,8 +39,8 @@ export default function ProductionPage() {
 
     const wipOrders = safeProductionOrders.filter(o => o.status === "In Progress").length;
     const completedOrders = safeProductionOrders.filter(o => o.status === "Completed").length;
-    const totalProductionCost = safeProductionOrders.reduce((acc, order) => acc + order.totalCost, 0);
-    const totalUnitsProduced = safeProductionOrders.reduce((acc, order) => acc + order.quantity, 0);
+    const totalProductionCost = safeProductionOrders.reduce((acc, order) => acc + (order.totalCost || 0), 0);
+    const totalUnitsProduced = safeProductionOrders.reduce((acc, order) => acc + (order.quantity || 0), 0);
     
     const isLoading = poLoading || fgLoading || rmLoading;
 
@@ -147,8 +147,8 @@ export default function ProductionPage() {
                             <TableCell className="font-medium">{order.id}</TableCell>
                             <TableCell>{order.productName}</TableCell>
                             <TableCell>{order.quantity.toLocaleString()}</TableCell>
-                            <TableCell className="text-right">{currencySymbol}{order.totalCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
-                            <TableCell className="text-right">{currencySymbol}{order.unitCost.toFixed(2)}</TableCell>
+                            <TableCell className="text-right">{currencySymbol}{(order.totalCost || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
+                            <TableCell className="text-right">{currencySymbol}{(order.unitCost || 0).toFixed(2)}</TableCell>
                              <TableCell>
                                 <Badge variant={order.status === 'Completed' ? 'secondary' : order.status === 'In Progress' ? 'default' : 'outline'}>
                                     {order.status}
