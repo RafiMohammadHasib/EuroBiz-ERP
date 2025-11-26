@@ -161,6 +161,12 @@ service cloud.firestore {
         allow write: if isAdmin();
     }
     
+    /**
+     * @description Controls access to salary information.
+     * @path /salaries
+     * @allow (read, write) Only users with an 'admin' role can read or write salary data.
+     * @principle Restricts sensitive salary data to administrators only.
+     */
     match /salaries/{salaryId} {
       allow read, write: if isAdmin();
     }
@@ -321,3 +327,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
