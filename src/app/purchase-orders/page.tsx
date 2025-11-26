@@ -37,6 +37,7 @@ import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, addDoc, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { useSettings } from "@/context/settings-context";
 import { MakePaymentDialog } from "@/components/dues/make-payment-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 
 export default function PurchaseOrdersPage() {
@@ -54,6 +55,7 @@ export default function PurchaseOrdersPage() {
 
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
   const [paymentPo, setPaymentPo] = useState<PurchaseOrder | null>(null);
+  const [orderToCancel, setOrderToCancel] = useState<PurchaseOrder | null>(null);
 
   const safePOs = purchaseOrders || [];
   const safeSuppliers = suppliers || [];
@@ -131,6 +133,27 @@ export default function PurchaseOrdersPage() {
         }
     }
   }
+
+    const handleCancelOrder = async () => {
+        if (!orderToCancel) return;
+        try {
+            const poRef = doc(firestore, 'purchaseOrders', orderToCancel.id);
+            await updateDoc(poRef, { deliveryStatus: 'Cancelled' });
+            toast({
+                title: 'Purchase Order Cancelled',
+                description: `Order ${orderToCancel.id} has been cancelled.`,
+            });
+            setOrderToCancel(null);
+        } catch (error) {
+            console.error("Error cancelling order:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not cancel the purchase order.',
+            });
+        }
+    };
+
 
   const handleMakePayment = async (poId: string, paymentAmount: number) => {
     if (!firestore) return;
@@ -255,7 +278,13 @@ export default function PurchaseOrdersPage() {
                             Mark as Received
                           </DropdownMenuItem>
                            <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive">Cancel Order</DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-destructive" 
+                            onClick={() => setOrderToCancel(order)}
+                            disabled={order.deliveryStatus === 'Cancelled' || order.deliveryStatus === 'Received'}
+                          >
+                            Cancel Order
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                     </TableCell>
@@ -359,6 +388,27 @@ export default function PurchaseOrdersPage() {
         onConfirmPayment={handleMakePayment}
       />
     )}
+    <AlertDialog open={!!orderToCancel} onOpenChange={(open) => !open && setOrderToCancel(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action cannot be undone. This will cancel purchase order "{orderToCancel?.id}".
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>Back</AlertDialogCancel>
+            <AlertDialogAction
+                onClick={handleCancelOrder}
+                className="bg-destructive hover:bg-destructive/90"
+            >
+                Confirm Cancellation
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }
+
+    
