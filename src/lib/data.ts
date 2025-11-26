@@ -48,7 +48,7 @@ export const invoices: Invoice[] = [
     id: 'INV-001', 
     customer: 'Stark Industries', 
     customerEmail: 'tony@stark.com', 
-    date: '2023-10-01', 
+    date: '2023-10-01T10:00:00Z', 
     dueDate: '2023-10-31',
     totalAmount: 2500.00,
     paidAmount: 2500.00,
@@ -63,7 +63,7 @@ export const invoices: Invoice[] = [
     id: 'INV-002', 
     customer: 'Wayne Enterprises', 
     customerEmail: 'bruce@wayne.com', 
-    date: '2023-10-05', 
+    date: '2023-10-05T11:30:00Z', 
     dueDate: '2023-11-04',
     totalAmount: 1500.75, 
     paidAmount: 1500.75,
@@ -77,7 +77,7 @@ export const invoices: Invoice[] = [
     id: 'INV-003', 
     customer: 'Oscorp', 
     customerEmail: 'norman@oscorp.com', 
-    date: '2023-11-15', 
+    date: '2023-11-15T14:00:00Z', 
     dueDate: '2023-12-15',
     totalAmount: 3200.00, 
     paidAmount: 0,
@@ -91,7 +91,7 @@ export const invoices: Invoice[] = [
     id: 'INV-004', 
     customer: 'Cyberdyne Systems', 
     customerEmail: 'miles@cyberdyne.com', 
-    date: '2023-09-20', 
+    date: '2023-09-20T09:00:00Z', 
     dueDate: '2023-10-20',
     totalAmount: 5000.00, 
     paidAmount: 0,
@@ -105,7 +105,7 @@ export const invoices: Invoice[] = [
     id: 'INV-005',
     customer: 'Queen Consolidated',
     customerEmail: 'oliver@queen.com',
-    date: '2023-12-01',
+    date: '2023-12-01T16:45:00Z',
     dueDate: '2023-12-31',
     totalAmount: 750.50,
     paidAmount: 0,
@@ -194,21 +194,42 @@ export const purchaseOrders: PurchaseOrder[] = [
     { id: 'PO-004', supplier: 'Chemical Supply Inc.', date: '2023-12-01', amount: 18000, deliveryStatus: 'Pending', paymentStatus: 'Partially Paid', items: [{ id: 'po-item-4', rawMaterialId: 'RM-001', quantity: 120, unitCost: 150}], discount: 500, tax: 200, paidAmount: 10000, dueAmount: 7700 },
 ];
 
-export type Salary = {
+export type Employee = {
     id: string;
     name: string;
     position: string;
-    amount: number;
+    salary: number;
     status: 'Active' | 'Inactive';
-    paymentDate: string;
+    joiningDate: string;
 };
 
-export const salaries: Salary[] = [
-    { id: 'SAL-001', name: 'Alice Johnson', position: 'CEO', amount: 150000, status: 'Active', paymentDate: '2023-11-30' },
-    { id: 'SAL-002', name: 'Bob Williams', position: 'Sales Director', amount: 90000, status: 'Active', paymentDate: '2023-11-30' },
-    { id: 'SAL-003', name: 'Charlie Brown', position: 'Production Manager', amount: 75000, status: 'Active', paymentDate: '2023-11-30' },
-    { id: 'SAL-004', name: 'Diana Prince', position: 'Accountant', amount: 60000, status: 'Inactive', paymentDate: '2023-10-30' },
+export const employees: Employee[] = [
+    { id: 'EMP-001', name: 'Alice Johnson', position: 'CEO', salary: 150000, status: 'Active', joiningDate: '2020-01-15' },
+    { id: 'EMP-002', name: 'Bob Williams', position: 'Sales Director', salary: 90000, status: 'Active', joiningDate: '2021-03-10' },
+    { id: 'EMP-003', name: 'Charlie Brown', position: 'Production Manager', salary: 75000, status: 'Active', joiningDate: '2020-07-22' },
+    { id: 'EMP-004', name: 'Diana Prince', position: 'Accountant', salary: 60000, status: 'Inactive', joiningDate: '2022-05-01' },
 ];
+
+export type SalaryPayment = {
+    id: string;
+    employeeId: string;
+    employeeName: string;
+    position: string;
+    paymentDate: string;
+    salaryMonth: string;
+    amount: number;
+    bonus: number;
+    deductions: number;
+    netPay: number;
+    paymentMethod: 'Bank Transfer' | 'Cash' | 'Cheque';
+};
+
+export const salaryPayments: SalaryPayment[] = [
+    { id: 'SP-001', employeeId: 'EMP-001', employeeName: 'Alice Johnson', position: 'CEO', paymentDate: '2023-11-30', salaryMonth: '2023-11', amount: 150000, bonus: 20000, deductions: 5000, netPay: 165000, paymentMethod: 'Bank Transfer' },
+    { id: 'SP-002', employeeId: 'EMP-002', employeeName: 'Bob Williams', position: 'Sales Director', paymentDate: '2023-11-30', salaryMonth: '2023-11', amount: 90000, bonus: 5000, deductions: 2000, netPay: 93000, paymentMethod: 'Bank Transfer' },
+    { id: 'SP-003', employeeId: 'EMP-003', employeeName: 'Charlie Brown', position: 'Production Manager', paymentDate: '2023-11-30', salaryMonth: '2023-11', amount: 75000, bonus: 0, deductions: 1500, netPay: 73500, paymentMethod: 'Cheque' },
+];
+
 
 export type SalesReturn = {
     id: string;
@@ -338,5 +359,3 @@ const twoDaysAgo = new Date(now);
 twoDaysAgo.setDate(now.getDate() - 2);
 const lastWeek = new Date(now);
 lastWeek.setDate(now.getDate() - 7);
-
-    
