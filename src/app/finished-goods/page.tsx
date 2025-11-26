@@ -119,7 +119,7 @@ export default function FinishedGoodsPage() {
               ) : (
                 safeFinishedGoods.map((item) => (
                   <Collapsible key={item.id} asChild>
-                    <>
+                    <React.Fragment>
                       <TableRow className="cursor-pointer">
                         <TableCell>
                           <CollapsibleTrigger asChild>
@@ -152,8 +152,8 @@ export default function FinishedGoodsPage() {
                         </TableCell>
                       </TableRow>
                       <CollapsibleContent asChild>
-                        <tr className="bg-muted/50">
-                          <td colSpan={6} className="p-0">
+                        <TableRow className="bg-muted/50">
+                          <TableCell colSpan={6} className="p-0">
                             <div className="p-4 pl-16">
                               <h4 className="font-semibold text-sm mb-2">Production Formula:</h4>
                               {item.components && item.components.length > 0 ? (
@@ -171,10 +171,10 @@ export default function FinishedGoodsPage() {
                                 <p className="text-sm text-muted-foreground">No formula defined for this product.</p>
                               )}
                             </div>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       </CollapsibleContent>
-                    </>
+                    </React.Fragment>
                   </Collapsible>
                 ))
               )}
