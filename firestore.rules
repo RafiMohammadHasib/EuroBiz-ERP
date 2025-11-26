@@ -189,6 +189,11 @@ service cloud.firestore {
       allow read, write: if isSignedIn();
     }
 
+    match /notifications/{notificationId} {
+        allow read, update: if isSignedIn();
+        allow create, delete: if isAdmin();
+    }
+
 
     // ---------------------------
     // --- User Profiles ---
@@ -313,6 +318,8 @@ service cloud.firestore {
     }
   }
 }
+
+    
 
     
 

@@ -20,12 +20,14 @@ import { Input } from '@/components/ui/input';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Bell, PieChart, Search, Circle } from 'lucide-react';
 import Link from 'next/link';
-import { notifications as initialNotifications } from '@/lib/data';
 import type { Notification } from '@/lib/data';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, writeBatch, doc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 
 interface HeaderProps {
@@ -35,12 +37,43 @@ interface HeaderProps {
 
 export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
   const userAvatar = placeholder.placeholderImages.find(p => p.id === 'user-avatar') as ImagePlaceholder | undefined;
-  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
-  
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const firestore = useFirestore();
+  const { toast } = useToast();
 
-  const handleMarkAllRead = () => {
-      setNotifications(notifications.map(n => ({ ...n, read: true })));
+  const notificationsQuery = useMemoFirebase(
+      () => firestore ? query(collection(firestore, "notifications"), orderBy("datetime", "desc")) : null,
+      [firestore]
+  );
+  const { data: notifications, isLoading } = useCollection<Notification>(notificationsQuery);
+  
+  const safeNotifications = notifications || [];
+  const unreadCount = safeNotifications.filter(n => !n.read).length;
+
+  const handleMarkAllRead = async () => {
+      if (!firestore || unreadCount === 0) return;
+
+      const batch = writeBatch(firestore);
+      const unreadNotifications = safeNotifications.filter(n => !n.read);
+
+      unreadNotifications.forEach(notification => {
+          const notifRef = doc(firestore, "notifications", notification.id);
+          batch.update(notifRef, { read: true });
+      });
+
+      try {
+          await batch.commit();
+          toast({
+              title: "Notifications updated",
+              description: "All notifications have been marked as read.",
+          });
+      } catch (error) {
+          console.error("Error marking notifications as read:", error);
+          toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Could not update notifications.",
+          });
+      }
   };
 
   return (
@@ -82,7 +115,7 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
             </div>
           <DropdownMenuSeparator />
             <div className="max-h-80 overflow-y-auto">
-            {notifications.map(notification => (
+            {isLoading ? <DropdownMenuItem>Loading...</DropdownMenuItem> : safeNotifications.map(notification => (
                  <DropdownMenuItem key={notification.id} className="flex items-start gap-3 p-2 cursor-default" onSelect={(e) => e.preventDefault()}>
                     {!notification.read && <Circle className="h-2 w-2 mt-1.5 flex-shrink-0 fill-blue-500 text-blue-500" />}
                     <div className={cn("flex-grow space-y-1", notification.read && "pl-5")}>
@@ -127,3 +160,5 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
     </header>
   );
 }
+
+    
