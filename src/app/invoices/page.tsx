@@ -42,10 +42,10 @@ export default function SalesPage() {
 
   const kpiData = useMemo(() => {
     const totalRevenue = safeInvoices
-      .reduce((acc, inv) => acc + inv.paidAmount, 0);
+      .reduce((acc, inv) => acc + (inv.paidAmount ?? 0), 0);
 
     const outstandingDues = safeInvoices
-      .reduce((acc, inv) => acc + inv.dueAmount, 0);
+      .reduce((acc, inv) => acc + (inv.dueAmount ?? 0), 0);
 
     const totalInvoices = safeInvoices.length;
 
