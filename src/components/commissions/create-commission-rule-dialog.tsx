@@ -31,9 +31,9 @@ export function CreateCommissionRuleDialog({ isOpen, onOpenChange, onCreate, pro
   const [rate, setRate] = useState('');
 
   const appliesToOptions = useMemo(() => {
-    const productOptions = products.map(p => p.productName);
-    const distributorOptions = distributors.map(d => d.name);
-    const tierOptions = [...new Set(distributors.map(d => d.tier))];
+    const productOptions = (products || []).map(p => p.productName);
+    const distributorOptions = (distributors || []).map(d => d.name);
+    const tierOptions = [...new Set((distributors || []).map(d => d.tier))];
     
     return {
       products: productOptions,

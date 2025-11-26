@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { PlusCircle, MoreHorizontal, Percent, BarChart } from "lucide-react"
-import { type Commission } from "@/lib/data"
+import { type Commission, type FinishedGood, type Distributor } from "@/lib/data"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,11 +37,18 @@ export default function CommissionsPage() {
     const firestore = useFirestore();
     const { currencySymbol } = useSettings();
     const commissionsCollection = useMemoFirebase(() => collection(firestore, 'commissions'), [firestore]);
-    const { data: commissions, isLoading } = useCollection<Commission>(commissionsCollection);
+    const finishedGoodsCollection = useMemoFirebase(() => collection(firestore, 'finishedGoods'), [firestore]);
+    const distributorsCollection = useMemoFirebase(() => collection(firestore, 'distributors'), [firestore]);
+
+    const { data: commissions, isLoading: commissionsLoading } = useCollection<Commission>(commissionsCollection);
+    const { data: finishedGoods, isLoading: fgLoading } = useCollection<FinishedGood>(finishedGoodsCollection);
+    const { data: distributors, isLoading: distLoading } = useCollection<Distributor>(distributorsCollection);
+
     const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
     const { toast } = useToast();
 
     const safeCommissions = commissions || [];
+    const isLoading = commissionsLoading || fgLoading || distLoading;
 
     const totalCommissionValue = safeCommissions.reduce((acc, commission) => {
         if (commission.type === 'Percentage') {
@@ -54,6 +61,7 @@ export default function CommissionsPage() {
     const averageCommissionRate = safeCommissions.filter(c => c.type === 'Percentage').reduce((acc, c, _, arr) => arr.length > 0 ? acc + c.rate / arr.length : 0, 0);
 
     const addCommissionRule = async (newRule: Omit<Commission, 'id'>) => {
+      if (!commissionsCollection) return;
       try {
         await addDoc(commissionsCollection, newRule);
         toast({
@@ -166,6 +174,8 @@ export default function CommissionsPage() {
         isOpen={isCreateDialogOpen}
         onOpenChange={setCreateDialogOpen}
         onCreate={addCommissionRule}
+        products={finishedGoods || []}
+        distributors={distributors || []}
     />
     </>
   );
