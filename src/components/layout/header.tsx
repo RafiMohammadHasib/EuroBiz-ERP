@@ -18,17 +18,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Bell, PieChart, Search, Circle } from 'lucide-react';
+import { PieChart, Search } from 'lucide-react';
 import Link from 'next/link';
-import type { Notification } from '@/lib/data';
-import { useState } from 'react';
-import { cn } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
-import { Badge } from '@/components/ui/badge';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, writeBatch, doc } from 'firebase/firestore';
-import { useToast } from '@/hooks/use-toast';
-
 
 interface HeaderProps {
     searchQuery: string;
@@ -37,44 +28,6 @@ interface HeaderProps {
 
 export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
   const userAvatar = placeholder.placeholderImages.find(p => p.id === 'user-avatar') as ImagePlaceholder | undefined;
-  const firestore = useFirestore();
-  const { toast } = useToast();
-
-  const notificationsQuery = useMemoFirebase(
-      () => firestore ? query(collection(firestore, "notifications"), orderBy("datetime", "desc")) : null,
-      [firestore]
-  );
-  const { data: notifications, isLoading } = useCollection<Notification>(notificationsQuery);
-  
-  const safeNotifications = notifications || [];
-  const unreadCount = safeNotifications.filter(n => !n.read).length;
-
-  const handleMarkAllRead = async () => {
-      if (!firestore || unreadCount === 0) return;
-
-      const batch = writeBatch(firestore);
-      const unreadNotifications = safeNotifications.filter(n => !n.read);
-
-      unreadNotifications.forEach(notification => {
-          const notifRef = doc(firestore, "notifications", notification.id);
-          batch.update(notifRef, { read: true });
-      });
-
-      try {
-          await batch.commit();
-          toast({
-              title: "Notifications updated",
-              description: "All notifications have been marked as read.",
-          });
-      } catch (error) {
-          console.error("Error marking notifications as read:", error);
-          toast({
-              variant: "destructive",
-              title: "Error",
-              description: "Could not update notifications.",
-          });
-      }
-  };
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm lg:px-6">
@@ -95,50 +48,6 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
           <span className="ml-2 hidden sm:inline">Reports</span>
         </Link>
       </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="rounded-full relative">
-            <Bell className="h-5 w-5" />
-            {unreadCount > 0 && (
-                <span className="absolute top-0 right-0 flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                </span>
-            )}
-            <span className="sr-only">Toggle notifications</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[350px]">
-            <div className="flex items-center justify-between p-2">
-                <DropdownMenuLabel className="p-0">Notifications</DropdownMenuLabel>
-                {unreadCount > 0 && <Badge variant="secondary">{unreadCount} New</Badge>}
-            </div>
-          <DropdownMenuSeparator />
-            <div className="max-h-80 overflow-y-auto">
-            {isLoading ? <DropdownMenuItem>Loading...</DropdownMenuItem> : safeNotifications.map(notification => (
-                 <DropdownMenuItem key={notification.id} className="flex items-start gap-3 p-2 cursor-default" onSelect={(e) => e.preventDefault()}>
-                    {!notification.read && <Circle className="h-2 w-2 mt-1.5 flex-shrink-0 fill-blue-500 text-blue-500" />}
-                    <div className={cn("flex-grow space-y-1", notification.read && "pl-5")}>
-                        <p className={cn("font-medium text-sm", notification.type === 'warning' && 'text-destructive')}>{notification.title}</p>
-                        <p className="text-xs text-muted-foreground">{notification.description}</p>
-                        <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(notification.datetime), { addSuffix: true })}</p>
-                    </div>
-                </DropdownMenuItem>
-            ))}
-            </div>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem className="p-0">
-             <Button
-                variant="link"
-                className="w-full text-sm text-primary"
-                onClick={handleMarkAllRead}
-                disabled={unreadCount === 0}
-              >
-                Mark all as read
-            </Button>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="rounded-full">

@@ -330,15 +330,6 @@ export const suppliers: Supplier[] = [
     { id: 'SUP-03', name: 'Advanced Polymers', category: 'Polymers', status: 'Inactive' },
 ]
 
-export type Notification = {
-    id: string;
-    title: string;
-    description: string;
-    type: 'info' | 'warning';
-    datetime: string;
-    read: boolean;
-};
-
 // Getting current date and subtracting days to make datetimes dynamic
 const now = new Date();
 const yesterday = new Date(now);
@@ -348,4 +339,4 @@ twoDaysAgo.setDate(now.getDate() - 2);
 const lastWeek = new Date(now);
 lastWeek.setDate(now.getDate() - 7);
 
-
+    

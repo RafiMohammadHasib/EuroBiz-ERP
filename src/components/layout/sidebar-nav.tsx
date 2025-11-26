@@ -37,7 +37,6 @@ import {
   Users as UsersIcon,
   ChevronDown,
   Percent,
-  Bell,
   LifeBuoy,
 } from "lucide-react";
 import { useAuth, useUser } from "@/firebase";
@@ -211,3 +210,5 @@ export default function SidebarNav({ navItems: itemsToRender, navGroups: groupsT
     </>
   );
 }
+
+    

@@ -194,12 +194,6 @@ service cloud.firestore {
       allow read, write: if isSignedIn();
     }
 
-    match /notifications/{notificationId} {
-      allow get, list, update: if isSignedIn();
-      allow create, delete: if false;
-    }
-
-
     // ---------------------------
     // --- User Profiles ---
     // ---------------------------
@@ -323,3 +317,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
