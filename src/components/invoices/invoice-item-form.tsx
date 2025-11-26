@@ -45,7 +45,9 @@ export function InvoiceItemForm({ item, products, onChange, onRemove }: InvoiceI
         </SelectTrigger>
         <SelectContent>
           {products.map(p => (
-            <SelectItem key={p.id} value={p.productName}>{p.productName}</SelectItem>
+            <SelectItem key={p.id} value={p.productName}>
+              {p.productName} ({p.quantity} available)
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>
