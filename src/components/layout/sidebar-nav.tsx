@@ -164,7 +164,7 @@ export default function SidebarNav({ navItems: itemsToRender, navGroups: groupsT
         <div className="flex flex-col gap-2">
         {groupsToRender.map((group) => (
             <SidebarGroup key={group.label} className="pt-0">
-                <SidebarGroupLabel className="h-7 group-data-[collapsible=icon]:-mt-6 group-data-[collapsible=icon]:hidden">{group.label}</SidebarGroupLabel>
+                <SidebarGroupLabel className="h-7 group-data-[collapsible=icon]:hidden">{group.label}</SidebarGroupLabel>
                 <SidebarMenu>
                     {group.items.map((item) => (
                          <SidebarMenuItem key={item.href}>
@@ -202,13 +202,12 @@ export default function SidebarNav({ navItems: itemsToRender, navGroups: groupsT
                 </Link>
               </SidebarMenuItem>
           ))}
-          <SidebarSeparator className="my-2"/>
-            <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Logout" size="sm" onClick={handleLogout}>
-                    <LogOut />
-                    <span>Logout</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="Logout" size="sm" onClick={handleLogout}>
+                <LogOut />
+                <span>Logout</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
     </>
