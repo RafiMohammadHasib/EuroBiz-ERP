@@ -25,6 +25,7 @@ import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection } from 'firebase/firestore';
 import type { FinishedGood, RawMaterial } from '@/lib/data';
 import { useSettings } from '@/context/settings-context';
+import { cn } from '@/lib/utils';
 
 export default function FinishedGoodsPage() {
   const firestore = useFirestore();
@@ -111,15 +112,16 @@ export default function FinishedGoodsPage() {
                 </TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
               {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">Loading...</TableCell>
-                </TableRow>
+                <TableBody>
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">Loading...</TableCell>
+                  </TableRow>
+                </TableBody>
               ) : (
                 safeFinishedGoods.map((item) => (
-                  <Collapsible key={item.id} asChild>
-                    <React.Fragment>
+                  <Collapsible asChild key={item.id} asChild>
+                    <TableBody>
                       <TableRow>
                         <TableCell>
                           <CollapsibleTrigger asChild>
@@ -174,11 +176,10 @@ export default function FinishedGoodsPage() {
                           </TableCell>
                         </TableRow>
                       </CollapsibleContent>
-                    </React.Fragment>
+                    </TableBody>
                   </Collapsible>
                 ))
               )}
-            </TableBody>
           </Table>
         </CardContent>
       </Card>
