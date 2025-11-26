@@ -17,9 +17,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Badge } from "@/components/ui/badge"
 import { CreateSupplierDialog } from "@/components/suppliers/create-supplier-dialog";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, doc, deleteDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useSettings } from "@/context/settings-context";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 
 export default function SuppliersPage() {
@@ -32,6 +33,7 @@ export default function SuppliersPage() {
     const { data: purchaseOrders, isLoading: isLoadingPOs } = useCollection<PurchaseOrder>(purchaseOrdersCollection);
 
     const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
+    const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(null);
     const { toast } = useToast();
 
     const supplierData = useMemo(() => {
@@ -69,6 +71,27 @@ export default function SuppliersPage() {
             });
         }
     }
+
+    const handleDeleteSupplier = async () => {
+        if (!supplierToDelete) return;
+        try {
+            const supplierRef = doc(firestore, 'suppliers', supplierToDelete.id);
+            await deleteDoc(supplierRef);
+            toast({
+                title: 'Supplier Deleted',
+                description: `Supplier "${supplierToDelete.name}" has been deleted.`,
+            });
+            setSupplierToDelete(null);
+        } catch (error) {
+            console.error("Error deleting supplier:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not delete the supplier.',
+            });
+        }
+    };
+
 
   return (
     <>
@@ -169,8 +192,13 @@ export default function SuppliersPage() {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                                        <DropdownMenuItem>Delete</DropdownMenuItem>
+                                        <DropdownMenuItem disabled>Edit</DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            className="text-destructive"
+                                            onClick={() => setSupplierToDelete(supplier)}
+                                        >
+                                            Delete
+                                        </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </TableCell>
@@ -187,6 +215,26 @@ export default function SuppliersPage() {
         onOpenChange={setCreateDialogOpen}
         onCreate={addSupplier}
     />
+     <AlertDialog open={!!supplierToDelete} onOpenChange={(open) => !open && setSupplierToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the supplier
+                "{supplierToDelete?.name}".
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+                onClick={handleDeleteSupplier}
+                className="bg-destructive hover:bg-destructive/90"
+            >
+                Continue
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }
