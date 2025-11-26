@@ -28,8 +28,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { CreateCommissionRuleDialog } from "@/components/commissions/create-commission-rule-dialog";
+import { EditCommissionRuleDialog } from "@/components/commissions/edit-commission-rule-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useSettings } from "@/context/settings-context";
 
@@ -45,6 +47,8 @@ export default function CommissionsPage() {
     const { data: distributors, isLoading: distLoading } = useCollection<Distributor>(distributorsCollection);
 
     const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
+    const [ruleToEdit, setRuleToEdit] = useState<Commission | null>(null);
+    const [ruleToDelete, setRuleToDelete] = useState<Commission | null>(null);
     const { toast } = useToast();
 
     const safeCommissions = commissions || [];
@@ -77,6 +81,51 @@ export default function CommissionsPage() {
         });
       }
     }
+
+    const updateCommissionRule = async (updatedRule: Commission) => {
+      if (!firestore) return;
+      try {
+        const ruleRef = doc(firestore, 'commissions', updatedRule.id);
+        await updateDoc(ruleRef, {
+            ruleName: updatedRule.ruleName,
+            appliesTo: updatedRule.appliesTo,
+            type: updatedRule.type,
+            rate: updatedRule.rate
+        });
+        toast({
+          title: 'Commission Rule Updated',
+          description: `The rule "${updatedRule.ruleName}" has been updated.`,
+        });
+        setRuleToEdit(null);
+      } catch (error) {
+        console.error("Error updating commission rule:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not update the commission rule.",
+        });
+      }
+    };
+    
+    const deleteCommissionRule = async () => {
+        if (!ruleToDelete || !firestore) return;
+        try {
+            const ruleRef = doc(firestore, 'commissions', ruleToDelete.id);
+            await deleteDoc(ruleRef);
+            toast({
+                title: 'Commission Rule Deleted',
+                description: `The rule "${ruleToDelete.ruleName}" has been deleted.`,
+            });
+            setRuleToDelete(null);
+        } catch (error) {
+            console.error("Error deleting commission rule:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not delete the commission rule.',
+            });
+        }
+    };
 
   return (
     <>
@@ -157,8 +206,8 @@ export default function CommissionsPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
-                          <DropdownMenuItem>Delete</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setRuleToEdit(commission)}>Edit</DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={() => setRuleToDelete(commission)}>Delete</DropdownMenuItem>
                           </DropdownMenuContent>
                       </DropdownMenu>
                       </TableCell>
@@ -177,6 +226,32 @@ export default function CommissionsPage() {
         products={finishedGoods || []}
         distributors={distributors || []}
     />
+    {ruleToEdit && (
+        <EditCommissionRuleDialog
+            isOpen={!!ruleToEdit}
+            onOpenChange={(open) => !open && setRuleToEdit(null)}
+            onUpdate={updateCommissionRule}
+            products={finishedGoods || []}
+            distributors={distributors || []}
+            commission={ruleToEdit}
+        />
+    )}
+    <AlertDialog open={!!ruleToDelete} onOpenChange={(open) => !open && setRuleToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the rule "{ruleToDelete?.ruleName}".
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={deleteCommissionRule} className="bg-destructive hover:bg-destructive/90">
+                    Delete
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }
