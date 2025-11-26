@@ -32,7 +32,7 @@ export function CreatePurchaseOrderDialog({ isOpen, onOpenChange, onCreate, supp
   const { toast } = useToast();
   const { currencySymbol } = useSettings();
   const [supplier, setSupplier] = useState('');
-  const [status, setStatus] = useState<'Pending' | 'Completed' | 'Cancelled'>('Pending');
+  const [status, setStatus] = useState<PurchaseOrder['status']>('Pending');
   const [items, setItems] = useState<Omit<PurchaseOrderItem, 'id'>[]>([]);
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(0);
@@ -139,12 +139,13 @@ export function CreatePurchaseOrderDialog({ isOpen, onOpenChange, onCreate, supp
             </div>
              <div className="grid gap-2">
                 <Label htmlFor="status">Status</Label>
-                <Select value={status} onValueChange={(value) => setStatus(value as 'Pending' | 'Completed' | 'Cancelled')}>
+                <Select value={status} onValueChange={(value) => setStatus(value as PurchaseOrder['status'])}>
                     <SelectTrigger id="status">
                         <SelectValue placeholder="Select Status" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="Received">Received</SelectItem>
                         <SelectItem value="Completed">Completed</SelectItem>
                         <SelectItem value="Cancelled">Cancelled</SelectItem>
                     </SelectContent>

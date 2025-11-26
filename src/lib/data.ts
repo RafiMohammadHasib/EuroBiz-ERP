@@ -133,7 +133,7 @@ export type PurchaseOrder = {
     supplier: string;
     date: string;
     amount: number; // This will now be the grand total
-    status: 'Pending' | 'Completed' | 'Cancelled';
+    status: 'Pending' | 'Received' | 'Completed' | 'Cancelled';
     items: PurchaseOrderItem[];
     discount: number;
     tax: number;
@@ -313,5 +313,3 @@ export const notifications: Notification[] = [
     type: "info",
   },
 ];
-
-    

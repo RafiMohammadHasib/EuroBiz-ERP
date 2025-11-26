@@ -77,16 +77,16 @@ export default function PurchaseOrdersPage() {
     }
   }
 
-  const handleMarkAsCompleted = async (orderId: string) => {
+  const handleMarkAsReceived = async (orderId: string) => {
     const orderToUpdate = safePOs.find(po => po.id === orderId);
 
     if (orderToUpdate) {
         try {
             const batch = writeBatch(firestore);
 
-            // 1. Update PO status
+            // 1. Update PO status to 'Received'
             const poRef = doc(firestore, 'purchaseOrders', orderId);
-            batch.update(poRef, { status: 'Completed' });
+            batch.update(poRef, { status: 'Received' });
 
             // 2. Update raw material stock and unit cost
             orderToUpdate.items.forEach(item => {
@@ -113,18 +113,25 @@ export default function PurchaseOrdersPage() {
             await batch.commit();
 
             toast({
-                title: "Purchase Order Completed",
-                description: `Order ${orderId} has been marked as completed and stock has been updated.`
+                title: "Purchase Order Received",
+                description: `Order ${orderId} marked as received. Stock has been updated.`
             });
         } catch(error) {
-            console.error("Error completing PO: ", error);
+            console.error("Error receiving PO: ", error);
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: "Could not complete the purchase order."
+                description: "Could not mark the purchase order as received."
             });
         }
     }
+  }
+
+  const handleGenerateInvoice = (orderId: string) => {
+      toast({
+        title: "Invoice Generation (Simulated)",
+        description: `An invoice for Purchase Order ${orderId} would be generated here.`,
+      });
   }
 
 
@@ -161,7 +168,7 @@ export default function PurchaseOrdersPage() {
                     <TableCell className="font-medium">{order.id}</TableCell>
                     <TableCell>{order.supplier}</TableCell>
                     <TableCell>
-                    <Badge variant={order.status === 'Completed' ? 'secondary' : order.status === 'Pending' ? 'outline' : 'destructive'}>
+                    <Badge variant={order.status === 'Completed' ? 'secondary' : order.status === 'Pending' ? 'outline' : 'default'}>
                         {order.status}
                     </Badge>
                     </TableCell>
@@ -179,8 +186,9 @@ export default function PurchaseOrdersPage() {
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem>View Details</DropdownMenuItem>
                         {order.status === 'Pending' && (
-                            <DropdownMenuItem onClick={() => handleMarkAsCompleted(order.id)}>Mark as Completed</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleMarkAsReceived(order.id)}>Mark as Received</DropdownMenuItem>
                         )}
+                        <DropdownMenuItem onClick={() => handleGenerateInvoice(order.id)}>Generate Invoice</DropdownMenuItem>
                         <DropdownMenuItem>Cancel</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -244,6 +252,7 @@ export default function PurchaseOrdersPage() {
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="pending">Pending</TabsTrigger>
+            <TabsTrigger value="received">Received</TabsTrigger>
             <TabsTrigger value="completed">Completed</TabsTrigger>
           </TabsList>
           <div className="ml-auto flex items-center gap-2">
@@ -260,6 +269,9 @@ export default function PurchaseOrdersPage() {
         </TabsContent>
         <TabsContent value="pending" className="mt-4">
           {renderPurchaseOrderTable(safePOs.filter(o => o.status === 'Pending'))}
+        </TabsContent>
+        <TabsContent value="received" className="mt-4">
+          {renderPurchaseOrderTable(safePOs.filter(o => o.status === 'Received'))}
         </TabsContent>
         <TabsContent value="completed" className="mt-4">
           {renderPurchaseOrderTable(safePOs.filter(o => o.status === 'Completed'))}
