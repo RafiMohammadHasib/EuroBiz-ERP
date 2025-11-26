@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -184,7 +185,9 @@ export default function PurchaseOrdersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/purchase-orders/${order.id}`}>View Details</Link>
+                        </DropdownMenuItem>
                         {order.status === 'Pending' && (
                             <DropdownMenuItem onClick={() => handleMarkAsReceived(order.id)}>Mark as Received</DropdownMenuItem>
                         )}
