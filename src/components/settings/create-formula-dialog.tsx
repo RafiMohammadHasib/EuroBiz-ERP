@@ -83,14 +83,17 @@ export function CreateFormulaDialog({ isOpen, onOpenChange, onCreate, rawMateria
     }
 
     const unitCost = calculateUnitCost();
+    const parsedSellingPrice = parseFloat(sellingPrice);
 
-    onCreate({
+    const newFormula: Omit<FinishedGood, 'id'> = {
       productName,
       quantity: 0, // Initial quantity is 0
       unitCost,
-      sellingPrice: parseFloat(sellingPrice) || undefined,
       components,
-    });
+      ...(parsedSellingPrice > 0 && { sellingPrice: parsedSellingPrice }),
+    };
+
+    onCreate(newFormula);
     
     resetForm();
     onOpenChange(false);
