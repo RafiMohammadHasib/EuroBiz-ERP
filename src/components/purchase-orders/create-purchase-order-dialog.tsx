@@ -33,7 +33,6 @@ export function CreatePurchaseOrderDialog({ isOpen, onOpenChange, onCreate, supp
   const { currencySymbol } = useSettings();
   const [supplier, setSupplier] = useState('');
   const [deliveryStatus, setDeliveryStatus] = useState<PurchaseOrder['deliveryStatus']>('Pending');
-  const [paymentStatus, setPaymentStatus] = useState<PurchaseOrder['paymentStatus']>('Unpaid');
   const [items, setItems] = useState<Omit<PurchaseOrderItem, 'id'>[]>([]);
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(0);
@@ -72,7 +71,6 @@ export function CreatePurchaseOrderDialog({ isOpen, onOpenChange, onCreate, supp
   const resetForm = () => {
     setSupplier('');
     setDeliveryStatus('Pending');
-    setPaymentStatus('Unpaid');
     setItems([]);
     setDiscount(0);
     setTax(0);
@@ -94,11 +92,20 @@ export function CreatePurchaseOrderDialog({ isOpen, onOpenChange, onCreate, supp
         ...item
     }));
 
+    let initialPaymentStatus: PurchaseOrder['paymentStatus'];
+    if (dueAmount <= 0.001) {
+        initialPaymentStatus = 'Paid';
+    } else if (paidAmount > 0) {
+        initialPaymentStatus = 'Partially Paid';
+    } else {
+        initialPaymentStatus = 'Unpaid';
+    }
+
     onCreate({
       supplier,
       amount: grandTotal,
       deliveryStatus,
-      paymentStatus,
+      paymentStatus: initialPaymentStatus,
       date: new Date().toISOString().split('T')[0],
       items: newOrderItems,
       discount,
