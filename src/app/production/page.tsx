@@ -16,7 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { CreateProductionOrderDialog } from "@/components/production/create-production-order-dialog";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, addDoc, serverTimestamp, query, orderBy, doc, updateDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, orderBy, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useSettings } from "@/context/settings-context";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -43,7 +43,7 @@ export default function ProductionPage() {
     const wipOrders = safeProductionOrders.filter(o => o.status === "In Progress").length;
     const completedOrders = safeProductionOrders.filter(o => o.status === "Completed").length;
     const totalProductionCost = safeProductionOrders.reduce((acc, order) => acc + (order.totalCost || 0), 0);
-    const totalUnitsProduced = safeProductionOrders.reduce((acc, order) => acc + (order.quantity || 0), 0);
+    const totalUnitsProduced = safeProductionOrders.filter(o => o.status === "Completed").reduce((acc, order) => acc + (order.quantity || 0), 0);
     
     const isLoading = poLoading || fgLoading || rmLoading;
 
@@ -67,12 +67,52 @@ export default function ProductionPage() {
     
     const handleUpdateStatus = async (orderId: string, status: 'Completed' | 'Cancelled') => {
         if (!firestore) return;
+        const order = safeProductionOrders.find(o => o.id === orderId);
+        if (!order) return;
+
         try {
+            const batch = writeBatch(firestore);
             const orderRef = doc(firestore, 'productionOrders', orderId);
-            await updateDoc(orderRef, { status });
+            batch.update(orderRef, { status });
+
+            if (status === 'Completed') {
+                const finishedGood = safeFinishedGoods.find(fg => fg.productName === order.productName);
+                if (finishedGood) {
+                    const fgRef = doc(firestore, 'finishedGoods', finishedGood.id);
+
+                    // Update Finished Good quantity and unit cost
+                    const oldTotalValue = finishedGood.quantity * finishedGood.unitCost;
+                    const newItemsValue = order.quantity * order.unitCost;
+                    const newTotalQuantity = finishedGood.quantity + order.quantity;
+                    
+                    const newUnitCost = newTotalQuantity > 0
+                        ? (oldTotalValue + newItemsValue) / newTotalQuantity
+                        : order.unitCost;
+
+                    batch.update(fgRef, {
+                        quantity: newTotalQuantity,
+                        unitCost: newUnitCost
+                    });
+
+                    // Deduct raw materials
+                    finishedGood.components.forEach(component => {
+                        const material = safeRawMaterials.find(rm => rm.id === component.materialId);
+                        if (material) {
+                            const materialRef = doc(firestore, 'rawMaterials', material.id);
+                            const quantityToDeduct = component.quantity * order.quantity;
+                            batch.update(materialRef, {
+                                quantity: material.quantity - quantityToDeduct
+                            });
+                        }
+                    });
+                }
+            }
+            
+            await batch.commit();
+
             toast({
                 title: `Production ${status}`,
-                description: `Order ${orderId} has been marked as ${status.toLowerCase()}.`,
+                description: `Order ${orderId} has been marked as ${status.toLowerCase()}. Inventory updated.`,
             });
         } catch (error) {
             console.error(`Error updating order status:`, error);
@@ -131,7 +171,7 @@ export default function ProductionPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{totalUnitsProduced.toLocaleString()}</div>
-                    <p className="text-xs text-muted-foreground">Across all orders</p>
+                    <p className="text-xs text-muted-foreground">Across all completed orders</p>
                 </CardContent>
             </Card>
         </div>
@@ -250,3 +290,5 @@ export default function ProductionPage() {
     </>
   );
 }
+
+    
