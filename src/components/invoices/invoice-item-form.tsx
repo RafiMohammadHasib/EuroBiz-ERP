@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { FinishedGood, InvoiceItem } from '@/lib/data';
 import { Trash2 } from 'lucide-react';
 import { useSettings } from '@/context/settings-context';
+import { useMemo } from 'react';
 
 interface InvoiceItemFormProps {
   item: Omit<InvoiceItem, 'id' | 'total'>;
@@ -18,12 +19,17 @@ interface InvoiceItemFormProps {
 export function InvoiceItemForm({ item, products, onChange, onRemove }: InvoiceItemFormProps) {
   const { currencySymbol } = useSettings();
 
+  const selectedProduct = useMemo(() => {
+    return products.find(p => p.productName === item.description);
+  }, [item.description, products]);
+
   const handleProductChange = (productName: string) => {
     const product = products.find(p => p.productName === productName);
     onChange({
       ...item,
       description: productName,
       unitPrice: product?.sellingPrice || 0,
+      quantity: 1, // Reset quantity to 1 on product change
     });
   };
 
@@ -57,6 +63,7 @@ export function InvoiceItemForm({ item, products, onChange, onRemove }: InvoiceI
         value={item.quantity}
         onChange={handleQuantityChange}
         min="1"
+        max={selectedProduct?.quantity}
       />
       <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{currencySymbol}</span>
