@@ -22,7 +22,7 @@ import { useSettings } from '@/context/settings-context';
 interface CreateProductionOrderDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreate: (order: Omit<ProductionOrder, 'id'>) => void;
+  onCreate: (order: Omit<ProductionOrder, 'id' | 'createdAt'>) => void;
   products: FinishedGood[];
   rawMaterials: RawMaterial[];
 }

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -16,14 +16,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { CreateProductionOrderDialog } from "@/components/production/create-production-order-dialog";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, orderBy, doc, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useSettings } from "@/context/settings-context";
 
 export default function ProductionPage() {
     const firestore = useFirestore();
     const { currencySymbol } = useSettings();
-    const productionOrdersCollection = useMemoFirebase(() => collection(firestore, 'productionOrders'), [firestore]);
+    const productionOrdersCollection = useMemoFirebase(() => query(collection(firestore, 'productionOrders'), orderBy('createdAt', 'desc')), [firestore]);
     const finishedGoodsCollection = useMemoFirebase(() => collection(firestore, 'finishedGoods'), [firestore]);
     const rawMaterialsCollection = useMemoFirebase(() => collection(firestore, 'rawMaterials'), [firestore]);
     
@@ -44,9 +44,9 @@ export default function ProductionPage() {
     
     const isLoading = poLoading || fgLoading || rmLoading;
 
-    const addProductionOrder = async (newOrder: Omit<ProductionOrder, 'id'>) => {
+    const addProductionOrder = async (newOrder: Omit<ProductionOrder, 'id' | 'createdAt'>) => {
       try {
-        await addDoc(productionOrdersCollection, newOrder);
+        await addDoc(productionOrdersCollection.firestore, { ...newOrder, createdAt: serverTimestamp() });
         toast({
           title: 'Production Order Created',
           description: `New order for ${newOrder.quantity} units of ${newOrder.productName} has been created.`,
@@ -60,6 +60,25 @@ export default function ProductionPage() {
         })
       }
     }
+    
+    const handleMarkAsComplete = async (orderId: string) => {
+        if (!firestore) return;
+        try {
+            const orderRef = doc(firestore, 'productionOrders', orderId);
+            await updateDoc(orderRef, { status: 'Completed' });
+            toast({
+                title: 'Production Complete',
+                description: `Order ${orderId} has been marked as completed.`,
+            });
+        } catch (error) {
+            console.error("Error completing production order:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not update the order status.',
+            });
+        }
+    };
 
   return (
     <>
@@ -127,13 +146,15 @@ export default function ProductionPage() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Order ID</TableHead>
                         <TableHead>Product</TableHead>
                         <TableHead>Quantity</TableHead>
                         <TableHead className="text-right">Total Cost</TableHead>
                         <TableHead className="text-right">Unit Cost</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Start Date</TableHead>
+                        <TableHead>
+                            <span className="sr-only">Actions</span>
+                        </TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -144,8 +165,7 @@ export default function ProductionPage() {
                     ) : (
                       safeProductionOrders.map(order => (
                          <TableRow key={order.id}>
-                            <TableCell className="font-medium">{order.id}</TableCell>
-                            <TableCell>{order.productName}</TableCell>
+                            <TableCell className="font-medium">{order.productName}</TableCell>
                             <TableCell>{order.quantity.toLocaleString()}</TableCell>
                             <TableCell className="text-right">{currencySymbol}{(order.totalCost || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
                             <TableCell className="text-right">{currencySymbol}{(order.unitCost || 0).toFixed(2)}</TableCell>
@@ -155,6 +175,13 @@ export default function ProductionPage() {
                                 </Badge>
                              </TableCell>
                             <TableCell>{new Date(order.startDate).toLocaleDateString()}</TableCell>
+                            <TableCell className="text-right">
+                                {order.status !== 'Completed' && (
+                                    <Button variant="outline" size="sm" onClick={() => handleMarkAsComplete(order.id)}>
+                                        Mark as Complete
+                                    </Button>
+                                )}
+                            </TableCell>
                          </TableRow>
                       ))
                     )}
