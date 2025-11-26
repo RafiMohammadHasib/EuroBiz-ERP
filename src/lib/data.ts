@@ -187,14 +187,15 @@ export type RawMaterial = {
     quantity: number;
     unit: 'kg' | 'litre' | 'pcs' | 'ml' | 'gm';
     unitCost: number;
+    createdAt: any;
 };
 
 export const rawMaterials: RawMaterial[] = [
-    { id: 'RM-001', name: 'Titanium Dioxide', category: 'Pigment', quantity: 500, unit: 'kg', unitCost: 150 },
-    { id: 'RM-002', name: 'Acrylic Polymer', category: 'Binder', quantity: 300, unit: 'litre', unitCost: 250 },
-    { id: 'RM-003', name: 'Water', category: 'Solvent', quantity: 1000, unit: 'litre', unitCost: 5 },
-    { id: 'RM-004', name: 'Calcium Carbonate', category: 'Filler', quantity: 800, unit: 'kg', unitCost: 50 },
-    { id: 'RM-005', name: 'Fungicide', category: 'Additive', quantity: 50, unit: 'kg', unitCost: 500 },
+    { id: 'RM-001', name: 'Titanium Dioxide', category: 'Pigment', quantity: 500, unit: 'kg', unitCost: 150, createdAt: new Date() },
+    { id: 'RM-002', name: 'Acrylic Polymer', category: 'Binder', quantity: 300, unit: 'litre', unitCost: 250, createdAt: new Date() },
+    { id: 'RM-003', name: 'Water', category: 'Solvent', quantity: 1000, unit: 'litre', unitCost: 5, createdAt: new Date() },
+    { id: 'RM-004', name: 'Calcium Carbonate', category: 'Filler', quantity: 800, unit: 'kg', unitCost: 50, createdAt: new Date() },
+    { id: 'RM-005', name: 'Fungicide', category: 'Additive', quantity: 50, unit: 'kg', unitCost: 500, createdAt: new Date() },
 ];
 
 export type FinishedGood = {

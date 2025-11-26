@@ -22,15 +22,20 @@ import { type RawMaterial } from "@/lib/data"
 import { DollarSign, List, PackageCheck, Archive, PlusCircle, Download } from "lucide-react"
 import { CreateRawMaterialDialog } from "@/components/raw-materials/create-raw-material-dialog";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, orderBy } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useSettings } from "@/context/settings-context";
 
 export default function RawMaterialsPage() {
   const firestore = useFirestore();
   const { currencySymbol } = useSettings();
-  const rawMaterialsCollection = useMemoFirebase(() => collection(firestore, 'rawMaterials'), [firestore]);
-  const { data: rawMaterials, isLoading } = useCollection<RawMaterial>(rawMaterialsCollection);
+  
+  const rawMaterialsQuery = useMemoFirebase(() => 
+    query(collection(firestore, 'rawMaterials'), orderBy('createdAt', 'desc')), 
+    [firestore]
+  );
+  const { data: rawMaterials, isLoading } = useCollection<RawMaterial>(rawMaterialsQuery);
+  
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
   const { toast } = useToast();
 
@@ -41,9 +46,13 @@ export default function RawMaterialsPage() {
   const totalUnits = safeRawMaterials.reduce((acc, item) => acc + item.quantity, 0);
   const mostStocked = safeRawMaterials.length > 0 ? safeRawMaterials.reduce((prev, current) => (prev.quantity > current.quantity) ? prev : current) : null;
 
-  const addRawMaterial = async (newMaterial: Omit<RawMaterial, 'id'>) => {
+  const addRawMaterial = async (newMaterial: Omit<RawMaterial, 'id' | 'createdAt'>) => {
     try {
-      await addDoc(rawMaterialsCollection, newMaterial);
+      const materialWithTimestamp = {
+        ...newMaterial,
+        createdAt: serverTimestamp(),
+      }
+      await addDoc(collection(firestore, 'rawMaterials'), materialWithTimestamp);
        toast({
         title: 'Raw Material Added',
         description: `New material "${newMaterial.name}" has been added to inventory.`,

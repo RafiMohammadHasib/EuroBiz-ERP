@@ -20,7 +20,7 @@ import { RawMaterial } from '@/lib/data';
 interface CreateRawMaterialDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreate: (material: Omit<RawMaterial, 'id'>) => void;
+  onCreate: (material: Omit<RawMaterial, 'id' | 'createdAt'>) => void;
 }
 
 export function CreateRawMaterialDialog({ isOpen, onOpenChange, onCreate }: CreateRawMaterialDialogProps) {
@@ -142,5 +142,3 @@ export function CreateRawMaterialDialog({ isOpen, onOpenChange, onCreate }: Crea
     </Dialog>
   );
 }
-
-    
