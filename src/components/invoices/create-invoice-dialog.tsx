@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,7 +46,7 @@ export function CreateInvoiceDialog({ distributors, products, commissionRules, o
     setItems(items.filter((_, i) => i !== index));
   };
   
-  const { subTotal, totalDiscount, grandTotal } = useState(() => {
+  const { subTotal, totalDiscount, grandTotal } = useMemo(() => {
     const distributor = distributors.find(d => d.name === customerName);
     let subTotal = 0;
     let totalDiscount = 0;
@@ -59,7 +59,7 @@ export function CreateInvoiceDialog({ distributors, products, commissionRules, o
         const product = products.find(p => p.productName === item.description);
         if (!product || !distributor) return;
 
-        commissionRules.forEach(rule => {
+        (commissionRules || []).forEach(rule => {
             if (rule.type === 'Percentage') {
                 const ruleAppliesToProduct = rule.appliesTo.includes(product.productName);
                 const ruleAppliesToDistributor = rule.appliesTo.includes(distributor.name);
