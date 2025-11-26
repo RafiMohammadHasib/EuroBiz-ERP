@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Bell, Search } from 'lucide-react';
+import { Bell, PieChart, Search } from 'lucide-react';
 import Link from 'next/link';
 
 interface HeaderProps {
@@ -41,6 +41,12 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
+      <Button variant="ghost" asChild>
+        <Link href="/reports">
+          <PieChart className="h-5 w-5" />
+          <span className="ml-2 hidden sm:inline">Reports</span>
+        </Link>
+      </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="rounded-full">

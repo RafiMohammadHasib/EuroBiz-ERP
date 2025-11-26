@@ -88,7 +88,6 @@ export const navGroups: NavGroup[] = [
     {
         label: "Analysis & Tools",
         items: [
-            { href: "/reports", label: "Reports", icon: PieChart },
             { href: "/forecast", label: "AI Forecast", icon: BrainCircuit },
             { href: "/notifications", label: "Notifications", icon: Bell },
             { href: "/sql-viewer", label: "SQL Viewer", icon: Database },
