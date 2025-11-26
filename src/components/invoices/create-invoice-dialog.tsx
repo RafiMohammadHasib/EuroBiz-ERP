@@ -1,44 +1,66 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Invoice } from '@/lib/data';
+import { Invoice, FinishedGood, InvoiceItem as InvoiceItemType, Customer } from '@/lib/data';
 import { useSettings } from '@/context/settings-context';
+import { PlusCircle, Trash2 } from 'lucide-react';
+import { Separator } from '../ui/separator';
+import { InvoiceItemForm } from './invoice-item-form';
 
-interface CreateInvoiceDialogProps {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCreateInvoice: (invoice: Omit<Invoice, 'id' | 'items'>) => void;
+interface CreateInvoiceFormProps {
+  customers: Customer[];
+  products: FinishedGood[];
+  onCreateInvoice: (invoice: Omit<Invoice, 'id'>) => void;
+  isLoading: boolean;
 }
 
-export function CreateInvoiceDialog({ isOpen, onOpenChange, onCreateInvoice }: CreateInvoiceDialogProps) {
+export function CreateInvoiceDialog({ customers, products, onCreateInvoice, isLoading }: CreateInvoiceFormProps) {
   const { toast } = useToast();
-  const { currency } = useSettings();
-  const [customer, setCustomer] = useState('');
+  const { currencySymbol } = useSettings();
+  
+  const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
-  const [amount, setAmount] = useState('');
   const [status, setStatus] = useState<'Paid' | 'Unpaid' | 'Overdue'>('Unpaid');
+  const [items, setItems] = useState<Omit<InvoiceItemType, 'id' | 'total'>[]>([]);
+
+  useEffect(() => {
+    const selectedCustomer = customers.find(c => c.firstName + ' ' + c.lastName === customerName);
+    if (selectedCustomer) {
+        setCustomerEmail(selectedCustomer.email);
+    } else {
+        setCustomerEmail('');
+    }
+  }, [customerName, customers]);
+
+
+  const handleItemChange = (index: number, updatedItem: Omit<InvoiceItemType, 'id' | 'total'>) => {
+    const newItems = [...items];
+    newItems[index] = updatedItem;
+    setItems(newItems);
+  };
+  
+  const handleAddItem = () => {
+    setItems([...items, { description: '', quantity: 1, unitPrice: 0 }]);
+  };
+  
+  const handleRemoveItem = (index: number) => {
+    setItems(items.filter((_, i) => i !== index));
+  };
+  
+  const subTotal = items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
 
   const handleSubmit = () => {
-    const numericAmount = parseFloat(amount);
-    if (!customer || !customerEmail || !amount || isNaN(numericAmount) || numericAmount <= 0) {
+    if (!customerName || items.length === 0 || items.some(i => !i.description || i.quantity <= 0 || i.unitPrice <= 0)) {
       toast({
         variant: 'destructive',
         title: 'Invalid Input',
-        description: 'Please fill out all fields with valid data.',
+        description: 'Please select a customer and add at least one valid item.',
       });
       return;
     }
@@ -47,98 +69,108 @@ export function CreateInvoiceDialog({ isOpen, onOpenChange, onCreateInvoice }: C
     const dueDate = new Date(today);
     dueDate.setDate(today.getDate() + 30);
 
-    const newInvoice = {
-      customer,
-      customerEmail,
-      amount: numericAmount,
+    const newInvoice: Omit<Invoice, 'id'> = {
+      customer: customerName,
+      customerEmail: customerEmail,
+      amount: subTotal,
       status,
       date: today.toISOString().split('T')[0],
       dueDate: dueDate.toISOString().split('T')[0],
+      items: items.map((item, index) => ({
+          ...item,
+          id: `item-${Date.now()}-${index}`,
+          total: item.quantity * item.unitPrice,
+      })),
     };
     
     onCreateInvoice(newInvoice);
-    
-    toast({
-      title: 'Invoice Created (Simulated)',
-      description: `A new invoice for ${customer} has been added.`,
-    });
 
-    // Reset form and close dialog
-    setCustomer('');
+    // Reset form
+    setCustomerName('');
     setCustomerEmail('');
-    setAmount('');
     setStatus('Unpaid');
-    onOpenChange(false);
+    setItems([]);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Create New Invoice</DialogTitle>
-          <DialogDescription>
-            Fill in the details below to create a new invoice. Click save when you're done.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="customer-name" className="text-right">
-              Customer
-            </Label>
-            <Input
-              id="customer-name"
-              value={customer}
-              onChange={(e) => setCustomer(e.target.value)}
-              className="col-span-3"
-              placeholder="e.g., Acme Inc."
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="customer-email" className="text-right">
-              Email
-            </Label>
-            <Input
-              id="customer-email"
-              type="email"
-              value={customerEmail}
-              onChange={(e) => setCustomerEmail(e.target.value)}
-              className="col-span-3"
-              placeholder="e.g., contact@acme.com"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="amount" className="text-right">
-              Amount ({currency})
-            </Label>
-            <Input
-              id="amount"
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="col-span-3"
-              placeholder="e.g., 5000"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="status" className="text-right">
-              Status
-            </Label>
-            <Select value={status} onValueChange={(value) => setStatus(value as 'Paid' | 'Unpaid' | 'Overdue')}>
-                <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select Status" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="Unpaid">Unpaid</SelectItem>
-                    <SelectItem value="Paid">Paid</SelectItem>
-                    <SelectItem value="Overdue">Overdue</SelectItem>
-                </SelectContent>
-            </Select>
-          </div>
+    <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid gap-2">
+                <Label htmlFor="customer-name">Customer</Label>
+                <Select value={customerName} onValueChange={setCustomerName}>
+                    <SelectTrigger id="customer-name">
+                        <SelectValue placeholder="Select a customer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {customers.map(c => (
+                            <SelectItem key={c.id} value={`${c.firstName} ${c.lastName}`}>{c.firstName} {c.lastName}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="grid gap-2">
+                <Label htmlFor="customer-email">Email</Label>
+                <Input id="customer-email" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} placeholder="Customer email" readOnly={customers.some(c => c.firstName + ' ' + c.lastName === customerName)} />
+            </div>
+             <div className="grid gap-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={status} onValueChange={(value) => setStatus(value as 'Paid' | 'Unpaid' | 'Overdue')}>
+                    <SelectTrigger id="status">
+                        <SelectValue placeholder="Select Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Unpaid">Unpaid</SelectItem>
+                        <SelectItem value="Paid">Paid</SelectItem>
+                        <SelectItem value="Overdue">Overdue</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
         </div>
-        <DialogFooter>
-          <Button type="submit" onClick={handleSubmit}>Save Invoice</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+
+        <div className="space-y-4">
+            <Label className="font-semibold">Invoice Items</Label>
+            <div className="rounded-md border p-4 space-y-4">
+                {items.map((item, index) => (
+                    <InvoiceItemForm
+                        key={index}
+                        item={item}
+                        products={products}
+                        onChange={(updatedItem) => handleItemChange(index, updatedItem)}
+                        onRemove={() => handleRemoveItem(index)}
+                    />
+                ))}
+                 <Button variant="outline" size="sm" onClick={handleAddItem} className="mt-2">
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Item
+                </Button>
+            </div>
+        </div>
+        
+        <Separator />
+
+        <div className="flex justify-end">
+            <div className="w-full md:w-1/3 space-y-2">
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="font-medium">{currencySymbol}{subTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                 <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tax</span>
+                    <span className="font-medium">{currencySymbol}0.00</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between">
+                    <span className="font-bold text-lg">Total</span>
+                    <span className="font-bold text-lg">{currencySymbol}{subTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+            </div>
+        </div>
+
+        <div className="flex justify-end">
+            <Button onClick={handleSubmit} disabled={isLoading} size="lg">
+                {isLoading ? 'Saving...' : 'Generate Invoice'}
+            </Button>
+        </div>
+
+    </div>
   );
 }

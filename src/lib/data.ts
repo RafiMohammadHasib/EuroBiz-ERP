@@ -11,6 +11,13 @@ export type Invoice = {
   items: InvoiceItem[];
 };
 
+export type Customer = {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+}
+
 export type InvoiceItem = {
     id: string;
     description: string;
@@ -26,6 +33,13 @@ export const companyDetails = {
     phone: '+1 (555) 123-4567',
     logoUrl: '/logo.png' // You can add a logo here
 }
+
+export const customers: Customer[] = [
+    { id: 'CUST-01', firstName: 'Stark', lastName: 'Industries', email: 'tony@stark.com' },
+    { id: 'CUST-02', firstName: 'Wayne', lastName: 'Enterprises', email: 'bruce@wayne.com' },
+    { id: 'CUST-03', firstName: 'Oscorp', lastName: '', email: 'norman@oscorp.com' },
+];
+
 
 export const invoices: Invoice[] = [
   { 
@@ -301,4 +315,3 @@ const twoDaysAgo = new Date(now);
 twoDaysAgo.setDate(now.getDate() - 2);
 const lastWeek = new Date(now);
 lastWeek.setDate(now.getDate() - 7);
-    
