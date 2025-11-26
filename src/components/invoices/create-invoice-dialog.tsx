@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -108,6 +108,9 @@ export function CreateInvoiceDialog({ distributors, products, commissionRules, o
         } else {
             invoiceStatus = 'Paid';
         }
+    }
+     if (grandTotal <= 0 && numericPaidAmount <= 0) {
+        invoiceStatus = 'Paid'; // Consider it paid if total is 0
     }
 
     const newInvoice: Omit<Invoice, 'id'> = {
