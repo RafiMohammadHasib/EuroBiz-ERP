@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -10,8 +10,8 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, MoreHorizontal, Users, Truck, DollarSign, TrendingUp, Award } from "lucide-react"
-import { type Distributor } from "@/lib/data"
+import { PlusCircle, MoreHorizontal, Users, Truck, DollarSign, TrendingUp, Award, Mail, Phone } from "lucide-react"
+import { type Distributor, type Invoice } from "@/lib/data"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { CreateDistributorDialog } from "@/components/distributors/create-distributor-dialog";
@@ -23,20 +23,42 @@ import { useSettings } from "@/context/settings-context";
 export default function DistributorsPage() {
     const firestore = useFirestore();
     const { currencySymbol } = useSettings();
+    
     const distributorsCollection = useMemoFirebase(() => collection(firestore, 'distributors'), [firestore]);
-    const { data: distributors, isLoading } = useCollection<Distributor>(distributorsCollection);
+    const invoicesCollection = useMemoFirebase(() => collection(firestore, 'invoices'), [firestore]);
+
+    const { data: distributors, isLoading: distributorsLoading } = useCollection<Distributor>(distributorsCollection);
+    const { data: invoices, isLoading: invoicesLoading } = useCollection<Invoice>(invoicesCollection);
+    
     const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
     const { toast } = useToast();
+    
+    const isLoading = distributorsLoading || invoicesLoading;
 
-    const safeDistributors = distributors || [];
+    const distributorData = useMemo(() => {
+        if (!distributors || !invoices) return [];
+        return distributors.map(dist => {
+            const distributorInvoices = invoices.filter(inv => inv.customer === dist.name && inv.status === 'Paid');
+            const totalSales = distributorInvoices.reduce((acc, inv) => acc + inv.amount, 0);
+            return {
+                ...dist,
+                totalSales,
+            }
+        })
+    }, [distributors, invoices]);
 
-    const totalDistributors = safeDistributors.length;
-    const totalSales = safeDistributors.reduce((acc, dist) => acc + dist.totalSales, 0);
+
+    const totalDistributors = distributorData.length;
+    const totalSales = distributorData.reduce((acc, dist) => acc + dist.totalSales, 0);
     const averageSales = totalDistributors > 0 ? totalSales / totalDistributors : 0;
-    const topDistributor = safeDistributors.length > 0 ? safeDistributors.reduce((prev, current) => (prev.totalSales > current.totalSales) ? prev : current) : null;
+    const topDistributor = distributorData.length > 0 ? distributorData.reduce((prev, current) => (prev.totalSales > current.totalSales) ? prev : current) : null;
 
-    const addDistributor = async (newDistributor: Omit<Distributor, 'id'>) => {
+    const addDistributor = async (newDistributorData: Omit<Distributor, 'id' | 'totalSales'>) => {
       try {
+        const newDistributor = {
+            ...newDistributorData,
+            totalSales: 0, // Initialize totalSales to 0
+        };
         await addDoc(distributorsCollection, newDistributor);
         toast({
           title: 'Distributor Added',
@@ -122,6 +144,7 @@ export default function DistributorsPage() {
                     <TableRow>
                         <TableHead>Distributor Name</TableHead>
                         <TableHead>Location</TableHead>
+                        <TableHead>Contact</TableHead>
                         <TableHead>Tier</TableHead>
                         <TableHead className="text-right">Total Sales</TableHead>
                         <TableHead>
@@ -132,13 +155,17 @@ export default function DistributorsPage() {
                 <TableBody>
                     {isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">Loading...</TableCell>
+                        <TableCell colSpan={6} className="h-24 text-center">Loading...</TableCell>
                       </TableRow>
                     ) : (
-                      safeDistributors.map((dist) => (
+                      distributorData.map((dist) => (
                         <TableRow key={dist.id}>
                             <TableCell className="font-medium">{dist.name}</TableCell>
                             <TableCell>{dist.location}</TableCell>
+                            <TableCell>
+                                {dist.email && <div className="flex items-center gap-2 text-sm"><Mail className="h-3 w-3" /> {dist.email}</div>}
+                                {dist.phone && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Phone className="h-3 w-3" /> {dist.phone}</div>}
+                            </TableCell>
                             <TableCell>{dist.tier}</TableCell>
                             <TableCell className="text-right">{currencySymbol}{dist.totalSales.toLocaleString()}</TableCell>
                             <TableCell>

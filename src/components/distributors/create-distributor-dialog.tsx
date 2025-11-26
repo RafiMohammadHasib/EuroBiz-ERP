@@ -20,23 +20,23 @@ import { useToast } from '@/hooks/use-toast';
 interface CreateDistributorDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreate: (distributor: Omit<Distributor, 'id'>) => void;
+  onCreate: (distributor: Omit<Distributor, 'id' | 'totalSales'>) => void;
 }
 
 export function CreateDistributorDialog({ isOpen, onOpenChange, onCreate }: CreateDistributorDialogProps) {
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [tier, setTier] = useState<'Tier 1' | 'Tier 2' | 'Tier 3'>('Tier 2');
-  const [totalSales, setTotalSales] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const { toast } = useToast();
 
   const handleSubmit = () => {
-    const numericSales = parseFloat(totalSales);
-    if (!name || !location || !totalSales || isNaN(numericSales)) {
+    if (!name || !location) {
        toast({
         variant: 'destructive',
         title: 'Invalid Input',
-        description: 'Please fill out all fields with valid data.',
+        description: 'Please fill out name and location.',
       });
       return;
     }
@@ -45,23 +45,25 @@ export function CreateDistributorDialog({ isOpen, onOpenChange, onCreate }: Crea
       name,
       location,
       tier,
-      totalSales: numericSales,
+      email: email || undefined,
+      phone: phone || undefined,
     });
     
     setName('');
     setLocation('');
     setTier('Tier 2');
-    setTotalSales('');
+    setEmail('');
+    setPhone('');
     onOpenChange(false);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Distributor</DialogTitle>
           <DialogDescription>
-            Fill in the details for the new distributor.
+            Fill in the details for the new distributor. Total sales will be calculated automatically.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -89,6 +91,31 @@ export function CreateDistributorDialog({ isOpen, onOpenChange, onCreate }: Crea
               placeholder="e.g., Dhaka, Bangladesh"
             />
           </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="dist-email" className="text-right">
+              Email
+            </Label>
+            <Input
+              id="dist-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="col-span-3"
+              placeholder="(Optional) contact@example.com"
+            />
+          </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="dist-phone" className="text-right">
+              Phone
+            </Label>
+            <Input
+              id="dist-phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="col-span-3"
+              placeholder="(Optional) +880123456789"
+            />
+          </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="dist-tier" className="text-right">
               Tier
@@ -103,19 +130,6 @@ export function CreateDistributorDialog({ isOpen, onOpenChange, onCreate }: Crea
                     <SelectItem value="Tier 3">Tier 3</SelectItem>
                 </SelectContent>
             </Select>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="dist-sales" className="text-right">
-              Total Sales
-            </Label>
-            <Input
-              id="dist-sales"
-              type="number"
-              value={totalSales}
-              onChange={(e) => setTotalSales(e.target.value)}
-              className="col-span-3"
-              placeholder="e.g., 50000"
-            />
           </div>
         </div>
         <DialogFooter>

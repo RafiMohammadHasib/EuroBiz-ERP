@@ -30,10 +30,9 @@ export function CreateInvoiceDialog({ distributors, products, onCreateInvoice, i
   const [items, setItems] = useState<Omit<InvoiceItemType, 'id' | 'total'>[]>([]);
 
   useEffect(() => {
-    // Since distributors don't have an email in the current data model, we'll leave it blank.
-    // This can be updated if the distributor data model changes.
-    setCustomerEmail('');
-  }, [customerName]);
+    const selectedDistributor = distributors.find(d => d.name === customerName);
+    setCustomerEmail(selectedDistributor?.email || '');
+  }, [customerName, distributors]);
 
 
   const handleItemChange = (index: number, updatedItem: Omit<InvoiceItemType, 'id' | 'total'>) => {
@@ -68,7 +67,7 @@ export function CreateInvoiceDialog({ distributors, products, onCreateInvoice, i
 
     const newInvoice: Omit<Invoice, 'id'> = {
       customer: customerName,
-      customerEmail: customerEmail, // This will be blank for now
+      customerEmail: customerEmail,
       amount: subTotal,
       status,
       date: today.toISOString().split('T')[0],
@@ -91,7 +90,7 @@ export function CreateInvoiceDialog({ distributors, products, onCreateInvoice, i
 
   return (
     <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="grid gap-2">
                 <Label htmlFor="distributor-name">Distributor</Label>
                 <Select value={customerName} onValueChange={setCustomerName}>
@@ -104,10 +103,6 @@ export function CreateInvoiceDialog({ distributors, products, onCreateInvoice, i
                         ))}
                     </SelectContent>
                 </Select>
-            </div>
-            <div className="grid gap-2">
-                <Label htmlFor="customer-email">Email</Label>
-                <Input id="customer-email" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} placeholder="(Optional) Distributor email" />
             </div>
              <div className="grid gap-2">
                 <Label htmlFor="status">Status</Label>
