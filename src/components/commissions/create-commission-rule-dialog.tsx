@@ -15,6 +15,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '../ui/select';
 import { Commission, Distributor, FinishedGood } from '@/lib/data';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '../ui/dropdown-menu';
+import { ChevronDown } from 'lucide-react';
+import { Badge } from '../ui/badge';
+import { ScrollArea } from '../ui/scroll-area';
 
 interface CreateCommissionRuleDialogProps {
   isOpen: boolean;
@@ -26,7 +30,7 @@ interface CreateCommissionRuleDialogProps {
 
 export function CreateCommissionRuleDialog({ isOpen, onOpenChange, onCreate, products, distributors }: CreateCommissionRuleDialogProps) {
   const [ruleName, setRuleName] = useState('');
-  const [appliesTo, setAppliesTo] = useState('');
+  const [appliesTo, setAppliesTo] = useState<string[]>([]);
   const [type, setType] = useState<'Percentage' | 'Fixed'>('Percentage');
   const [rate, setRate] = useState('');
 
@@ -45,7 +49,7 @@ export function CreateCommissionRuleDialog({ isOpen, onOpenChange, onCreate, pro
 
   const handleSubmit = () => {
     const numericRate = parseFloat(rate);
-    if (!ruleName || !appliesTo || !rate || isNaN(numericRate) || numericRate <= 0) {
+    if (!ruleName || appliesTo.length === 0 || !rate || isNaN(numericRate) || numericRate <= 0) {
       alert('Please fill out all fields with valid data.');
       return;
     }
@@ -58,11 +62,19 @@ export function CreateCommissionRuleDialog({ isOpen, onOpenChange, onCreate, pro
     });
     
     setRuleName('');
-    setAppliesTo('');
+    setAppliesTo([]);
     setType('Percentage');
     setRate('');
     onOpenChange(false);
   };
+  
+  const handleAppliesToChange = (item: string, checked: boolean) => {
+    if (checked) {
+        setAppliesTo(prev => [...prev, item]);
+    } else {
+        setAppliesTo(prev => prev.filter(i => i !== item));
+    }
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -86,29 +98,59 @@ export function CreateCommissionRuleDialog({ isOpen, onOpenChange, onCreate, pro
               placeholder="e.g., Q4 Bonus"
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="applies-to" className="text-right">
+          <div className="grid grid-cols-4 items-start gap-4 pt-2">
+            <Label htmlFor="applies-to" className="text-right pt-2">
               Applies To
             </Label>
-            <Select value={appliesTo} onValueChange={setAppliesTo}>
-                <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select a product, distributor, or tier" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Products</SelectLabel>
-                    {appliesToOptions.products.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel>Distributors</SelectLabel>
-                    {appliesToOptions.distributors.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel>Distributor Tiers</SelectLabel>
-                    {appliesToOptions.tiers.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                  </SelectGroup>
-                </SelectContent>
-            </Select>
+            <div className="col-span-3">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="w-full justify-between">
+                            <span>{appliesTo.length > 0 ? `${appliesTo.length} selected` : "Select items..."}</span>
+                            <ChevronDown className="h-4 w-4 opacity-50" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-full max-w-[295px]">
+                        <ScrollArea className="h-64">
+                            <DropdownMenuLabel>Products</DropdownMenuLabel>
+                            {appliesToOptions.products.map(p => (
+                                <DropdownMenuCheckboxItem
+                                    key={p}
+                                    checked={appliesTo.includes(p)}
+                                    onCheckedChange={(checked) => handleAppliesToChange(p, checked)}
+                                >
+                                    {p}
+                                </DropdownMenuCheckboxItem>
+                            ))}
+                            <DropdownMenuSeparator />
+                             <DropdownMenuLabel>Distributors</DropdownMenuLabel>
+                            {appliesToOptions.distributors.map(d => (
+                                <DropdownMenuCheckboxItem
+                                    key={d}
+                                    checked={appliesTo.includes(d)}
+                                    onCheckedChange={(checked) => handleAppliesToChange(d, checked)}
+                                >
+                                    {d}
+                                </DropdownMenuCheckboxItem>
+                            ))}
+                             <DropdownMenuSeparator />
+                            <DropdownMenuLabel>Distributor Tiers</DropdownMenuLabel>
+                             {appliesToOptions.tiers.map(t => (
+                                <DropdownMenuCheckboxItem
+                                    key={t}
+                                    checked={appliesTo.includes(t)}
+                                    onCheckedChange={(checked) => handleAppliesToChange(t, checked)}
+                                >
+                                    {t}
+                                </DropdownMenuCheckboxItem>
+                            ))}
+                        </ScrollArea>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                <div className="flex flex-wrap gap-1 mt-2">
+                    {appliesTo.map(item => <Badge key={item} variant="secondary">{item}</Badge>)}
+                </div>
+            </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="type" className="text-right">

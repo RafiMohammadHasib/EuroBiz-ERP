@@ -142,7 +142,7 @@ export default function CommissionsPage() {
                   safeCommissions.map((commission) => (
                   <TableRow key={commission.id}>
                       <TableCell className="font-medium">{commission.ruleName}</TableCell>
-                      <TableCell>{commission.appliesTo}</TableCell>
+                      <TableCell>{Array.isArray(commission.appliesTo) ? commission.appliesTo.join(', ') : commission.appliesTo}</TableCell>
                       <TableCell>{commission.type}</TableCell>
                       <TableCell className="text-right">
                       {commission.type === 'Percentage' ? `${commission.rate}%` : `${currencySymbol}${commission.rate.toLocaleString()}`}

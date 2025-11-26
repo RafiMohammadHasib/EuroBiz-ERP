@@ -109,16 +109,16 @@ export const salesData = [
 export type Commission = {
     id: string;
     ruleName: string;
-    appliesTo: string;
+    appliesTo: string[];
     type: 'Percentage' | 'Fixed';
     rate: number;
 }
 
 export const commissions: Commission[] = [
-    { id: 'COM-01', ruleName: 'Standard Sales', appliesTo: 'All Products', type: 'Percentage', rate: 5 },
-    { id: 'COM-02', ruleName: 'Distributor Tier 1', appliesTo: 'Tier 1 Distributors', type: 'Percentage', rate: 7.5 },
-    { id: 'COM-03', ruleName: 'New Product Launch', appliesTo: 'New-Gen Paint', type: 'Fixed', rate: 5000 },
-    { id: 'COM-04', ruleName: 'Q4 Volume Bonus', appliesTo: 'Sales over 1,000,000', type: 'Fixed', rate: 25000 },
+    { id: 'COM-01', ruleName: 'Standard Sales', appliesTo: ['All Products'], type: 'Percentage', rate: 5 },
+    { id: 'COM-02', ruleName: 'Distributor Tier 1', appliesTo: ['Tier 1 Distributors'], type: 'Percentage', rate: 7.5 },
+    { id: 'COM-03', ruleName: 'New Product Launch', appliesTo: ['New-Gen Paint'], type: 'Fixed', rate: 5000 },
+    { id: 'COM-04', ruleName: 'Q4 Volume Bonus', appliesTo: ['Sales over 1,000,000'], type: 'Fixed', rate: 25000 },
 ];
 
 export type PurchaseOrderItem = {
