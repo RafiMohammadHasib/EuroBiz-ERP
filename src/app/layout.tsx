@@ -6,7 +6,7 @@ import AuthHandler from '@/components/layout/auth-handler';
 import { SettingsProvider } from '@/context/settings-context';
 
 export const metadata: Metadata = {
-  title: 'BizFin Sales ERP',
+  title: 'EuroBiz Sales ERP',
   description: 'A comprehensive ERP system for manufacturing businesses, focusing on financial and sales management.',
 };
 

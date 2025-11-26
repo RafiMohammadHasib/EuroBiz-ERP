@@ -137,7 +137,7 @@ export default function SidebarNav({ navItems: itemsToRender, navGroups: groupsT
         <Link href="/" className="flex items-center gap-2.5">
           <Landmark className="h-7 w-7 text-primary" />
           <span className="font-bold text-xl whitespace-nowrap group-data-[collapsible=icon]:hidden">
-            BizFin
+            EuroBiz
           </span>
         </Link>
       </SidebarHeader>

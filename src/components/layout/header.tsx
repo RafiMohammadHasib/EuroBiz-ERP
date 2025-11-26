@@ -30,7 +30,7 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm lg:px-6">
-      <SidebarTrigger className="md:hidden" />
+      <SidebarTrigger />
       <div className="relative flex-1">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
