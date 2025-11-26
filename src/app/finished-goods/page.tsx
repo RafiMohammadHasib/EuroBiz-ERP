@@ -145,8 +145,8 @@ export default function FinishedGoodsPage() {
                   </TableRow>
               ) : (
                 safeFinishedGoods.map((item) => (
-                  <Collapsible asChild key={item.id}>
-                    <>
+                  <Collapsible key={item.id} asChild>
+                    <React.Fragment>
                       <TableRow>
                         <TableCell>
                           <CollapsibleTrigger asChild>
@@ -201,7 +201,7 @@ export default function FinishedGoodsPage() {
                           </TableCell>
                         </TableRow>
                       </CollapsibleContent>
-                    </>
+                    </React.Fragment>
                   </Collapsible>
                 ))
               )}
