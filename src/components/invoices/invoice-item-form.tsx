@@ -1,7 +1,6 @@
 
 'use client';
 
-import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -18,13 +17,6 @@ interface InvoiceItemFormProps {
 
 export function InvoiceItemForm({ item, products, onChange, onRemove }: InvoiceItemFormProps) {
   const { currencySymbol } = useSettings();
-
-  useEffect(() => {
-      const product = products.find(p => p.productName === item.description);
-      if (product && product.sellingPrice !== item.unitPrice) {
-          onChange({ ...item, unitPrice: product.sellingPrice || 0 });
-      }
-  }, [item.description, products, onChange, item]);
 
   const handleProductChange = (productName: string) => {
     const product = products.find(p => p.productName === productName);
