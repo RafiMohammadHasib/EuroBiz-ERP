@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -59,10 +59,15 @@ export default function PurchaseOrdersPage() {
   const safeSuppliers = suppliers || [];
   const safeRawMaterials = rawMaterials || [];
 
-  const totalPOValue = safePOs.reduce((sum, order) => sum + order.amount, 0);
-  const pendingShipment = safePOs.filter(o => o.deliveryStatus === 'Pending').length;
-  const totalOrders = safePOs.length;
-  const totalPaid = safePOs.reduce((sum, order) => sum + order.paidAmount, 0);
+  const sortedPOs = useMemo(() => 
+    safePOs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+    [safePOs]
+  );
+
+  const totalPOValue = sortedPOs.reduce((sum, order) => sum + order.amount, 0);
+  const pendingShipment = sortedPOs.filter(o => o.deliveryStatus === 'Pending').length;
+  const totalOrders = sortedPOs.length;
+  const totalPaid = sortedPOs.reduce((sum, order) => sum + order.paidAmount, 0);
 
   const addPurchaseOrder = async (newOrder: Omit<PurchaseOrder, 'id'>) => {
     try {
@@ -82,7 +87,7 @@ export default function PurchaseOrdersPage() {
   }
 
   const handleMarkAsReceived = async (orderId: string) => {
-    const orderToUpdate = safePOs.find(po => po.id === orderId);
+    const orderToUpdate = sortedPOs.find(po => po.id === orderId);
 
     if (orderToUpdate) {
         try {
@@ -193,7 +198,7 @@ export default function PurchaseOrdersPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Order ID</TableHead>
+              <TableHead>Date</TableHead>
               <TableHead>Supplier</TableHead>
               <TableHead>Payment Status</TableHead>
               <TableHead>Delivery Status</TableHead>
@@ -211,7 +216,7 @@ export default function PurchaseOrdersPage() {
             ) : (
                 orders.map((order) => (
                 <TableRow key={order.id}>
-                    <TableCell className="font-medium">{order.id}</TableCell>
+                    <TableCell className="font-medium">{new Date(order.date).toLocaleDateString()}</TableCell>
                     <TableCell>{order.supplier}</TableCell>
                     <TableCell>
                       <Badge variant={getPaymentStatusVariant(order.paymentStatus)}>
@@ -321,16 +326,16 @@ export default function PurchaseOrdersPage() {
           </div>
         </div>
         <TabsContent value="all" className="mt-4">
-          {renderPurchaseOrderTable(safePOs)}
+          {renderPurchaseOrderTable(sortedPOs)}
         </TabsContent>
         <TabsContent value="pending" className="mt-4">
-          {renderPurchaseOrderTable(safePOs.filter(o => o.deliveryStatus === 'Pending'))}
+          {renderPurchaseOrderTable(sortedPOs.filter(o => o.deliveryStatus === 'Pending'))}
         </TabsContent>
         <TabsContent value="received" className="mt-4">
-          {renderPurchaseOrderTable(safePOs.filter(o => o.deliveryStatus === 'Received'))}
+          {renderPurchaseOrderTable(sortedPOs.filter(o => o.deliveryStatus === 'Received'))}
         </TabsContent>
         <TabsContent value="paid" className="mt-4">
-          {renderPurchaseOrderTable(safePOs.filter(o => o.paymentStatus === 'Paid'))}
+          {renderPurchaseOrderTable(sortedPOs.filter(o => o.paymentStatus === 'Paid'))}
         </TabsContent>
       </Tabs>
     </div>
