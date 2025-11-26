@@ -1,3 +1,4 @@
+
 'use client';
 import type { ImagePlaceholder } from '@/lib/placeholder-images';
 import placeholder from '@/lib/placeholder-images.json';
@@ -24,6 +25,7 @@ import type { Notification } from '@/lib/data';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 
 interface HeaderProps {
