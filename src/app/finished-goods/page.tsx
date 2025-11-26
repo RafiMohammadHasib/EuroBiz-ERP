@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -22,19 +22,24 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { MoreHorizontal, DollarSign, TrendingUp, Boxes, ChevronDown, PackageCheck } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection } from 'firebase/firestore';
+import { collection, doc, updateDoc } from 'firebase/firestore';
 import type { FinishedGood, RawMaterial } from '@/lib/data';
 import { useSettings } from '@/context/settings-context';
 import { cn } from '@/lib/utils';
+import { EditSellingPriceDialog } from '@/components/finished-goods/edit-selling-price-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 export default function FinishedGoodsPage() {
   const firestore = useFirestore();
   const { currencySymbol } = useSettings();
+  const { toast } = useToast();
   const finishedGoodsCollection = useMemoFirebase(() => collection(firestore, 'finishedGoods'), [firestore]);
   const rawMaterialsCollection = useMemoFirebase(() => collection(firestore, 'rawMaterials'), [firestore]);
 
   const { data: finishedGoods, isLoading: fgLoading } = useCollection<FinishedGood>(finishedGoodsCollection);
   const { data: rawMaterials, isLoading: rmLoading } = useCollection<RawMaterial>(rawMaterialsCollection);
+  
+  const [itemToEdit, setItemToEdit] = useState<FinishedGood | null>(null);
 
   const safeFinishedGoods = finishedGoods || [];
   const safeRawMaterials = rawMaterials || [];
@@ -45,8 +50,29 @@ export default function FinishedGoodsPage() {
   const totalUnits = safeFinishedGoods.reduce((acc, item) => acc + item.quantity, 0);
 
   const isLoading = fgLoading || rmLoading;
+
+  const handleUpdateSellingPrice = async (productId: string, newPrice: number) => {
+    if (!firestore) return;
+    try {
+      const productRef = doc(firestore, 'finishedGoods', productId);
+      await updateDoc(productRef, { sellingPrice: newPrice });
+      toast({
+        title: 'Selling Price Updated',
+        description: `The price has been updated to ${currencySymbol}${newPrice.toFixed(2)}.`,
+      });
+      setItemToEdit(null); // Close the dialog
+    } catch (error) {
+      console.error('Error updating selling price:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not update the selling price.',
+      });
+    }
+  };
   
   return (
+    <>
     <div className="space-y-6">
        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -112,16 +138,15 @@ export default function FinishedGoodsPage() {
                 </TableHead>
               </TableRow>
             </TableHeader>
+             <TableBody>
               {isLoading ? (
-                <TableBody>
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">Loading...</TableCell>
                   </TableRow>
-                </TableBody>
               ) : (
                 safeFinishedGoods.map((item) => (
-                  <Collapsible asChild key={item.id} asChild>
-                    <TableBody>
+                   <Collapsible key={item.id} asChild>
+                    <>
                       <TableRow>
                         <TableCell>
                           <CollapsibleTrigger asChild>
@@ -147,7 +172,7 @@ export default function FinishedGoodsPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem>Edit Selling Price</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setItemToEdit(item)}>Edit Selling Price</DropdownMenuItem>
                               <DropdownMenuItem>View History</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -176,13 +201,23 @@ export default function FinishedGoodsPage() {
                           </TableCell>
                         </TableRow>
                       </CollapsibleContent>
-                    </TableBody>
+                    </>
                   </Collapsible>
                 ))
               )}
+              </TableBody>
           </Table>
         </CardContent>
       </Card>
     </div>
+    {itemToEdit && (
+        <EditSellingPriceDialog
+            isOpen={!!itemToEdit}
+            onOpenChange={(open) => !open && setItemToEdit(null)}
+            product={itemToEdit}
+            onUpdate={handleUpdateSellingPrice}
+        />
+    )}
+    </>
   );
 }
