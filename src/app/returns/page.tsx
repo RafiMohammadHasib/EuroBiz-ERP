@@ -65,23 +65,22 @@ export default function ReturnsPage() {
     
     // 2. Update the invoice
     const invoiceRef = doc(firestore, 'invoices', invoice.id);
-    const newPaidAmount = Math.max(0, invoice.paidAmount - totalReturnAmount);
-    const newDueAmount = Math.max(0, invoice.dueAmount - totalReturnAmount);
-    let newStatus: Invoice['status'] = invoice.status;
+    const newTotalAmount = invoice.totalAmount - totalReturnAmount;
+    const newDueAmount = newTotalAmount - invoice.paidAmount;
 
-    if (invoice.totalAmount - totalReturnAmount <= newPaidAmount) {
+    let newStatus: Invoice['status'] = invoice.status;
+    if (newDueAmount <= 0.001) {
         newStatus = 'Paid';
-    } else if (newPaidAmount > 0) {
+    } else if (invoice.paidAmount > 0) {
         newStatus = 'Partially Paid';
     } else {
         newStatus = 'Unpaid';
     }
     
     batch.update(invoiceRef, {
-        paidAmount: newPaidAmount,
-        dueAmount: newDueAmount,
+        totalAmount: newTotalAmount < 0 ? 0 : newTotalAmount,
+        dueAmount: newDueAmount < 0 ? 0 : newDueAmount,
         status: newStatus,
-        totalAmount: invoice.totalAmount - totalReturnAmount,
     });
 
 
