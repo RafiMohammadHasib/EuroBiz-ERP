@@ -64,8 +64,7 @@ service cloud.firestore {
     }
 
     match /sales_returns/{returnId} {
-      allow get, list: if isSignedIn();
-      allow write: if isAdmin();
+      allow read, write: if isAdmin();
     }
 
     match /commissions/{commissionId} {
