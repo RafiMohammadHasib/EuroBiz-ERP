@@ -26,7 +26,6 @@ service cloud.firestore {
     }
     
     // --- Settings ---
-    // Any signed-in user can read business and system settings. Admins can write.
     match /settings/business { 
       allow read: if isSignedIn(); 
       allow write: if isAdmin();
@@ -35,9 +34,8 @@ service cloud.firestore {
       allow read: if isSignedIn(); 
       allow write: if isAdmin();
     }
-    // A user can read and write to their OWN settings document.
     match /settings/{userId} {
-      allow read, write: if isOwner(userId) && request.resource.data.uid == userId;
+      allow read, write: if isOwner(userId);
     }
 
 
