@@ -77,7 +77,8 @@ service cloud.firestore {
     }
 
     match /settings/{settingId} {
-      allow read, write: if isAdmin();
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
     
     match /salary_payments/{paymentId} {
