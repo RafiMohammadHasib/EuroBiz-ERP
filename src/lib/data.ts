@@ -194,20 +194,6 @@ export const purchaseOrders: PurchaseOrder[] = [
     { id: 'PO-004', supplier: 'Chemical Supply Inc.', date: '2023-12-01', amount: 18000, deliveryStatus: 'Pending', paymentStatus: 'Partially Paid', items: [{ id: 'po-item-4', rawMaterialId: 'RM-001', quantity: 120, unitCost: 150}], discount: 500, tax: 200, paidAmount: 10000, dueAmount: 7700 },
 ];
 
-export type SalesReturn = {
-    id: string;
-    invoiceId: string;
-    customer: string;
-    date: string;
-    amount: number;
-    returnedUnits: number;
-}
-
-export const salesReturns: SalesReturn[] = [
-    { id: 'RET-001', invoiceId: 'INV-004', customer: 'Cyberdyne Systems', date: '2023-10-25', amount: 1000, returnedUnits: 2 },
-    { id: 'RET-002', invoiceId: 'INV-001', customer: 'Stark Industries', date: '2023-11-05', amount: 250, returnedUnits: 10 },
-];
-
 export type RawMaterial = {
     id: string;
     name: string;

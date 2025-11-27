@@ -183,42 +183,6 @@
         "status"
       ]
     },
-    "SalesReturn": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "SalesReturn",
-      "type": "object",
-      "description": "Represents a sales return.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the sales return."
-        },
-        "invoiceId": {
-          "type": "string",
-          "description": "Reference to SalesInvoice. (Relationship: SalesInvoice 1:N SalesReturn)"
-        },
-        "returnDate": {
-          "type": "string",
-          "description": "Date the return was processed.",
-          "format": "date-time"
-        },
-        "returnAmount": {
-          "type": "number",
-          "description": "Amount returned to the customer."
-        },
-        "reason": {
-          "type": "string",
-          "description": "Reason for the return."
-        }
-      },
-      "required": [
-        "id",
-        "invoiceId",
-        "returnDate",
-        "returnAmount",
-        "reason"
-      ]
-    },
     "OutstandingDue": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "OutstandingDue",
@@ -586,30 +550,6 @@
             {
               "name": "invoiceId",
               "description": "Unique identifier for the sales invoice."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/customers/{customerId}/invoices/{invoiceId}/returns/{returnId}",
-        "definition": {
-          "entityName": "SalesReturn",
-          "schema": {
-            "$ref": "#/backend/entities/SalesReturn"
-          },
-          "description": "Stores sales returns for each invoice. Includes denormalized 'invoiceId' for authorization independence.",
-          "params": [
-            {
-              "name": "customerId",
-              "description": "Unique identifier for the customer."
-            },
-            {
-              "name": "invoiceId",
-              "description": "Unique identifier for the sales invoice."
-            },
-            {
-              "name": "returnId",
-              "description": "Unique identifier for the sales return."
             }
           ]
         }

@@ -19,7 +19,6 @@ import {
   LayoutDashboard,
   FileText,
   CreditCard,
-  Undo2,
   PieChart,
   Settings,
   BrainCircuit,
@@ -73,7 +72,6 @@ export const navGroups: NavGroup[] = [
             { href: "/raw-materials", label: "Raw Materials", icon: Package },
             { href: "/production", label: "Production", icon: Factory },
             { href: "/finished-goods", label: "Finished Goods", icon: Package },
-            { href: "/returns", label: "Returns", icon: Undo2 },
         ]
     },
     {

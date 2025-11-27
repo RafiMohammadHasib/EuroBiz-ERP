@@ -17,10 +17,10 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import SalesChart from "@/components/dashboard/sales-chart"
-import { DollarSign, CreditCard, Users, Undo, Truck, ShoppingCart, Building, Package } from "lucide-react"
+import { DollarSign, CreditCard, Users, Truck, ShoppingCart, Building, Package } from "lucide-react"
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
-import type { Invoice, SalesReturn, Distributor, Supplier, PurchaseOrder } from "@/lib/data";
+import type { Invoice, Distributor, Supplier, PurchaseOrder } from "@/lib/data";
 import { useSettings } from "@/context/settings-context";
 
 export default function Home() {
@@ -31,32 +31,28 @@ export default function Home() {
   const purchaseOrdersCollection = useMemoFirebase(() => collection(firestore, 'purchaseOrders'), [firestore]);
   const distributorsCollection = useMemoFirebase(() => collection(firestore, 'distributors'), [firestore]);
   const suppliersCollection = useMemoFirebase(() => collection(firestore, 'suppliers'), [firestore]);
-  const salesReturnsCollection = useMemoFirebase(() => collection(firestore, 'sales_returns'), [firestore]);
 
   const { data: invoices, isLoading: invoicesLoading } = useCollection<Invoice & { amount?: number }>(invoicesCollection);
   const { data: purchaseOrders, isLoading: poLoading } = useCollection<PurchaseOrder>(purchaseOrdersCollection);
   const { data: distributors, isLoading: distributorsLoading } = useCollection<Distributor>(distributorsCollection);
   const { data: suppliers, isLoading: suppliersLoading } = useCollection<Supplier>(suppliersCollection);
-  const { data: salesReturns, isLoading: returnsLoading } = useCollection<SalesReturn>(salesReturnsCollection);
 
   const safeInvoices = invoices || [];
   const safePOs = purchaseOrders || [];
   const safeDistributors = distributors || [];
   const safeSuppliers = suppliers || [];
-  const safeReturns = salesReturns || [];
 
   const totalRevenue = safeInvoices.filter(i => i.status === 'Paid').reduce((acc, i) => acc + (i.totalAmount ?? i.amount ?? 0), 0);
   const outstandingDues = safeInvoices.filter(i => i.status !== 'Paid').reduce((acc, i) => acc + (i.dueAmount ?? i.amount ?? 0), 0);
   const paidInvoices = safeInvoices.filter(i => i.status === 'Paid').length;
   const uniqueCustomers = new Set(safeInvoices.map(i => i.customer)).size;
-  const totalReturns = safeReturns.length;
   
   const pendingPurchaseOrders = safePOs.filter(p => p.deliveryStatus === 'Pending').length;
   const totalPurchaseValue = safePOs.reduce((acc, p) => acc + p.amount, 0);
   const totalSuppliers = new Set(safeSuppliers.map(p => p.name)).size;
   const totalDistributors = new Set(safeDistributors.map(d => d.name)).size;
 
-  const isLoading = invoicesLoading || poLoading || distributorsLoading || suppliersLoading || returnsLoading;
+  const isLoading = invoicesLoading || poLoading || distributorsLoading || suppliersLoading;
 
   return (
     <div className="flex flex-col gap-6">
@@ -133,12 +129,12 @@ export default function Home() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sales Returns</CardTitle>
-            <Undo className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalReturns}</div>
-            <p className="text-xs text-muted-foreground">Returns processed this month</p>
+            <div className="text-2xl font-bold">{safeInvoices.length}</div>
+            <p className="text-xs text-muted-foreground">Generated invoices</p>
           </CardContent>
         </Card>
       </div>
