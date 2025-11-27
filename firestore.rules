@@ -17,68 +17,20 @@ service cloud.firestore {
     }
 
     // --- Business-Wide Data ---
-    // Allow admins full access, and all signed-in users read access to business data.
-    match /products/{productId} {
-      allow get, list: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    match /distribution_channels/{channelId} {
-      allow get, list: if isSignedIn();
-      allow write: if isAdmin();
-    }
-    
-    match /distributors/{distributorId} {
-        allow get, list: if isSignedIn();
-        allow write: if isAdmin();
-    }
-
-    match /suppliers/{supplierId} {
-      allow get, list: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    match /purchaseOrders/{poId} {
-      allow get, list: if isSignedIn();
-      allow write: if isAdmin();
-    }
-    
-    match /productionOrders/{prodId} {
-        allow get, list: if isSignedIn();
-        allow write: if isAdmin();
-    }
-
-    match /rawMaterials/{materialId} {
-      allow get, list: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    match /finishedGoods/{goodId} {
-      allow get, list: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    match /invoices/{invoiceId} {
-      allow get, list: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    match /commissions/{commissionId} {
-      allow read, write: if isAdmin();
-    }
-    
-    match /sales_commissions/{commissionId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /settings/{settingId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-    
-    match /salary_payments/{paymentId} {
-      allow read, write: if isAdmin();
-    }
+    // Admins have full access. All other authenticated users have read-only access.
+    match /{path=**}/products/{productId} { allow read, write: if isAdmin(); allow get, list: if isSignedIn(); }
+    match /{path=**}/settings/{settingId} { allow read, write: if isAdmin(); allow get, list: if isSignedIn(); }
+    match /{path=**}/distribution_channels/{dcId} { allow read, write: if isAdmin(); allow get, list: if isSignedIn(); }
+    match /{path=**}/distributors/{distributorId} { allow read, write: if isAdmin(); allow get, list: if isSignedIn(); }
+    match /{path=**}/suppliers/{supplierId} { allow read, write: if isAdmin(); allow get, list: if isSignedIn(); }
+    match /{path=**}/purchaseOrders/{poId} { allow read, write: if isAdmin(); allow get, list: if isSignedIn(); }
+    match /{path=**}/sales_commissions/{commissionId} { allow read, write: if isAdmin(); allow get, list: if isSignedIn(); }
+    match /{path=**}/invoices/{invoiceId} { allow read, write: if isAdmin(); allow get, list: if isSignedIn(); }
+    match /{path=**}/rawMaterials/{materialId} { allow read, write: if isAdmin(); allow get, list: if isSignedIn(); }
+    match /{path=**}/finishedGoods/{goodId} { allow read, write: if isAdmin(); allow get, list: if isSignedIn(); }
+    match /{path=**}/productionOrders/{prodId} { allow read, write: if isAdmin(); allow get, list: if isSignedIn(); }
+    match /{path=**}/commissions/{commissionId} { allow read, write: if isAdmin(); allow get, list: if isSignedIn(); }
+    match /{path=**}/salary_payments/{paymentId} { allow read, write: if isAdmin(); allow get, list: if isSignedIn(); }
 
 
     // --- User & Role Data ---
@@ -89,40 +41,24 @@ service cloud.firestore {
     match /salespeople/{salespersonId} {
       allow get, update, delete: if isOwner(salespersonId);
       allow create: if isOwner(salespersonId) && request.resource.data.id == salespersonId;
+
+      match /commissions/{commissionId} {
+        allow read, write: if isOwner(salespersonId);
+      }
     }
 
     match /customers/{customerId} {
       allow get, update, delete: if isOwner(customerId);
       allow create: if isOwner(customerId) && request.resource.data.id == customerId;
       allow list: if isSignedIn();
-    }
 
-    // --- Nested User Data ---
-    match /salespeople/{salespersonId}/commissions/{commissionId} {
-      allow read, write: if isOwner(salespersonId);
-    }
-
-    match /customers/{customerId}/invoices/{invoiceId} {
-      allow read, write: if isOwner(customerId);
-
-      match /returns/{returnId} {
+      match /invoices/{invoiceId} {
         allow read, write: if isOwner(customerId);
+
+        match /outstanding_dues/{dueId} {
+          allow read, write: if isOwner(customerId);
+        }
       }
-
-      match /outstanding_dues/{dueId} {
-        allow read, write: if isOwner(customerId);
-      }
-    }
-
-    // Read-only reporting subcollections
-    match /products/{productId}/commissions/{commissionId} {
-      allow get, list: if isSignedIn();
-      allow write: if false;
-    }
-
-    match /distribution_channels/{channelId}/commissions/{commissionId} {
-      allow get, list: if isSignedIn();
-      allow write: if false;
     }
   }
 }
