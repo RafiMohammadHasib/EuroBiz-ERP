@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -109,11 +108,11 @@ export function ProcessReturnDialog({ isOpen, onOpenChange, invoices, products, 
       return;
     }
     
-    if (totalReturnValue > selectedInvoice.dueAmount) {
+    if (totalReturnValue > selectedInvoice.paidAmount) {
          toast({
             variant: 'destructive',
             title: 'Invalid Return Amount',
-            description: 'Total return value cannot exceed the invoice due amount.',
+            description: 'Total return value cannot exceed the amount paid for the invoice.',
         });
         return;
     }
@@ -147,7 +146,7 @@ export function ProcessReturnDialog({ isOpen, onOpenChange, invoices, products, 
                         <SelectValue placeholder="Select an invoice" />
                     </SelectTrigger>
                     <SelectContent>
-                        {invoices.filter(inv => inv.status !== 'Paid').map(inv => (
+                        {invoices.filter(inv => inv.status !== 'Paid' || inv.paidAmount > 0).map(inv => (
                             <SelectItem key={inv.id} value={inv.id}>{inv.id} - {inv.customer}</SelectItem>
                         ))}
                     </SelectContent>
@@ -223,16 +222,16 @@ export function ProcessReturnDialog({ isOpen, onOpenChange, invoices, products, 
                 <p className="text-2xl font-bold">{currencySymbol}{totalReturnValue.toLocaleString()}</p>
              </div>
           </div>
-           {selectedInvoice && totalReturnValue > selectedInvoice.dueAmount && (
+           {selectedInvoice && totalReturnValue > selectedInvoice.paidAmount && (
                 <div className="flex items-center gap-2 text-sm text-destructive">
                     <AlertCircle className="h-4 w-4" />
-                    <span>Return value exceeds the invoice due amount.</span>
+                    <span>Return value cannot exceed the invoice paid amount.</span>
                 </div>
             )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isProcessing}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!selectedInvoice || returnItems.length === 0 || totalReturnValue > (selectedInvoice?.dueAmount || 0) || isProcessing}>
+          <Button onClick={handleSubmit} disabled={!selectedInvoice || returnItems.length === 0 || totalReturnValue > (selectedInvoice?.paidAmount || 0) || isProcessing}>
              {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Process Return
           </Button>
