@@ -31,6 +31,8 @@ export function CreatePurchaseOrderForm({ onCreate, suppliers, rawMaterials, isL
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
+  const [paymentType, setPaymentType] = useState<'Cash' | 'Card' | 'Bank Transfer'>('Cash');
+
 
   const handleAddItem = () => {
     setItems([...items, { rawMaterialId: '', quantity: 1, unitCost: 0 }]);
@@ -184,29 +186,57 @@ export function CreatePurchaseOrderForm({ onCreate, suppliers, rawMaterials, isL
         <Separator />
         
         <div className="flex justify-end">
-        <div className="w-full md:w-1/2 space-y-4">
+          <div className="w-full md:w-[450px] space-y-4">
             <div className="flex justify-between items-center">
-                <Label htmlFor="discount">Discount</Label>
+              <span className="text-muted-foreground">Subtotal</span>
+              <span className="font-medium">{currencySymbol}{subTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+            <div className="flex justify-between items-center">
+                <Label htmlFor="discount" className="text-muted-foreground">Discount</Label>
                 <Input id="discount" type="number" value={discount} onChange={e => setDiscount(parseFloat(e.target.value) || 0)} placeholder="0.00" className="text-right w-32" />
             </div>
             <div className="flex justify-between items-center">
-                <Label htmlFor="tax">VAT/Tax</Label>
+                <Label htmlFor="tax" className="text-muted-foreground">VAT/Tax</Label>
                 <Input id="tax" type="number" value={tax} onChange={e => setTax(parseFloat(e.target.value) || 0)} placeholder="0.00" className="text-right w-32" />
             </div>
-             <div className="flex justify-between items-center">
-                <Label htmlFor="paidAmount">Paid Amount</Label>
-                <Input id="paidAmount" type="number" value={paidAmount} onChange={e => setPaidAmount(parseFloat(e.target.value) || 0)} placeholder="0.00" className="text-right w-32" />
-            </div>
             <Separator />
-             <div className="flex justify-between items-center text-lg font-semibold">
-                <p>Grand Total</p>
-                <p>{currencySymbol}{grandTotal.toLocaleString()}</p>
+            <div className="flex justify-between items-center text-lg font-semibold">
+                <p>Total</p>
+                <p>{currencySymbol}{grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
-             <div className="flex justify-between items-center text-lg font-semibold text-destructive">
+            
+            <div className="grid grid-cols-2 gap-4 pt-2">
+                <div className="grid gap-2">
+                    <Label htmlFor="paidAmount">Amount Paid</Label>
+                    <Input
+                        id="paidAmount"
+                        type="number"
+                        value={paidAmount}
+                        onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)}
+                        placeholder="0.00"
+                    />
+                </div>
+                 <div className="grid gap-2">
+                    <Label htmlFor="paymentType">Payment Type</Label>
+                    <Select value={paymentType} onValueChange={(value) => setPaymentType(value as any)}>
+                        <SelectTrigger id="paymentType">
+                            <SelectValue placeholder="Select Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="Cash">Cash</SelectItem>
+                            <SelectItem value="Card">Card</SelectItem>
+                            <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+
+            <Separator />
+            <div className="flex justify-between items-center text-lg font-semibold text-destructive">
                 <p>Due Amount</p>
-                <p>{currencySymbol}{dueAmount.toLocaleString()}</p>
+                <p>{currencySymbol}{dueAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
-        </div>
+          </div>
         </div>
         <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
