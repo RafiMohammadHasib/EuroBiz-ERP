@@ -161,16 +161,15 @@ service cloud.firestore {
     }
 
     match /sales_returns/{returnId} {
-        allow read: if isSignedIn();
-        allow write: if isAdmin();
+        allow read, write: if isAdmin();
     }
     
     match /sales_commissions/{commissionId} {
-        allow read, write: if isSignedIn();
+        allow read, write: if isAdmin();
     }
 
     match /invoices/{invoiceId} {
-        allow read: if isSignedIn();
+        allow get, list: if isSignedIn();
         allow write: if isAdmin();
     }
 
@@ -180,7 +179,7 @@ service cloud.firestore {
     }
 
     match /finishedGoods/{goodId} {
-      allow read: if isSignedIn();
+      allow get, list: if isSignedIn();
       allow write: if isAdmin();
     }
     
@@ -324,5 +323,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
