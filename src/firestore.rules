@@ -116,8 +116,8 @@ service cloud.firestore {
     }
     
     match /settings/{settingId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
+      allow get: if isSignedIn();
+      allow list, write: if isAdmin();
     }
 
     /**
@@ -140,8 +140,8 @@ service cloud.firestore {
      * @principle Public read for signed-in users, with writes restricted to admins.
      */
     match /distributors/{distributorId} {
-        allow get, list: if isSignedIn();
-        allow write: if isAdmin();
+      allow get, list: if isSignedIn();
+      allow write: if isAdmin();
     }
 
     /**
@@ -160,13 +160,10 @@ service cloud.firestore {
         allow get, list: if isSignedIn();
         allow write: if isAdmin();
     }
-
-    match /sales_returns/{returnId} {
-        allow read, write: if isAdmin();
-    }
     
     match /sales_commissions/{commissionId} {
-        allow read, write: if isAdmin();
+        allow list: if isSignedIn();
+        allow get, write: if isAdmin();
     }
 
     match /invoices/{invoiceId} {
@@ -265,20 +262,6 @@ service cloud.firestore {
       allow create: if isOwner(customerId) && request.resource.data.customerId == customerId;
       allow update: if isExistingOwner(customerId) && request.resource.data.customerId == resource.data.customerId;
       allow delete: if isExistingOwner(customerId);
-
-      /**
-       * @description Secures sales returns associated with a customer's invoice.
-       * @path /customers/{customerId}/invoices/{invoiceId}/returns/{returnId}
-       * @allow (create) A customer can log a return for their own invoice.
-       * @deny (get) Another customer cannot view return data for an invoice that is not theirs.
-       * @principle Inherits ownership from the path and validates the invoice link.
-       */
-      match /returns/{returnId} {
-        allow get, list: if isOwner(customerId);
-        allow create: if isOwner(customerId) && request.resource.data.invoiceId == invoiceId;
-        allow update: if isExistingOwner(customerId) && request.resource.data.invoiceId == resource.data.invoiceId;
-        allow delete: if isExistingOwner(customerId);
-      }
 
       /**
        * @description Secures outstanding due records for a customer's invoice.
