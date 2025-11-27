@@ -134,7 +134,14 @@ export default function SettingsPage() {
     setIsSavingProfile(true);
     try {
       await updateProfile(user, { displayName: profileSettings.displayName });
-      await setDoc(profileSettingsDocRef, profileSettings, { merge: true });
+      
+      const dataToSave = {
+        uid: user.uid, // Ensure UID is part of the document
+        ...profileSettings,
+      };
+      
+      await setDoc(profileSettingsDocRef, dataToSave, { merge: true });
+      
       toast({
         title: 'Profile Updated',
         description: 'Your display name has been successfully updated.',
