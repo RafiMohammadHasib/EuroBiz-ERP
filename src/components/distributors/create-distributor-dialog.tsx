@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 interface CreateDistributorDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreate: (distributor: Omit<Distributor, 'id' | 'totalSales'>) => void;
+  onCreate: (distributor: Omit<Distributor, 'id' | 'totalSales' | 'totalCommission' | 'outstandingDues'>) => void;
 }
 
 export function CreateDistributorDialog({ isOpen, onOpenChange, onCreate }: CreateDistributorDialogProps) {
@@ -41,7 +41,7 @@ export function CreateDistributorDialog({ isOpen, onOpenChange, onCreate }: Crea
       return;
     }
 
-    const distributorData: Omit<Distributor, 'id' | 'totalSales'> = {
+    const distributorData: Omit<Distributor, 'id' | 'totalSales' | 'totalCommission' | 'outstandingDues'> = {
       name,
       location,
       tier,
@@ -65,7 +65,7 @@ export function CreateDistributorDialog({ isOpen, onOpenChange, onCreate }: Crea
         <DialogHeader>
           <DialogTitle>Add New Distributor</DialogTitle>
           <DialogDescription>
-            Fill in the details for the new distributor. Total sales will be calculated automatically.
+            Fill in the details for the new distributor. Financial data will be calculated automatically.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

@@ -10,8 +10,8 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, MoreHorizontal, Users, Truck, DollarSign, TrendingUp, Award, Mail, Phone } from "lucide-react"
-import { type Distributor, type Invoice } from "@/lib/data"
+import { PlusCircle, MoreHorizontal, Users, Truck, DollarSign, TrendingUp, Award, Mail, Phone, CreditCard, Percent } from "lucide-react"
+import { type Distributor, type Invoice, type SalesCommission } from "@/lib/data"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { CreateDistributorDialog } from "@/components/distributors/create-distributor-dialog";
@@ -26,38 +26,53 @@ export default function DistributorsPage() {
     
     const distributorsCollection = useMemoFirebase(() => collection(firestore, 'distributors'), [firestore]);
     const invoicesCollection = useMemoFirebase(() => collection(firestore, 'invoices'), [firestore]);
+    const salesCommissionsCollection = useMemoFirebase(() => collection(firestore, 'sales_commissions'), [firestore]);
 
     const { data: distributors, isLoading: distributorsLoading } = useCollection<Distributor>(distributorsCollection);
     const { data: invoices, isLoading: invoicesLoading } = useCollection<Invoice>(invoicesCollection);
+    const { data: salesCommissions, isLoading: scLoading } = useCollection<SalesCommission>(salesCommissionsCollection);
     
     const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
     const { toast } = useToast();
     
-    const isLoading = distributorsLoading || invoicesLoading;
+    const isLoading = distributorsLoading || invoicesLoading || scLoading;
 
     const distributorData = useMemo(() => {
-        if (!distributors || !invoices) return [];
+        if (!distributors || !invoices || !salesCommissions) return [];
         return distributors.map(dist => {
-            const distributorInvoices = invoices.filter(inv => inv.customer === dist.name && inv.status === 'Paid');
-            const totalSales = distributorInvoices.reduce((acc, inv) => acc + inv.amount, 0);
+            const distributorInvoices = invoices.filter(inv => inv.customer === dist.name);
+            const totalSales = distributorInvoices
+                .filter(inv => inv.status === 'Paid')
+                .reduce((acc, inv) => acc + inv.totalAmount, 0);
+            
+            const outstandingDues = distributorInvoices.reduce((acc, inv) => acc + inv.dueAmount, 0);
+
+            const totalCommission = salesCommissions
+                .filter(sc => sc.distributionChannelId === dist.id)
+                .reduce((acc, sc) => acc + sc.commissionAmount, 0);
+
             return {
                 ...dist,
                 totalSales,
+                outstandingDues,
+                totalCommission
             }
-        })
-    }, [distributors, invoices]);
+        });
+    }, [distributors, invoices, salesCommissions]);
 
 
     const totalDistributors = distributorData.length;
     const totalSales = distributorData.reduce((acc, dist) => acc + dist.totalSales, 0);
-    const averageSales = totalDistributors > 0 ? totalSales / totalDistributors : 0;
-    const topDistributor = distributorData.length > 0 ? distributorData.reduce((prev, current) => (prev.totalSales > current.totalSales) ? prev : current) : null;
+    const totalDues = distributorData.reduce((acc, dist) => acc + dist.outstandingDues, 0);
+    const totalCommissionsPaid = distributorData.reduce((acc, dist) => acc + dist.totalCommission, 0);
 
-    const addDistributor = async (newDistributorData: Omit<Distributor, 'id' | 'totalSales'>) => {
+    const addDistributor = async (newDistributorData: Omit<Distributor, 'id' | 'totalSales' | 'totalCommission' | 'outstandingDues'>) => {
       try {
         const newDistributor = {
             ...newDistributorData,
-            totalSales: 0, // Initialize totalSales to 0
+            totalSales: 0,
+            totalCommission: 0,
+            outstandingDues: 0
         };
         await addDoc(distributorsCollection, newDistributor);
         toast({
@@ -81,42 +96,42 @@ export default function DistributorsPage() {
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Distributors</CardTitle>
-                    <Truck className="h-4 w-4 text-muted-foreground" />
+                    <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{totalDistributors}</div>
-                    <p className="text-xs text-muted-foreground">Active distributors</p>
+                    <p className="text-xs text-muted-foreground">Active distributors in your network</p>
                 </CardContent>
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Distributor Sales</CardTitle>
+                    <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{currencySymbol}{totalSales.toLocaleString()}</div>
-                    <p className="text-xs text-muted-foreground">From all distributors</p>
+                    <p className="text-xs text-muted-foreground">From all distributor sales</p>
                 </CardContent>
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Average Sales</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className="text-sm font-medium">Outstanding Dues</CardTitle>
+                    <CreditCard className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{currencySymbol}{averageSales.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
-                    <p className="text-xs text-muted-foreground">Per distributor</p>
+                    <div className="text-2xl font-bold">{currencySymbol}{totalDues.toLocaleString()}</div>
+                    <p className="text-xs text-muted-foreground">Total receivable from distributors</p>
                 </CardContent>
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Top Performer</CardTitle>
-                    <Award className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className="text-sm font-medium">Commissions Paid</CardTitle>
+                    <Percent className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{topDistributor?.name || 'N/A'}</div>
+                    <div className="text-2xl font-bold">{currencySymbol}{totalCommissionsPaid.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">
-                        {topDistributor ? `${currencySymbol}${topDistributor.totalSales.toLocaleString()} in sales` : 'No distributors found'}
+                        Total commissions paid to all distributors
                     </p>
                 </CardContent>
             </Card>
@@ -125,9 +140,9 @@ export default function DistributorsPage() {
         <CardHeader>
             <div className="flex items-center justify-between">
                 <div>
-                    <CardTitle>Distributors</CardTitle>
+                    <CardTitle>Distributor Report</CardTitle>
                     <CardDescription>
-                    Manage your sales distributors.
+                    A comprehensive overview of your sales distributors.
                     </CardDescription>
                 </div>
                 <Button size="sm" className="h-8 gap-1" onClick={() => setCreateDialogOpen(true)}>
@@ -143,10 +158,11 @@ export default function DistributorsPage() {
                 <TableHeader>
                     <TableRow>
                         <TableHead>Distributor Name</TableHead>
-                        <TableHead>Location</TableHead>
                         <TableHead>Contact</TableHead>
                         <TableHead>Tier</TableHead>
                         <TableHead className="text-right">Total Sales</TableHead>
+                        <TableHead className="text-right">Outstanding Dues</TableHead>
+                        <TableHead className="text-right">Total Commissions</TableHead>
                         <TableHead>
                             <span className="sr-only">Actions</span>
                         </TableHead>
@@ -155,19 +171,23 @@ export default function DistributorsPage() {
                 <TableBody>
                     {isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center">Loading...</TableCell>
+                        <TableCell colSpan={7} className="h-24 text-center">Loading...</TableCell>
                       </TableRow>
                     ) : (
                       distributorData.map((dist) => (
                         <TableRow key={dist.id}>
-                            <TableCell className="font-medium">{dist.name}</TableCell>
-                            <TableCell>{dist.location}</TableCell>
+                            <TableCell className="font-medium">
+                                <div>{dist.name}</div>
+                                <div className="text-xs text-muted-foreground">{dist.location}</div>
+                            </TableCell>
                             <TableCell>
                                 {dist.email && <div className="flex items-center gap-2 text-sm"><Mail className="h-3 w-3" /> {dist.email}</div>}
                                 {dist.phone && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Phone className="h-3 w-3" /> {dist.phone}</div>}
                             </TableCell>
                             <TableCell>{dist.tier}</TableCell>
                             <TableCell className="text-right">{currencySymbol}{dist.totalSales.toLocaleString()}</TableCell>
+                            <TableCell className="text-right text-destructive">{currencySymbol}{dist.outstandingDues.toLocaleString()}</TableCell>
+                            <TableCell className="text-right">{currencySymbol}{dist.totalCommission.toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
                             <TableCell>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>

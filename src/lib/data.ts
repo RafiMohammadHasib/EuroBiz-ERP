@@ -277,14 +277,16 @@ export type Distributor = {
     location: string;
     tier: 'Tier 1' | 'Tier 2' | 'Tier 3';
     totalSales: number;
+    outstandingDues: number;
+    totalCommission: number;
     email?: string;
     phone?: string;
 }
 
 export const distributors: Distributor[] = [
-    { id: 'DIST-01', name: 'Dhaka Paint Supplies', location: 'Dhaka, Bangladesh', tier: 'Tier 1', totalSales: 550000, email: 'contact@dps.com', phone: '01700000001' },
-    { id: 'DIST-02', name: 'Chittagong Coatings', location: 'Chittagong, Bangladesh', tier: 'Tier 2', totalSales: 320000, email: 'sales@cc.com', phone: '01800000002' },
-    { id: 'DIST-03', name: 'Sylhet Colors', location: 'Sylhet, Bangladesh', tier: 'Tier 3', totalSales: 150000, email: 'info@sylhetcolors.com', phone: '01900000003' },
+    { id: 'DIST-01', name: 'Dhaka Paint Supplies', location: 'Dhaka, Bangladesh', tier: 'Tier 1', totalSales: 550000, outstandingDues: 50000, totalCommission: 27500, email: 'contact@dps.com', phone: '01700000001' },
+    { id: 'DIST-02', name: 'Chittagong Coatings', location: 'Chittagong, Bangladesh', tier: 'Tier 2', totalSales: 320000, outstandingDues: 15000, totalCommission: 16000, email: 'sales@cc.com', phone: '01800000002' },
+    { id: 'DIST-03', name: 'Sylhet Colors', location: 'Sylhet, Bangladesh', tier: 'Tier 3', totalSales: 150000, outstandingDues: 0, totalCommission: 7500, email: 'info@sylhetcolors.com', phone: '01900000003' },
 ];
 
 export type Supplier = {
