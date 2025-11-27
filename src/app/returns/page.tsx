@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -10,107 +10,113 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { invoices, salesReturns as initialSalesReturns } from '@/lib/data';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DollarSign, Package, Undo } from 'lucide-react';
+import { DollarSign, Package, Undo, PlusCircle } from 'lucide-react';
 import { useSettings } from '@/context/settings-context';
-
-// This is a client-side simulation. State is not persisted.
-let finishedGoodsInventory = 150; // Starting mock inventory
-let localInvoices = JSON.parse(JSON.stringify(invoices)); // Deep copy for local manipulation
-let localSalesReturns = [...initialSalesReturns];
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, writeBatch, doc, serverTimestamp } from 'firebase/firestore';
+import type { SalesReturn, Invoice, FinishedGood } from '@/lib/data';
+import { ProcessReturnDialog } from '@/components/returns/process-return-dialog';
 
 export default function ReturnsPage() {
   const { toast } = useToast();
-  const { currencySymbol, currency } = useSettings();
-  const [invoiceId, setInvoiceId] = useState('');
-  const [returnAmount, setReturnAmount] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [salesReturns, setSalesReturns] = useState(localSalesReturns);
+  const { currencySymbol } = useSettings();
+  const firestore = useFirestore();
 
-  const totalReturnValue = salesReturns.reduce((acc, r) => acc + r.amount, 0);
-  const totalReturnsProcessed = salesReturns.length;
-  const totalUnitsReturned = salesReturns.reduce((acc, r) => acc + r.returnedUnits, 0);
+  const [isProcessReturnOpen, setProcessReturnOpen] = useState(false);
 
-  const handleProcessReturn = () => {
-    setIsLoading(true);
+  const returnsCollection = useMemoFirebase(() => collection(firestore, 'sales_returns'), [firestore]);
+  const invoicesCollection = useMemoFirebase(() => collection(firestore, 'invoices'), [firestore]);
+  const productsCollection = useMemoFirebase(() => collection(firestore, 'finishedGoods'), [firestore]);
 
-    const amount = parseFloat(returnAmount);
-    if (!invoiceId || !returnAmount || isNaN(amount) || amount <= 0) {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid Input',
-        description: 'Please provide a valid Invoice ID and return amount.',
-      });
-      setIsLoading(false);
-      return;
+  const { data: salesReturns, isLoading: returnsLoading } = useCollection<SalesReturn>(returnsCollection);
+  const { data: invoices, isLoading: invoicesLoading } = useCollection<Invoice>(invoicesCollection);
+  const { data: products, isLoading: productsLoading } = useCollection<FinishedGood>(productsCollection);
+
+  const safeReturns = salesReturns || [];
+  const safeInvoices = invoices || [];
+  const safeProducts = products || [];
+  const isLoading = returnsLoading || invoicesLoading || productsLoading;
+
+  const totalReturnValue = safeReturns.reduce((acc, r) => acc + r.amount, 0);
+  const totalReturnsProcessed = safeReturns.length;
+  const totalUnitsReturned = safeReturns.reduce((acc, r) => acc + (r.returnedUnits || 0), 0);
+
+  const handleProcessReturn = async (invoice: Invoice, returnItems: { productId: string; quantity: number }[], reason: string) => {
+    if (!firestore) return;
+    
+    let totalReturnAmount = 0;
+    const batch = writeBatch(firestore);
+
+    // 1. Update inventory and calculate total return value
+    for (const item of returnItems) {
+        const product = safeProducts.find(p => p.id === item.productId);
+        if (product) {
+            const returnAmountForItem = item.quantity * (product.sellingPrice || 0);
+            totalReturnAmount += returnAmountForItem;
+
+            const productRef = doc(firestore, 'finishedGoods', product.id);
+            batch.update(productRef, {
+                quantity: product.quantity + item.quantity
+            });
+        }
     }
+    
+    // 2. Update the invoice
+    const invoiceRef = doc(firestore, 'invoices', invoice.id);
+    const newPaidAmount = Math.max(0, invoice.paidAmount - totalReturnAmount);
+    const newDueAmount = Math.max(0, invoice.dueAmount - totalReturnAmount);
+    let newStatus: Invoice['status'] = invoice.status;
 
-    const invoiceIndex = localInvoices.findIndex((inv: any) => inv.id === invoiceId && inv.status !== 'Paid');
-
-    if (invoiceIndex === -1) {
-      toast({
-        variant: 'destructive',
-        title: 'Invoice Not Found',
-        description: 'Could not find an unpaid or overdue invoice with that ID.',
-      });
-      setIsLoading(false);
-      return;
+    if (invoice.totalAmount - totalReturnAmount <= newPaidAmount) {
+        newStatus = 'Paid';
+    } else if (newPaidAmount > 0) {
+        newStatus = 'Partially Paid';
+    } else {
+        newStatus = 'Unpaid';
     }
+    
+    batch.update(invoiceRef, {
+        paidAmount: newPaidAmount,
+        dueAmount: newDueAmount,
+        status: newStatus,
+        totalAmount: invoice.totalAmount - totalReturnAmount,
+    });
 
-    const invoice = localInvoices[invoiceIndex];
-    if (amount > invoice.dueAmount) {
-        toast({
-            variant: 'destructive',
-            title: 'Invalid Amount',
-            description: 'Return amount cannot be greater than the invoice due amount.',
-        });
-        setIsLoading(false);
-        return;
-    }
-
-    // Simulate the business logic
-    // 1. Decrease the outstanding due amount
-    localInvoices[invoiceIndex].dueAmount -= amount;
-    localInvoices[invoiceIndex].paidAmount -= amount; // Assuming a return is a refund against what was paid or owed
-
-    // 2. Add returned stock to inventory (assuming each 15 BDT is one unit for this mock)
-    const returnedUnits = Math.floor(amount / 15);
-    finishedGoodsInventory += returnedUnits;
 
     // 3. Create a new return record
-    const newReturn = {
-        id: `RET-${String(localSalesReturns.length + 1).padStart(3, '0')}`,
+    const returnRef = doc(collection(firestore, 'sales_returns'));
+    const newReturn: Omit<SalesReturn, 'id'> = {
         invoiceId: invoice.id,
         customer: invoice.customer,
-        date: new Date().toISOString().split('T')[0],
-        amount,
-        returnedUnits,
+        date: new Date().toISOString(),
+        amount: totalReturnAmount,
+        returnedUnits: returnItems.reduce((acc, item) => acc + item.quantity, 0),
+        reason: reason,
     };
-    localSalesReturns.push(newReturn);
-    setSalesReturns([...localSalesReturns]);
-
-    // In a real app, you would call a server action here to update the database.
-    setTimeout(() => {
+    batch.set(returnRef, newReturn);
+    
+    try {
+        await batch.commit();
         toast({
-          title: 'Return Processed Successfully',
-          description: `Invoice ${invoiceId} has been updated. The new due amount is ${localInvoices[invoiceIndex].dueAmount.toLocaleString('en-US', { style: 'currency', currency: currency })}. ${returnedUnits} units returned to inventory.`,
+            title: 'Return Processed',
+            description: `Return for invoice ${invoice.id} has been processed successfully.`,
         });
-        setInvoiceId('');
-        setReturnAmount('');
-        setIsLoading(false);
-        
-        // This is a trick to notify other components that data has changed
-        window.dispatchEvent(new CustomEvent('data-updated', { detail: { localInvoices, finishedGoodsInventory }}));
-    }, 1000);
-
-
+        return true; // Indicate success
+    } catch (error) {
+        console.error("Error processing return: ", error);
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Could not process the return.',
+        });
+        return false; // Indicate failure
+    }
   };
 
   return (
+    <>
     <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <Card>
@@ -145,74 +151,68 @@ export default function ReturnsPage() {
             </Card>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-5">
-            <div className="md:col-span-2">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Process Sales Return</CardTitle>
+        <Card>
+            <CardHeader>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <CardTitle>Sales Returns</CardTitle>
                         <CardDescription>
-                        Enter invoice ID and return value to update inventory and dues.
+                            Manage and track all sales returns.
                         </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="space-y-2">
-                        <Label htmlFor="invoice-id">Original Invoice ID</Label>
-                        <Input
-                            id="invoice-id"
-                            placeholder="e.g., INV-003"
-                            value={invoiceId}
-                            onChange={(e) => setInvoiceId(e.target.value.toUpperCase())}
-                        />
-                        </div>
-                        <div className="space-y-2">
-                        <Label htmlFor="return-amount">Value of Returned Goods ({currencySymbol})</Label>
-                        <Input
-                            id="return-amount"
-                            type="number"
-                            placeholder="e.g., 10000"
-                            value={returnAmount}
-                            onChange={(e) => setReturnAmount(e.target.value)}
-                        />
-                        </div>
-                        <Button onClick={handleProcessReturn} disabled={isLoading} className="w-full">
-                        {isLoading ? 'Processing...' : 'Process Return'}
-                        </Button>
-                    </CardContent>
-                </Card>
-            </div>
-            <div className="md:col-span-3">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Recent Returns</CardTitle>
-                        <CardDescription>
-                        A log of the most recently processed sales returns.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Return ID</TableHead>
-                                    <TableHead>Customer</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead className="text-right">Amount</TableHead>
+                    </div>
+                    <Button size="sm" className="h-8 gap-1" onClick={() => setProcessReturnOpen(true)}>
+                        <PlusCircle className="h-3.5 w-3.5" />
+                        <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                            Process Return
+                        </span>
+                    </Button>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Return ID</TableHead>
+                            <TableHead>Invoice ID</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="h-24 text-center">Loading...</TableCell>
+                            </TableRow>
+                        ) : safeReturns.length > 0 ? (
+                            safeReturns.map((r) => (
+                                <TableRow key={r.id}>
+                                    <TableCell className="font-medium">{r.id}</TableCell>
+                                    <TableCell>{r.invoiceId}</TableCell>
+                                    <TableCell>{r.customer}</TableCell>
+                                    <TableCell>{new Date(r.date).toLocaleDateString()}</TableCell>
+                                    <TableCell className="text-right">{currencySymbol}{r.amount.toLocaleString()}</TableCell>
                                 </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {salesReturns.map((r) => (
-                                    <TableRow key={r.id}>
-                                        <TableCell className="font-medium">{r.id}</TableCell>
-                                        <TableCell>{r.customer}</TableCell>
-                                        <TableCell>{new Date(r.date).toLocaleDateString()}</TableCell>
-                                        <TableCell className="text-right">{currencySymbol}{r.amount.toLocaleString()}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
+                            ))
+                        ) : (
+                             <TableRow>
+                                <TableCell colSpan={5} className="h-24 text-center">
+                                    No sales returns found.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
     </div>
+    <ProcessReturnDialog
+        isOpen={isProcessReturnOpen}
+        onOpenChange={setProcessReturnOpen}
+        invoices={safeInvoices}
+        products={safeProducts}
+        onProcessReturn={handleProcessReturn}
+    />
+    </>
   );
 }
