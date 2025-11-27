@@ -84,7 +84,6 @@ export const navGroups: NavGroup[] = [
         label: "Analysis & Tools",
         items: [
             { href: "/forecast", label: "AI Forecast", icon: BrainCircuit },
-            { href: "/sql-viewer", label: "SQL Viewer", icon: Database },
         ]
     }
 ]

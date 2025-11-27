@@ -11,14 +11,15 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Copy, Check, Download } from 'lucide-react';
 import { collection, doc, setDoc, addDoc } from 'firebase/firestore';
-import type { Commission, FinishedGood, RawMaterial, Distributor } from '@/lib/data';
+import type { Commission, FinishedGood, RawMaterial, Distributor, PurchaseOrder, SalesCommission } from '@/lib/data';
 import { CreateCommissionRuleDialog } from '@/components/commissions/create-commission-rule-dialog';
 import { CreateFormulaDialog } from '@/components/settings/create-formula-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSettings } from '@/context/settings-context';
 import { companyDetails as initialCompanyDetails } from '@/lib/data';
+import { Textarea } from '@/components/ui/textarea';
 
 
 type ProfileSettings = {
@@ -38,6 +39,12 @@ type BusinessSettings = {
     logoUrl: string;
 };
 
+type ForeignKey = {
+  column: string;
+  referencesTable: string;
+  referencesColumn: string;
+};
+
 export default function SettingsPage() {
   const { user } = useUser();
   const auth = useAuth();
@@ -54,6 +61,9 @@ export default function SettingsPage() {
   const finishedGoodsCollection = useMemoFirebase(() => collection(firestore, 'finishedGoods'), [firestore]);
   const rawMaterialsCollection = useMemoFirebase(() => collection(firestore, 'rawMaterials'), [firestore]);
   const distributorsCollection = useMemoFirebase(() => collection(firestore, 'distributors'), [firestore]);
+  const purchaseOrdersCollection = useMemoFirebase(() => collection(firestore, 'purchaseOrders'), [firestore]);
+  const salesCommissionsCollection = useMemoFirebase(() => collection(firestore, 'sales_commissions'), [firestore]);
+
   
   // --- Data Hooks ---
   const { data: profileSettingsData, isLoading: profileLoading } = useDoc<ProfileSettings>(profileSettingsDocRef);
@@ -64,6 +74,9 @@ export default function SettingsPage() {
   const { data: finishedGoods, isLoading: fgLoading } = useCollection<FinishedGood>(finishedGoodsCollection);
   const { data: rawMaterials, isLoading: rmLoading } = useCollection<RawMaterial>(rawMaterialsCollection);
   const { data: distributors, isLoading: distLoading } = useCollection<Distributor>(distributorsCollection);
+  const { data: purchaseOrders, isLoading: poLoading } = useCollection<PurchaseOrder>(purchaseOrdersCollection);
+  const { data: salesCommissions, isLoading: scLoading } = useCollection<SalesCommission>(salesCommissionsCollection);
+
 
   // --- Component State ---
   const [profileSettings, setProfileSettings] = useState<ProfileSettings>({ displayName: '' });
@@ -87,6 +100,8 @@ export default function SettingsPage() {
 
   const [isCommissionRuleDialogOpen, setCommissionRuleDialogOpen] = useState(false);
   const [isFormulaDialogOpen, setFormulaDialogOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
 
   // --- Effects to sync state with data from hooks ---
   useEffect(() => {
@@ -242,6 +257,126 @@ export default function SettingsPage() {
         });
     }
   };
+  
+    // --- Data Backup Logic ---
+    const generateSqlForTable = (tableName: string, data: any[], foreignKeys: ForeignKey[] = []): string => {
+        if (!data || !data.length) return `-- No data for table: ${tableName}\n`;
+
+        const firstItem = data[0];
+        const columns = Object.keys(firstItem);
+        
+        let createTableStatement = `CREATE TABLE IF NOT EXISTS "${tableName}" (\n`;
+
+        columns.forEach((column) => {
+        const value = firstItem[column];
+        let sqlType: string;
+
+        const fk = foreignKeys.find(fk => fk.column === column);
+
+        if (column.endsWith('_id') || column === 'id' || fk) {
+            sqlType = 'VARCHAR(255)';
+            if(column === 'id') {
+                sqlType += ' PRIMARY KEY NOT NULL';
+            }
+        } else {
+            switch (typeof value) {
+                case 'number':
+                    sqlType = Number.isInteger(value) ? 'INTEGER' : 'DECIMAL(10, 2)';
+                    break;
+                case 'string':
+                    if (column.toLowerCase().includes('date')) {
+                        sqlType = 'DATE';
+                    } else if (value.length > 255 || column.toLowerCase().includes('description')) {
+                        sqlType = 'TEXT';
+                    } else {
+                        sqlType = 'VARCHAR(255)';
+                    }
+                    break;
+                case 'boolean':
+                    sqlType = 'BOOLEAN';
+                    break;
+                case 'object':
+                    if (value && 'seconds' in value && 'nanoseconds' in value) {
+                       sqlType = 'TIMESTAMP'; // Firestore timestamp
+                    } else {
+                       sqlType = 'TEXT'; // JSON string for other objects/arrays
+                    }
+                    break;
+                default:
+                    sqlType = 'TEXT'; // For arrays, objects, etc.
+            }
+            if(!column.endsWith('description')) {
+                sqlType += ' NOT NULL';
+            }
+        }
+        
+        createTableStatement += `  "${column}" ${sqlType},\n`;
+        });
+
+        foreignKeys.forEach(fk => {
+            createTableStatement += `  FOREIGN KEY ("${fk.column}") REFERENCES "${fk.referencesTable}"("${fk.referencesColumn}"),\n`;
+        });
+
+        if(createTableStatement.trim().endsWith(',')) {
+            createTableStatement = createTableStatement.trim().slice(0, -1);
+        }
+        
+        createTableStatement += '\n);\n\n';
+
+        let insertStatements = `INSERT INTO "${tableName}" ("${columns.join('", "')}") VALUES\n`;
+        data.forEach((item, itemIndex) => {
+        const values = columns.map(column => {
+            let value = item[column];
+            if (value === null || value === undefined) {
+                return 'NULL';
+            }
+            if (Array.isArray(value) || (value !== null && typeof value === 'object')) {
+                if (value && 'seconds' in value && 'nanoseconds' in value) {
+                     return `'${new Date(value.seconds * 1000).toISOString()}'`;
+                }
+                value = JSON.stringify(value).replace(/'/g, "''");
+                return `'${value}'`;
+            }
+            if (typeof value === 'string') {
+            return `'${value.replace(/'/g, "''")}'`;
+            }
+            return value;
+        });
+        insertStatements += `  (${values.join(', ')})${itemIndex === data.length - 1 ? ';' : ','}\n`;
+        });
+
+        return createTableStatement + insertStatements;
+    };
+  
+    const allSql = useMemo(() => [
+        generateSqlForTable('suppliers', suppliers),
+        generateSqlForTable('distributors', distributors),
+        generateSqlForTable('raw_materials', rawMaterials),
+        generateSqlForTable('finished_goods', finishedGoods),
+        generateSqlForTable('purchase_orders', purchaseOrders),
+        generateSqlForTable('commissions', commissions),
+        generateSqlForTable('sales_commissions', salesCommissions),
+    ].join('\n\n'), [suppliers, distributors, rawMaterials, finishedGoods, purchaseOrders, commissions, salesCommissions]);
+
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(allSql);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+    
+    const handleDownload = () => {
+        const blob = new Blob([allSql], { type: 'application/sql' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'data_backup.sql';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
 
   return (
     <>
@@ -253,10 +388,11 @@ export default function SettingsPage() {
             </p>
         </div>
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-4">
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="system">System</TabsTrigger>
               <TabsTrigger value="business">Business</TabsTrigger>
+              <TabsTrigger value="backup">Data Backup</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="mt-6">
@@ -410,7 +546,7 @@ export default function SettingsPage() {
                                 <div key={rule.id} className="flex justify-between items-center rounded-lg border p-4">
                                     <div>
                                         <p className="font-semibold">{rule.ruleName}</p>
-                                        <p className="text-sm text-muted-foreground">{rule.appliesTo}</p>
+                                        <p className="text-sm text-muted-foreground">{Array.isArray(rule.appliesTo) ? rule.appliesTo.join(', ') : rule.appliesTo}</p>
                                     </div>
                                     <div className="font-semibold text-primary">
                                         {rule.type === 'Percentage' ? `${rule.rate}%` : `৳${rule.rate.toLocaleString()}`}
@@ -466,6 +602,34 @@ export default function SettingsPage() {
                       </Button>
                   </CardFooter>
               </Card>
+          </TabsContent>
+
+          <TabsContent value="backup" className="mt-6">
+             <Card>
+                <CardHeader>
+                    <CardTitle>Data Backup</CardTitle>
+                    <CardDescription>
+                        Generate a complete SQL backup of your most important business data from Firestore.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-center gap-4">
+                        <Button variant="outline" onClick={handleCopy} className="w-full sm:w-auto">
+                            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                            <span className="ml-2">{copied ? 'Copied!' : 'Copy SQL to Clipboard'}</span>
+                        </Button>
+                        <Button onClick={handleDownload} className="w-full sm:w-auto">
+                            <Download className="h-4 w-4" />
+                            <span className="ml-2">Download .sql File</span>
+                        </Button>
+                    </div>
+                    <Textarea
+                        readOnly
+                        value={allSql}
+                        className="font-mono bg-muted h-[60vh] text-xs"
+                    />
+                </CardContent>
+            </Card>
           </TabsContent>
 
         </Tabs>
