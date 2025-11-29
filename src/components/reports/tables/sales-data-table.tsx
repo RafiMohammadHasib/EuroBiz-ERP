@@ -4,7 +4,7 @@
 import { useMemo, useState } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
-import type { Invoice, SalesCommission, FinishedGood } from "@/lib/data";
+import type { Invoice } from "@/lib/data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -16,10 +16,11 @@ import { useSettings } from "@/context/settings-context";
 import SalesChart from "@/components/dashboard/sales-chart";
 import ProductPerformanceChart from "../product-performance-chart";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DateRange } from "react-day-picker";
 
 type SortKey = keyof Invoice | 'amount';
 
-export function SalesDataTable() {
+export function SalesDataTable({ dateRange }: { dateRange?: DateRange }) {
     const firestore = useFirestore();
     const { currencySymbol } = useSettings();
 
@@ -40,18 +41,28 @@ export function SalesDataTable() {
     
     const isLoading = l1;
 
-    const safeInvoices = useMemo(() => invoices || [], [invoices]);
+    const filteredInvoices = useMemo(() => {
+        let items = invoices || [];
+        if (dateRange?.from) {
+            items = items.filter(item => new Date(item.date) >= dateRange.from!);
+        }
+        if (dateRange?.to) {
+            items = items.filter(item => new Date(item.date) <= dateRange.to!);
+        }
+        return items;
+    }, [invoices, dateRange]);
+
 
     const kpiData = useMemo(() => {
-        const totalRevenue = safeInvoices.reduce((acc, inv) => acc + (inv.paidAmount ?? 0), 0);
-        const totalSales = safeInvoices.reduce((acc, inv) => acc + (inv.totalAmount ?? 0), 0);
-        const totalInvoices = safeInvoices.length;
+        const totalRevenue = filteredInvoices.reduce((acc, inv) => acc + (inv.paidAmount ?? 0), 0);
+        const totalSales = filteredInvoices.reduce((acc, inv) => acc + (inv.totalAmount ?? 0), 0);
+        const totalInvoices = filteredInvoices.length;
         const avgSaleValue = totalInvoices > 0 ? totalSales / totalInvoices : 0;
         return { totalRevenue, totalInvoices, avgSaleValue };
-    }, [safeInvoices]);
+    }, [filteredInvoices]);
 
     const sortedInvoices = useMemo(() => {
-        let sortableItems = [...safeInvoices];
+        let sortableItems = [...filteredInvoices];
         if (sortConfig !== null) {
             sortableItems.sort((a, b) => {
                 const aValue = a[sortConfig.key as keyof Invoice];
@@ -66,7 +77,7 @@ export function SalesDataTable() {
             });
         }
         return sortableItems.filter(inv => inv.customer.toLowerCase().includes(searchTerm.toLowerCase()));
-    }, [safeInvoices, sortConfig, searchTerm]);
+    }, [filteredInvoices, sortConfig, searchTerm]);
 
     const requestSort = (key: SortKey) => {
         let direction: 'asc' | 'desc' = 'asc';

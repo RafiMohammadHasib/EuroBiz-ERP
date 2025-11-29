@@ -16,10 +16,11 @@ import { useSettings } from "@/context/settings-context";
 import PurchaseAnalysisChart from "../purchase-analysis-chart";
 import SupplierSpendChart from "../supplier-spend-chart";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DateRange } from "react-day-picker";
 
 type SortKey = keyof PurchaseOrder;
 
-export function PurchasingDataTable() {
+export function PurchasingDataTable({ dateRange }: { dateRange?: DateRange }) {
     const firestore = useFirestore();
     const { currencySymbol } = useSettings();
 
@@ -35,18 +36,27 @@ export function PurchasingDataTable() {
         paymentStatus: true,
         amount: true,
     });
-    
-    const safePOs = useMemo(() => purchaseOrders || [], [purchaseOrders]);
 
+    const filteredPOs = useMemo(() => {
+        let items = purchaseOrders || [];
+        if (dateRange?.from) {
+            items = items.filter(item => new Date(item.date) >= dateRange.from!);
+        }
+        if (dateRange?.to) {
+            items = items.filter(item => new Date(item.date) <= dateRange.to!);
+        }
+        return items;
+    }, [purchaseOrders, dateRange]);
+    
     const kpiData = useMemo(() => {
-        const totalPOValue = safePOs.reduce((acc, po) => acc + po.amount, 0);
-        const totalPOs = safePOs.length;
+        const totalPOValue = filteredPOs.reduce((acc, po) => acc + po.amount, 0);
+        const totalPOs = filteredPOs.length;
         const avgPOValue = totalPOs > 0 ? totalPOValue / totalPOs : 0;
         return { totalPOValue, totalPOs, avgPOValue };
-    }, [safePOs]);
+    }, [filteredPOs]);
 
     const sortedPOs = useMemo(() => {
-        let sortableItems = [...safePOs];
+        let sortableItems = [...filteredPOs];
         if (sortConfig !== null) {
             sortableItems.sort((a, b) => {
                 const aValue = a[sortConfig.key];
@@ -57,7 +67,7 @@ export function PurchasingDataTable() {
             });
         }
         return sortableItems.filter(po => po.supplier.toLowerCase().includes(searchTerm.toLowerCase()));
-    }, [safePOs, sortConfig, searchTerm]);
+    }, [filteredPOs, sortConfig, searchTerm]);
 
     const requestSort = (key: SortKey) => {
         let direction: 'asc' | 'desc' = 'asc';

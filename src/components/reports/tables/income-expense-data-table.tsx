@@ -14,8 +14,9 @@ import { useSettings } from "@/context/settings-context";
 import IncomeExpenseChart from "../income-expense-chart";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DateRange } from "react-day-picker";
 
-export function IncomeExpenseDataTable() {
+export function IncomeExpenseDataTable({ dateRange }: { dateRange?: DateRange }) {
     const firestore = useFirestore();
     const { currencySymbol } = useSettings();
 
@@ -36,60 +37,75 @@ export function IncomeExpenseDataTable() {
 
     const isLoading = l1 || l2 || l3 || l4 || l5 || l6;
 
-    const incomeData = useMemo(() => (invoices || []).filter(i => i.paidAmount > 0).map(i => ({
-        id: i.id,
-        date: i.date,
-        source: `Invoice ${i.id} - ${i.customer}`,
-        amount: i.paidAmount,
-        type: 'Income'
-    })), [invoices]);
-    
-    const expenseData = useMemo(() => {
-        const poExpenses = (purchaseOrders || []).filter(p => p.paidAmount > 0).map(p => ({
+    const filteredData = useMemo(() => {
+        let allItems: {id: string, date: string, source: string, amount: number, type: 'Income' | 'Expense'}[] = [];
+        
+        const incomeData = (invoices || []).map(i => ({
+            id: i.id,
+            date: i.date,
+            source: `Invoice ${i.id} - ${i.customer}`,
+            amount: i.paidAmount,
+            type: 'Income' as const
+        })).filter(i => i.amount > 0);
+
+        const poExpenses = (purchaseOrders || []).map(p => ({
             id: p.id,
             date: p.date,
             source: `PO ${p.id} - ${p.supplier}`,
             amount: p.paidAmount,
-            type: 'Expense'
-        }));
+            type: 'Expense' as const
+        })).filter(p => p.amount > 0);
+
         const prodExpenses = (productionOrders || []).map(p => ({
             id: p.id,
             date: p.startDate,
             source: `Production ${p.id} - ${p.productName}`,
             amount: p.labourCost + p.otherCosts,
-            type: 'Expense'
-        }));
+            type: 'Expense' as const
+        })).filter(p => p.amount > 0);
+
         const salaryExpenses = (salaryPayments || []).map(p => ({
             id: p.id,
             date: p.paymentDate,
             source: `Salary - ${p.employeeName}`,
             amount: p.amount,
-            type: 'Expense'
+            type: 'Expense' as const
         }));
+
         const commissionExpenses = (salesCommissions || []).map(c => ({
             id: c.id,
             date: c.saleDate,
             source: `Commission for Inv ${c.invoiceId}`,
             amount: c.commissionAmount,
-            type: 'Expense'
+            type: 'Expense' as const
         }));
+
         const generalExpenses = (expenses || []).map(e => ({
             id: e.id,
             date: e.date,
             source: `${e.category}: ${e.description}`,
             amount: e.amount,
-            type: 'Expense'
+            type: 'Expense' as const
         }));
 
-        return [...poExpenses, ...prodExpenses, ...salaryExpenses, ...commissionExpenses, ...generalExpenses];
-    }, [purchaseOrders, productionOrders, salaryPayments, salesCommissions, expenses]);
+        allItems = [...incomeData, ...poExpenses, ...prodExpenses, ...salaryExpenses, ...commissionExpenses, ...generalExpenses];
+        
+        if (dateRange?.from) {
+            allItems = allItems.filter(item => new Date(item.date) >= dateRange.from!);
+        }
+        if (dateRange?.to) {
+            allItems = allItems.filter(item => new Date(item.date) <= dateRange.to!);
+        }
+        return allItems;
+    }, [invoices, purchaseOrders, productionOrders, salaryPayments, salesCommissions, expenses, dateRange]);
+
 
     const kpiData = useMemo(() => {
-        const totalIncome = incomeData.reduce((acc, item) => acc + item.amount, 0);
-        const totalExpense = expenseData.reduce((acc, item) => acc + item.amount, 0);
+        const totalIncome = filteredData.filter(i => i.type === 'Income').reduce((acc, item) => acc + item.amount, 0);
+        const totalExpense = filteredData.filter(i => i.type === 'Expense').reduce((acc, item) => acc + item.amount, 0);
         const netFlow = totalIncome - totalExpense;
         return { totalIncome, totalExpense, netFlow };
-    }, [incomeData, expenseData]);
+    }, [filteredData]);
 
     if (isLoading) {
         return <Skeleton className="h-[600px] w-full" />
@@ -148,7 +164,7 @@ export function IncomeExpenseDataTable() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {[...incomeData, ...expenseData].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(item => (
+                            {filteredData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(item => (
                                 <TableRow key={`${item.type}-${item.id}`}>
                                     <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
                                     <TableCell>{item.source}</TableCell>

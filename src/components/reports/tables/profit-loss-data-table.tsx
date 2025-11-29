@@ -13,6 +13,7 @@ import { Download, Search, DollarSign, TrendingUp, TrendingDown } from "lucide-r
 import { useSettings } from "@/context/settings-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import ProfitLossChart from "../profit-loss-chart";
+import { DateRange } from "react-day-picker";
 
 type ProductProfit = {
     name: string;
@@ -21,7 +22,7 @@ type ProductProfit = {
     grossProfit: number;
 };
 
-export function ProfitLossDataTable() {
+export function ProfitLossDataTable({ dateRange }: { dateRange?: DateRange }) {
     const firestore = useFirestore();
     const { currencySymbol } = useSettings();
 
@@ -34,13 +35,25 @@ export function ProfitLossDataTable() {
     const [searchTerm, setSearchTerm] = useState("");
 
     const isLoading = l1 || l2;
+    
+    const filteredInvoices = useMemo(() => {
+        let items = invoices || [];
+        if (dateRange?.from) {
+            items = items.filter(item => new Date(item.date) >= dateRange.from!);
+        }
+        if (dateRange?.to) {
+            items = items.filter(item => new Date(item.date) <= dateRange.to!);
+        }
+        return items;
+    }, [invoices, dateRange]);
+
 
     const productProfitData: ProductProfit[] = useMemo(() => {
-        if (!invoices || !finishedGoods) return [];
+        if (!filteredInvoices || !finishedGoods) return [];
         
         const profitMap: { [key: string]: { revenue: number, cogs: number } } = {};
 
-        invoices.forEach(inv => {
+        filteredInvoices.forEach(inv => {
             if (inv.status === 'Paid') {
                 inv.items.forEach(item => {
                     if (!profitMap[item.description]) {
@@ -62,7 +75,7 @@ export function ProfitLossDataTable() {
             cogs: data.cogs,
             grossProfit: data.revenue - data.cogs
         }));
-    }, [invoices, finishedGoods]);
+    }, [filteredInvoices, finishedGoods]);
 
     const kpiData = useMemo(() => {
         const totalRevenue = productProfitData.reduce((acc, item) => acc + item.revenue, 0);
@@ -188,4 +201,3 @@ export function ProfitLossDataTable() {
         </div>
     );
 }
-

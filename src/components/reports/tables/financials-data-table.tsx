@@ -14,11 +14,12 @@ import { useSettings } from "@/context/settings-context";
 import FinancialsChart from "../financials-chart";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DateRange } from "react-day-picker";
 
 type ReceivableSortKey = keyof Invoice;
 type PayableSortKey = keyof PurchaseOrder;
 
-export function FinancialsDataTable() {
+export function FinancialsDataTable({ dateRange }: { dateRange?: DateRange }) {
     const firestore = useFirestore();
     const { currencySymbol } = useSettings();
 
@@ -34,18 +35,40 @@ export function FinancialsDataTable() {
 
     const isLoading = l1 || l2;
 
+    const filteredInvoices = useMemo(() => {
+        let items = invoices || [];
+        if (dateRange?.from) {
+            items = items.filter(item => new Date(item.date) >= dateRange.from!);
+        }
+        if (dateRange?.to) {
+            items = items.filter(item => new Date(item.date) <= dateRange.to!);
+        }
+        return items;
+    }, [invoices, dateRange]);
+    
+    const filteredPurchaseOrders = useMemo(() => {
+        let items = purchaseOrders || [];
+        if (dateRange?.from) {
+            items = items.filter(item => new Date(item.date) >= dateRange.from!);
+        }
+        if (dateRange?.to) {
+            items = items.filter(item => new Date(item.date) <= dateRange.to!);
+        }
+        return items;
+    }, [purchaseOrders, dateRange]);
+
     const kpiData = useMemo(() => {
-        const outstandingInvoices = (invoices || []).filter((i) => i.status !== 'Paid' && i.dueAmount > 0);
+        const outstandingInvoices = (filteredInvoices || []).filter((i) => i.status !== 'Paid');
         const accountsReceivable = outstandingInvoices.reduce((acc, inv) => acc + inv.dueAmount, 0);
 
-        const pendingPurchaseOrders = (purchaseOrders || []).filter((po) => po.paymentStatus !== 'Paid');
+        const pendingPurchaseOrders = (filteredPurchaseOrders || []).filter((po) => po.paymentStatus !== 'Paid');
         const accountsPayable = pendingPurchaseOrders.reduce((acc, po) => acc + po.dueAmount, 0);
 
         return { accountsReceivable, accountsPayable };
-    }, [invoices, purchaseOrders]);
+    }, [filteredInvoices, filteredPurchaseOrders]);
 
     const sortedReceivables = useMemo(() => {
-        let items = (invoices || []).filter(i => i.dueAmount > 0);
+        let items = (filteredInvoices || []).filter(i => i.dueAmount > 0);
         if (sortConfigReceivable) {
             items.sort((a, b) => {
                 const aVal = a[sortConfigReceivable.key];
@@ -56,10 +79,10 @@ export function FinancialsDataTable() {
             });
         }
         return items.filter(i => i.customer.toLowerCase().includes(searchTerm.toLowerCase()));
-    }, [invoices, sortConfigReceivable, searchTerm]);
+    }, [filteredInvoices, sortConfigReceivable, searchTerm]);
 
     const sortedPayables = useMemo(() => {
-        let items = (purchaseOrders || []).filter(p => p.dueAmount > 0);
+        let items = (filteredPurchaseOrders || []).filter(p => p.dueAmount > 0);
         if (sortConfigPayable) {
             items.sort((a, b) => {
                 const aVal = a[sortConfigPayable.key];
@@ -70,7 +93,7 @@ export function FinancialsDataTable() {
             });
         }
         return items.filter(p => p.supplier.toLowerCase().includes(searchTerm.toLowerCase()));
-    }, [purchaseOrders, sortConfigPayable, searchTerm]);
+    }, [filteredPurchaseOrders, sortConfigPayable, searchTerm]);
     
 
     const handleExport = (type: 'receivable' | 'payable') => {

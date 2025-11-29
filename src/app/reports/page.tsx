@@ -1,6 +1,8 @@
 
 'use client';
 
+import { useState } from "react";
+import { DateRange } from "react-day-picker";
 import {
   Card,
   CardContent,
@@ -16,48 +18,58 @@ import { FinancialsDataTable } from "@/components/reports/tables/financials-data
 import { CommissionsDataTable } from "@/components/reports/tables/commissions-data-table";
 import { IncomeExpenseDataTable } from "@/components/reports/tables/income-expense-data-table";
 import { ProfitLossDataTable } from "@/components/reports/tables/profit-loss-data-table";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 export default function ReportsPage() {
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
   return (
     <div className="space-y-6">
         <Card>
-            <CardHeader>
-                <CardTitle>Comprehensive Reports</CardTitle>
-                <CardDescription>
-                An interactive overview of your business performance across all key areas.
-                </CardDescription>
+            <CardHeader className="flex-col md:flex-row md:items-center md:justify-between">
+                <div>
+                    <CardTitle>Comprehensive Reports</CardTitle>
+                    <CardDescription>
+                    An interactive overview of your business performance across all key areas.
+                    </CardDescription>
+                </div>
+                <DateRangePicker onUpdate={(range) => setDateRange(range.range)} />
             </CardHeader>
         </Card>
         <Tabs defaultValue="sales" className="grid grid-cols-1 gap-6">
-            <TabsList className="grid w-full grid-cols-1 h-auto sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+            <TabsList className="grid w-full grid-cols-1 h-auto sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
                 <TabsTrigger value="sales">Sales</TabsTrigger>
                 <TabsTrigger value="purchasing">Purchasing</TabsTrigger>
                 <TabsTrigger value="inventory">Inventory</TabsTrigger>
                 <TabsTrigger value="financials">Financials</TabsTrigger>
                 <TabsTrigger value="commissions">Commissions</TabsTrigger>
+                <TabsTrigger value="income-expense">Income/Expense</TabsTrigger>
                 <TabsTrigger value="profit-loss">Profit & Loss</TabsTrigger>
             </TabsList>
             <TabsContent value="sales">
                 <div className="grid gap-6">
-                   <SalesDataTable />
+                   <SalesDataTable dateRange={dateRange}/>
                 </div>
             </TabsContent>
             <TabsContent value="purchasing">
                 <div className="grid gap-6">
-                    <PurchasingDataTable />
+                    <PurchasingDataTable dateRange={dateRange} />
                 </div>
             </TabsContent>
             <TabsContent value="inventory">
                 <InventoryDataTable />
             </TabsContent>
             <TabsContent value="financials">
-                 <FinancialsDataTable />
+                 <FinancialsDataTable dateRange={dateRange} />
             </TabsContent>
             <TabsContent value="commissions">
-               <CommissionsDataTable />
+               <CommissionsDataTable dateRange={dateRange} />
+            </TabsContent>
+             <TabsContent value="income-expense">
+               <IncomeExpenseDataTable dateRange={dateRange} />
             </TabsContent>
             <TabsContent value="profit-loss">
-               <ProfitLossDataTable />
+               <ProfitLossDataTable dateRange={dateRange} />
             </TabsContent>
         </Tabs>
     </div>

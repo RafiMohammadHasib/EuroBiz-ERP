@@ -13,6 +13,7 @@ import { Download, Search, Percent, Users, BarChart } from "lucide-react";
 import { useSettings } from "@/context/settings-context";
 import CommissionReport from "../commission-chart";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DateRange } from "react-day-picker";
 
 type SortKey = keyof DistributorCommissions;
 
@@ -22,7 +23,7 @@ interface DistributorCommissions {
     totalCommission: number;
 }
 
-export function CommissionsDataTable() {
+export function CommissionsDataTable({ dateRange }: { dateRange?: DateRange }) {
     const firestore = useFirestore();
     const { currencySymbol } = useSettings();
 
@@ -37,12 +38,24 @@ export function CommissionsDataTable() {
 
     const isLoading = l1 || l2;
 
+    const filteredCommissions = useMemo(() => {
+        let items = salesCommissions || [];
+        if (dateRange?.from) {
+            items = items.filter(item => new Date(item.saleDate) >= dateRange.from!);
+        }
+        if (dateRange?.to) {
+            items = items.filter(item => new Date(item.saleDate) <= dateRange.to!);
+        }
+        return items;
+    }, [salesCommissions, dateRange]);
+
+
     const commissionData: DistributorCommissions[] = useMemo(() => {
-        if (!distributors || !salesCommissions) return [];
+        if (!distributors || !filteredCommissions) return [];
         
         const commissionsByDistributor: { [key: string]: number } = {};
 
-        salesCommissions.forEach(sc => {
+        filteredCommissions.forEach(sc => {
             if (!commissionsByDistributor[sc.distributionChannelId]) {
                 commissionsByDistributor[sc.distributionChannelId] = 0;
             }
@@ -54,11 +67,11 @@ export function CommissionsDataTable() {
             name: dist.name,
             totalCommission: commissionsByDistributor[dist.id] || 0,
         }));
-    }, [distributors, salesCommissions]);
+    }, [distributors, filteredCommissions]);
 
     const kpiData = useMemo(() => {
         const totalCommissionPaid = commissionData.reduce((acc, item) => acc + item.totalCommission, 0);
-        const totalDistributors = commissionData.length;
+        const totalDistributors = commissionData.filter(c => c.totalCommission > 0).length;
         const avgCommission = totalDistributors > 0 ? totalCommissionPaid / totalDistributors : 0;
         return { totalCommissionPaid, totalDistributors, avgCommission };
     }, [commissionData]);
@@ -190,4 +203,3 @@ export function CommissionsDataTable() {
         </div>
     );
 }
-
