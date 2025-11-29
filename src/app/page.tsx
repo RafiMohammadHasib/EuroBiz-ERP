@@ -48,7 +48,7 @@ export default function Home() {
   const { data: distributors, isLoading: distributorsLoading } = useCollection<Distributor>(distributorsCollection);
   const { data: suppliers, isLoading: suppliersLoading } = useCollection<Supplier>(suppliersCollection);
 
-  const { currentPeriodStats, previousPeriodStats, growth } = useMemo(() => {
+  const { currentPeriodStats, growth } = useMemo(() => {
     const getStatsForPeriod = (start?: Date, end?: Date) => {
         let periodInvoices = (invoices || []).filter(inv => inv.status !== 'Cancelled');
         if (start) periodInvoices = periodInvoices.filter(inv => new Date(inv.date) >= start);
@@ -67,7 +67,7 @@ export default function Home() {
     if (dateRange?.from && dateRange?.to) {
         const diff = differenceInDays(dateRange.to, dateRange.from);
         const prevStart = subDays(dateRange.from, diff + 1);
-        const prevEnd = subDays(dateRange.to, diff + 1);
+        const prevEnd = subDays(dateRange.to, diff);
         previousStats = getStatsForPeriod(prevStart, prevEnd);
     }
 
@@ -78,10 +78,9 @@ export default function Home() {
 
     return {
       currentPeriodStats: currentStats,
-      previousPeriodStats: previousStats,
       growth: {
         revenue: calculateGrowth(currentStats.totalRevenue, previousStats.totalRevenue),
-        customers: calculateGrowth(currentStats.uniqueCustomers, previousStats.customers),
+        customers: calculateGrowth(currentStats.uniqueCustomers, previousStats.uniqueCustomers),
         salesVolume: calculateGrowth(currentStats.salesVolume, previousStats.salesVolume),
       }
     };
@@ -112,7 +111,7 @@ export default function Home() {
 
 
   const safeInvoices = (invoices || []).filter(inv => inv.status !== 'Cancelled') || [];
-  const safePOs = filteredPOs || [];
+  const safePOs = purchaseOrders || [];
   const safeDistributors = distributors || [];
   const safeSuppliers = suppliers || [];
 
@@ -136,13 +135,13 @@ export default function Home() {
     }
   }
 
-  const GrowthCard = ({ title, value, growth, formatAsCurrency = false }: { title: string, value: number, growth: number, formatAsCurrency?: boolean }) => {
+  const GrowthCard = ({ title, value, growth, formatAsCurrency = false, icon: Icon }: { title: string, value: number, growth: number, formatAsCurrency?: boolean, icon: React.ElementType }) => {
     const isPositive = growth >= 0;
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{title}</CardTitle>
-                {isPositive ? <ArrowUp className="h-4 w-4 text-green-500" /> : <ArrowDown className="h-4 w-4 text-red-500" />}
+                <Icon className={cn("h-4 w-4", isPositive ? "text-green-500" : "text-red-500")} />
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold">
@@ -165,9 +164,9 @@ export default function Home() {
       </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <GrowthCard title="Revenue" value={currentPeriodStats.totalRevenue} growth={growth.revenue} formatAsCurrency />
-          <GrowthCard title="New Customers" value={currentPeriodStats.uniqueCustomers} growth={growth.customers} />
-          <GrowthCard title="Sales Volume" value={currentPeriodStats.salesVolume} growth={growth.salesVolume} />
+          <GrowthCard title="Revenue" value={currentPeriodStats.totalRevenue} growth={growth.revenue} formatAsCurrency icon={DollarSign} />
+          <GrowthCard title="New Customers" value={currentPeriodStats.uniqueCustomers} growth={growth.customers} icon={Users} />
+          <GrowthCard title="Sales Volume" value={currentPeriodStats.salesVolume} growth={growth.salesVolume} icon={ShoppingCart} />
       </div>
 
 
@@ -195,7 +194,7 @@ export default function Home() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending POs</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{pendingPurchaseOrders}</div>
@@ -224,66 +223,64 @@ export default function Home() {
                     <SalesChart dateRange={dateRange} />
                 </CardContent>
             </Card>
-            <div className="lg:col-span-2 grid gap-6">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Recent Invoices</CardTitle>
-                        <CardDescription>Your most recent sales activity.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                    <Table>
-                        <TableHeader>
+            <Card className="lg:col-span-2">
+                <CardHeader>
+                    <CardTitle>Recent Invoices</CardTitle>
+                    <CardDescription>Your most recent sales activity.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                <Table>
+                    <TableHeader>
+                    <TableRow>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                    </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                    {isLoading ? (
                         <TableRow>
-                            <TableHead>Customer</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Amount</TableHead>
-                            <TableHead>Status</TableHead>
+                        <TableCell colSpan={4} className="h-24 text-center">
+                            Loading...
+                        </TableCell>
                         </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                        {isLoading ? (
-                            <TableRow>
-                            <TableCell colSpan={4} className="h-24 text-center">
-                                Loading...
+                    ) : (
+                        filteredInvoices.slice(0, 5).map((invoice) => (
+                        <TableRow key={invoice.id}>
+                            <TableCell>
+                                <div className="font-medium">{invoice.customer}</div>
+                                <div className="hidden text-sm text-muted-foreground md:inline">
+                                    {invoice.customerEmail}
+                                </div>
                             </TableCell>
-                            </TableRow>
-                        ) : (
-                            filteredInvoices.slice(0, 5).map((invoice) => (
-                            <TableRow key={invoice.id}>
-                                <TableCell>
-                                    <div className="font-medium">{invoice.customer}</div>
-                                    <div className="hidden text-sm text-muted-foreground md:inline">
-                                        {invoice.customerEmail}
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                <div className="font-medium">{new Date(invoice.date).toLocaleDateString()}</div>
-                                <div className="text-sm text-muted-foreground">{new Date(invoice.date).toLocaleTimeString()}</div>
-                                </TableCell>
-                                <TableCell>{currencySymbol}{(invoice.totalAmount ?? 0).toLocaleString()}</TableCell>
-                                <TableCell>
-                                    <Badge variant={getStatusVariant(invoice.status)}>
-                                    {invoice.status}
-                                    </Badge>
-                                </TableCell>
-                            </TableRow>
-                            ))
-                        )}
-                        </TableBody>
-                    </Table>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Top Performing Products</CardTitle>
-                        <CardDescription>Products generating the most revenue in the selected period.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[300px] p-0 pt-4">
-                        <ProductPerformanceChart />
-                    </CardContent>
-                </Card>
-            </div>
+                            <TableCell>
+                            <div className="font-medium">{new Date(invoice.date).toLocaleDateString()}</div>
+                            <div className="text-sm text-muted-foreground">{new Date(invoice.date).toLocaleTimeString()}</div>
+                            </TableCell>
+                            <TableCell>{currencySymbol}{(invoice.totalAmount ?? 0).toLocaleString()}</TableCell>
+                            <TableCell>
+                                <Badge variant={getStatusVariant(invoice.status)}>
+                                {invoice.status}
+                                </Badge>
+                            </TableCell>
+                        </TableRow>
+                        ))
+                    )}
+                    </TableBody>
+                </Table>
+                </CardContent>
+            </Card>
         </div>
+        <Card>
+            <CardHeader>
+                <CardTitle>Top Performing Products</CardTitle>
+                <CardDescription>Products generating the most revenue in the selected period.</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[300px] p-0 pt-4">
+                <ProductPerformanceChart />
+            </CardContent>
+        </Card>
     </div>
   )
 }
