@@ -9,6 +9,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card"
 import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { collection, doc, writeBatch } from "firebase/firestore";
@@ -35,6 +36,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SalesDetailsDialog } from "@/components/sales/sales-details-dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -58,6 +60,8 @@ export default function SalesPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [invoiceToCancel, setInvoiceToCancel] = useState<Invoice | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const safeInvoices = invoices || [];
   const safeCommissions = salesCommissions || [];
@@ -106,6 +110,14 @@ export default function SalesPage() {
       })
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [invoiceWithSalesperson, searchTerm, statusFilter]);
+
+  const paginatedInvoices = useMemo(() => {
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return filteredInvoices.slice(startIndex, endIndex);
+  }, [filteredInvoices, currentPage, rowsPerPage]);
+
+  const totalPages = Math.ceil(filteredInvoices.length / rowsPerPage);
 
   const getStatusVariant = (status: Invoice['status']) => {
     switch (status) {
@@ -195,7 +207,7 @@ export default function SalesPage() {
           </Card>
         </div>
 
-        <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+        <Tabs value={statusFilter} onValueChange={(value) => {setStatusFilter(value); setCurrentPage(1);}}>
             <div className="flex flex-col md:flex-row items-center gap-4">
                 <TabsList>
                     <TabsTrigger value="all">All</TabsTrigger>
@@ -212,7 +224,7 @@ export default function SalesPage() {
                         placeholder="Search by customer name..."
                         className="pl-8 w-full md:w-[300px]"
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}}
                     />
                 </div>
                  <div className="md:ml-auto">
@@ -246,8 +258,8 @@ export default function SalesPage() {
                                     Loading...
                                 </TableCell>
                             </TableRow>
-                        ) : filteredInvoices.length > 0 ? (
-                        filteredInvoices.map((invoice) => (
+                        ) : paginatedInvoices.length > 0 ? (
+                        paginatedInvoices.map((invoice) => (
                             <TableRow key={invoice.id}>
                             <TableCell className="font-medium">{invoice.customer}</TableCell>
                             <TableCell>{new Date(invoice.date).toLocaleString()}</TableCell>
@@ -297,6 +309,55 @@ export default function SalesPage() {
                     </TableBody>
                     </Table>
             </CardContent>
+             <CardFooter className="flex items-center justify-between">
+                <div className="text-xs text-muted-foreground">
+                    Showing <strong>{paginatedInvoices.length}</strong> of <strong>{filteredInvoices.length}</strong> invoices
+                </div>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                         <p className="text-xs font-medium">Rows per page</p>
+                         <Select
+                            value={`${rowsPerPage}`}
+                            onValueChange={(value) => {
+                            setRowsPerPage(Number(value));
+                            setCurrentPage(1);
+                            }}
+                        >
+                            <SelectTrigger className="h-8 w-[70px]">
+                            <SelectValue placeholder={rowsPerPage} />
+                            </SelectTrigger>
+                            <SelectContent side="top">
+                            {[10, 20, 30, 40, 50].map((pageSize) => (
+                                <SelectItem key={pageSize} value={`${pageSize}`}>
+                                {pageSize}
+                                </SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="text-xs font-medium">
+                        Page {currentPage} of {totalPages}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                        >
+                            Previous
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                </div>
+            </CardFooter>
             </Card>
         </Tabs>
     </div>
