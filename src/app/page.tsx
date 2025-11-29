@@ -29,6 +29,7 @@ import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { cn } from '@/lib/utils';
 import SalesChart from '@/components/dashboard/sales-chart';
 import ProductPerformanceChart from '@/components/reports/product-performance-chart';
+import BalanceChart from '@/components/dashboard/balance-chart';
 
 export default function Home() {
   const firestore = useFirestore();
@@ -168,6 +169,16 @@ export default function Home() {
           <GrowthCard title="New Customers" value={currentPeriodStats.uniqueCustomers} growth={growth.customers} icon={Users} />
           <GrowthCard title="Sales Volume" value={currentPeriodStats.salesVolume} growth={growth.salesVolume} icon={ShoppingCart} />
       </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Balance</CardTitle>
+          <CardDescription>A summary of your income and expenses for the selected period.</CardDescription>
+        </CardHeader>
+        <CardContent className="h-[350px]">
+          <BalanceChart dateRange={dateRange} />
+        </CardContent>
+      </Card>
 
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
