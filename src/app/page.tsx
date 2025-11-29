@@ -95,6 +95,17 @@ export default function Home() {
     }
     return items;
   }, [purchaseOrders, dateRange]);
+  
+  const filteredInvoices = useMemo(() => {
+    let items = invoices || [];
+    if (dateRange?.from) {
+        items = items.filter(item => new Date(item.date) >= dateRange.from!);
+    }
+    if (dateRange?.to) {
+        items = items.filter(item => new Date(item.date) <= dateRange.to!);
+    }
+    return items;
+  }, [invoices, dateRange]);
 
 
   const safeInvoices = (invoices || []).filter(inv => inv.status !== 'Cancelled') || [];
@@ -222,7 +233,7 @@ export default function Home() {
                   </TableCell>
                 </TableRow>
               ) : (
-                safeInvoices.slice(0, 5).map((invoice) => (
+                filteredInvoices.slice(0, 5).map((invoice) => (
                   <TableRow key={invoice.id}>
                     <TableCell>
                         <div className="font-medium">{invoice.customer}</div>
