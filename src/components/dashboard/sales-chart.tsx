@@ -6,7 +6,7 @@ import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
 import type { Invoice } from "@/lib/data";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Bar, BarChart, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Skeleton } from "../ui/skeleton";
 import { useSettings } from "@/context/settings-context";
 import { DateRange } from "react-day-picker";
@@ -67,24 +67,52 @@ export default function SalesChart({ dateRange }: { dateRange?: DateRange }) {
 
   return (
       <ChartContainer config={chartConfig} className="w-full h-full">
-        <BarChart accessibilityLayer data={salesData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+        <AreaChart
+          accessibilityLayer
+          data={salesData}
+          margin={{
+            left: 12,
+            right: 12,
+            top: 10,
+          }}
+        >
+          <CartesianGrid vertical={false} />
           <XAxis
             dataKey="month"
-            stroke="hsl(var(--muted-foreground))"
-            fontSize={12}
             tickLine={false}
             axisLine={false}
+            tickMargin={8}
+            tickFormatter={(value) => value.slice(0, 3)}
           />
           <YAxis
-            stroke="hsl(var(--muted-foreground))"
-            fontSize={12}
             tickLine={false}
             axisLine={false}
+            tickMargin={8}
             tickFormatter={(value) => `${currencySymbol}${Number(value) / 1000}K`}
           />
           <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-          <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[4, 4, 0, 0]} />
-        </BarChart>
+          <defs>
+            <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
+              <stop
+                offset="5%"
+                stopColor="var(--color-revenue)"
+                stopOpacity={0.8}
+              />
+              <stop
+                offset="95%"
+                stopColor="var(--color-revenue)"
+                stopOpacity={0.1}
+              />
+            </linearGradient>
+          </defs>
+          <Area
+            dataKey="revenue"
+            type="natural"
+            fill="url(#fillRevenue)"
+            stroke="var(--color-revenue)"
+            stackId="a"
+          />
+        </AreaChart>
       </ChartContainer>
   );
 }
