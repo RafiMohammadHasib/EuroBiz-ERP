@@ -348,11 +348,3 @@ export const notifications: Notification[] = [
         read: true,
     },
 ];
-
-export type SalaryPayment = {
-    id: string;
-    employeeName: string;
-    position: string;
-    paymentDate: string;
-    amount: number;
-}

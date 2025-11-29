@@ -17,7 +17,6 @@ import FinancialsChart from "@/components/reports/financials-chart"
 import IncomeExpenseChart from "@/components/reports/income-expense-chart"
 import ProductPerformanceChart from "@/components/reports/product-performance-chart"
 import SupplierSpendChart from "@/components/reports/supplier-spend-chart"
-import SalaryReportChart from "@/components/reports/salary-report-chart"
 
 export default function ReportsPage() {
   return (
@@ -136,19 +135,6 @@ export default function ReportsPage() {
                         <CardContent>
                             <div className="h-[400px]">
                                 <FinancialsChart />
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Salary Payments Report</CardTitle>
-                            <CardDescription>
-                            Total salary paid out per month.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="h-[400px]">
-                                <SalaryReportChart />
                             </div>
                         </CardContent>
                     </Card>
