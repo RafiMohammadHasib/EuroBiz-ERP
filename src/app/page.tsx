@@ -220,7 +220,7 @@ export default function Home() {
                     <CardTitle>Sales Overview</CardTitle>
                     <CardDescription>A summary of sales revenue for the selected period.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="h-[350px]">
                     <SalesChart dateRange={dateRange} />
                 </CardContent>
             </Card>
@@ -287,5 +287,3 @@ export default function Home() {
     </div>
   )
 }
-
-    

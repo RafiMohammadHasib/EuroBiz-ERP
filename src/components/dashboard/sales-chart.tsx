@@ -66,7 +66,6 @@ export default function SalesChart({ dateRange }: { dateRange?: DateRange }) {
   }
 
   return (
-    <div className="h-[350px]">
       <ChartContainer config={chartConfig} className="w-full h-full">
         <BarChart accessibilityLayer data={salesData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
           <XAxis
@@ -87,8 +86,5 @@ export default function SalesChart({ dateRange }: { dateRange?: DateRange }) {
           <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ChartContainer>
-    </div>
   );
 }
-
-    
