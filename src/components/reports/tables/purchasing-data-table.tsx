@@ -1,0 +1,213 @@
+
+'use client';
+
+import { useMemo, useState } from "react";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection } from "firebase/firestore";
+import type { PurchaseOrder } from "@/lib/data";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
+import { Download, Search, ChevronDown, Package, ShoppingCart, TrendingUp } from "lucide-react";
+import { useSettings } from "@/context/settings-context";
+import PurchaseAnalysisChart from "../purchase-analysis-chart";
+import SupplierSpendChart from "../supplier-spend-chart";
+import { Skeleton } from "@/components/ui/skeleton";
+
+type SortKey = keyof PurchaseOrder;
+
+export function PurchasingDataTable() {
+    const firestore = useFirestore();
+    const { currencySymbol } = useSettings();
+
+    const poCol = useMemoFirebase(() => collection(firestore, 'purchaseOrders'), [firestore]);
+    const { data: purchaseOrders, isLoading } = useCollection<PurchaseOrder>(poCol);
+
+    const [searchTerm, setSearchTerm] = useState("");
+    const [sortConfig, setSortConfig] = useState<{ key: SortKey, direction: 'asc' | 'desc' } | null>(null);
+    const [visibleColumns, setVisibleColumns] = useState({
+        supplier: true,
+        date: true,
+        deliveryStatus: true,
+        paymentStatus: true,
+        amount: true,
+    });
+    
+    const safePOs = useMemo(() => purchaseOrders || [], [purchaseOrders]);
+
+    const kpiData = useMemo(() => {
+        const totalPOValue = safePOs.reduce((acc, po) => acc + po.amount, 0);
+        const totalPOs = safePOs.length;
+        const avgPOValue = totalPOs > 0 ? totalPOValue / totalPOs : 0;
+        return { totalPOValue, totalPOs, avgPOValue };
+    }, [safePOs]);
+
+    const sortedPOs = useMemo(() => {
+        let sortableItems = [...safePOs];
+        if (sortConfig !== null) {
+            sortableItems.sort((a, b) => {
+                const aValue = a[sortConfig.key];
+                const bValue = b[sortConfig.key];
+                if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+                if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+        return sortableItems.filter(po => po.supplier.toLowerCase().includes(searchTerm.toLowerCase()));
+    }, [safePOs, sortConfig, searchTerm]);
+
+    const requestSort = (key: SortKey) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+    
+    const handleExport = () => {
+        const headers = Object.keys(visibleColumns).filter(k => visibleColumns[k as keyof typeof visibleColumns]);
+        const csvRows = [
+            headers.join(','),
+            ...sortedPOs.map(po => headers.map(header => po[header as keyof PurchaseOrder]).join(','))
+        ];
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'purchasing_report.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    if (isLoading) {
+        return <Skeleton className="h-[600px] w-full" />
+    }
+
+    return (
+        <>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Purchase Value</CardTitle>
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{currencySymbol}{kpiData.totalPOValue.toLocaleString()}</div>
+                    <p className="text-xs text-muted-foreground">Across all purchase orders</p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Purchase Orders</CardTitle>
+                    <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{kpiData.totalPOs}</div>
+                    <p className="text-xs text-muted-foreground">Total orders placed</p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Average PO Value</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{currencySymbol}{kpiData.avgPOValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+                    <p className="text-xs text-muted-foreground">Average value per PO</p>
+                </CardContent>
+            </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Monthly Purchase Analysis</CardTitle>
+                </CardHeader>
+                <CardContent className="h-[300px] p-0 pt-4">
+                    <PurchaseAnalysisChart />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Spend by Supplier</CardTitle>
+                </CardHeader>
+                <CardContent className="h-[300px] p-0 pt-4">
+                    <SupplierSpendChart />
+                </CardContent>
+            </Card>
+        </div>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Purchasing Details</CardTitle>
+                <div className="flex items-center gap-4 mt-4">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            type="search"
+                            placeholder="Filter by supplier..."
+                            className="pl-8 w-full"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="ml-auto">
+                                Columns <ChevronDown className="ml-2 h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            {Object.keys(visibleColumns).map((key) => (
+                                <DropdownMenuCheckboxItem
+                                    key={key}
+                                    className="capitalize"
+                                    checked={visibleColumns[key as keyof typeof visibleColumns]}
+                                    onCheckedChange={(value) =>
+                                        setVisibleColumns(prev => ({...prev, [key]: !!value}))
+                                    }
+                                >
+                                    {key.replace(/([A-Z])/g, ' $1')}
+                                </DropdownMenuCheckboxItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button onClick={handleExport} variant="outline">
+                        <Download className="mr-2 h-4 w-4" />
+                        Export
+                    </Button>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            {visibleColumns.supplier && <TableHead onClick={() => requestSort('supplier')}>Supplier</TableHead>}
+                            {visibleColumns.date && <TableHead onClick={() => requestSort('date')}>Date</TableHead>}
+                            {visibleColumns.deliveryStatus && <TableHead onClick={() => requestSort('deliveryStatus')}>Delivery Status</TableHead>}
+                            {visibleColumns.paymentStatus && <TableHead onClick={() => requestSort('paymentStatus')}>Payment Status</TableHead>}
+                            {visibleColumns.amount && <TableHead className="text-right" onClick={() => requestSort('amount')}>Amount</TableHead>}
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {sortedPOs.map(po => (
+                            <TableRow key={po.id}>
+                                {visibleColumns.supplier && <TableCell>{po.supplier}</TableCell>}
+                                {visibleColumns.date && <TableCell>{new Date(po.date).toLocaleDateString()}</TableCell>}
+                                {visibleColumns.deliveryStatus && <TableCell><Badge variant={po.deliveryStatus === 'Received' ? 'secondary' : po.deliveryStatus === 'Cancelled' ? 'destructive' : 'outline'}>{po.deliveryStatus}</Badge></TableCell>}
+                                {visibleColumns.paymentStatus && <TableCell><Badge variant={po.paymentStatus === 'Paid' ? 'secondary' : 'outline'}>{po.paymentStatus}</Badge></TableCell>}
+                                {visibleColumns.amount && <TableCell className="text-right">{currencySymbol}{po.amount.toLocaleString()}</TableCell>}
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+        </>
+    );
+}
