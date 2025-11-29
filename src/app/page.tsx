@@ -20,10 +20,10 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, CreditCard, Users, Truck, ShoppingCart, Building, Package, FileText, ArrowUp, ArrowDown } from "lucide-react"
+import { DollarSign, CreditCard, Users, Truck, ShoppingCart, Building, Package, FileText, ArrowUp, ArrowDown, Boxes } from "lucide-react"
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
-import type { Invoice, Distributor, Supplier, PurchaseOrder } from "@/lib/data";
+import type { Invoice, Distributor, Supplier, PurchaseOrder, FinishedGood } from "@/lib/data";
 import { useSettings } from "@/context/settings-context";
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { cn } from '@/lib/utils';
@@ -42,11 +42,13 @@ export default function Home() {
   const purchaseOrdersCollection = useMemoFirebase(() => collection(firestore, 'purchaseOrders'), [firestore]);
   const distributorsCollection = useMemoFirebase(() => collection(firestore, 'distributors'), [firestore]);
   const suppliersCollection = useMemoFirebase(() => collection(firestore, 'suppliers'), [firestore]);
+  const finishedGoodsCollection = useMemoFirebase(() => collection(firestore, 'finishedGoods'), [firestore]);
 
   const { data: invoices, isLoading: invoicesLoading } = useCollection<Invoice>(invoicesCollection);
   const { data: purchaseOrders, isLoading: poLoading } = useCollection<PurchaseOrder>(purchaseOrdersCollection);
   const { data: distributors, isLoading: distributorsLoading } = useCollection<Distributor>(distributorsCollection);
   const { data: suppliers, isLoading: suppliersLoading } = useCollection<Supplier>(suppliersCollection);
+  const { data: finishedGoods, isLoading: fgLoading } = useCollection<FinishedGood>(finishedGoodsCollection);
 
   const { currentPeriodStats, growth } = useMemo(() => {
     const getStatsForPeriod = (start?: Date, end?: Date) => {
@@ -114,6 +116,7 @@ export default function Home() {
   const safePOs = purchaseOrders || [];
   const safeDistributors = distributors || [];
   const safeSuppliers = suppliers || [];
+  const safeFinishedGoods = finishedGoods || [];
 
   const outstandingDues = safeInvoices.filter(i => i.status !== 'Paid').reduce((acc, i) => acc + (i.dueAmount ?? 0), 0);
   
@@ -121,8 +124,9 @@ export default function Home() {
   const totalPurchaseValue = safePOs.reduce((acc, p) => acc + p.amount, 0);
   const totalSuppliers = new Set(safeSuppliers.map(p => p.name)).size;
   const totalDistributors = new Set(safeDistributors.map(d => d.name)).size;
+  const activeStockValue = safeFinishedGoods.reduce((acc, item) => acc + (item.quantity * item.unitCost), 0);
 
-  const isLoading = invoicesLoading || poLoading || distributorsLoading || suppliersLoading;
+  const isLoading = invoicesLoading || poLoading || distributorsLoading || suppliersLoading || fgLoading;
 
   const getStatusVariant = (status: Invoice['status']) => {
     switch (status) {
@@ -193,12 +197,12 @@ export default function Home() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Distributors</CardTitle>
-            <Truck className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Active Stock Value</CardTitle>
+            <Boxes className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{totalDistributors}</div>
-            <p className="text-xs text-muted-foreground">From your distributor network</p>
+            <div className="text-2xl font-bold">{currencySymbol}{activeStockValue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Value of finished goods</p>
           </CardContent>
         </Card>
         <Card>
@@ -213,12 +217,12 @@ export default function Home() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Suppliers</CardTitle>
-            <Building className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Active Distributors</CardTitle>
+            <Truck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalSuppliers}</div>
-            <p className="text-xs text-muted-foreground">Active suppliers in the system</p>
+            <div className="text-2xl font-bold">+{totalDistributors}</div>
+            <p className="text-xs text-muted-foreground">From your distributor network</p>
           </CardContent>
         </Card>
       </div>
@@ -285,3 +289,5 @@ export default function Home() {
     </div>
   )
 }
+
+    
