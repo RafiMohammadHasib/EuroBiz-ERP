@@ -38,24 +38,27 @@ export default function SalesChart({ dateRange }: { dateRange?: DateRange }) {
 
   const salesData = useMemo(() => {
     const monthlyRevenue: { [key: string]: number } = {};
-    const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     
-    monthOrder.forEach(month => {
-        monthlyRevenue[month] = 0;
-    });
-
     filteredInvoices?.forEach(invoice => {
       const date = new Date(invoice.date);
-      const month = monthOrder[date.getMonth()];
-      if (month) {
-          monthlyRevenue[month] += invoice.totalAmount;
+      // Format as 'YYYY-MM' to group by month
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (!monthlyRevenue[monthKey]) {
+        monthlyRevenue[monthKey] = 0;
       }
+      // Use paidAmount for revenue recognition
+      monthlyRevenue[monthKey] += invoice.paidAmount;
     });
 
-    return monthOrder.map(month => ({
-      month,
-      revenue: monthlyRevenue[month],
-    }));
+    return Object.entries(monthlyRevenue)
+      .map(([monthKey, revenue]) => ({
+        month: new Date(monthKey + '-02').toLocaleString('default', { month: 'short' }), // Use a specific day to avoid timezone issues
+        revenue: revenue,
+      }))
+      .sort((a, b) => {
+          const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          return monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month);
+      });
   }, [filteredInvoices]);
 
   if (isLoading) {
@@ -87,3 +90,5 @@ export default function SalesChart({ dateRange }: { dateRange?: DateRange }) {
     </div>
   );
 }
+
+    

@@ -9,6 +9,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from "@/components/ui/card"
 import {
   Table,
@@ -26,6 +27,8 @@ import type { Invoice, Distributor, Supplier, PurchaseOrder } from "@/lib/data";
 import { useSettings } from "@/context/settings-context";
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { cn } from '@/lib/utils';
+import SalesChart from '@/components/dashboard/sales-chart';
+import ProductPerformanceChart from '@/components/reports/product-performance-chart';
 
 export default function Home() {
   const firestore = useFirestore();
@@ -78,7 +81,7 @@ export default function Home() {
       previousPeriodStats: previousStats,
       growth: {
         revenue: calculateGrowth(currentStats.totalRevenue, previousStats.totalRevenue),
-        customers: calculateGrowth(currentStats.uniqueCustomers, previousStats.uniqueCustomers),
+        customers: calculateGrowth(currentStats.uniqueCustomers, previousStats.customers),
         salesVolume: calculateGrowth(currentStats.salesVolume, previousStats.salesVolume),
       }
     };
@@ -104,7 +107,7 @@ export default function Home() {
     if (dateRange?.to) {
         items = items.filter(item => new Date(item.date) <= dateRange.to!);
     }
-    return items;
+    return items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [invoices, dateRange]);
 
 
@@ -211,53 +214,78 @@ export default function Home() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Invoices</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Customer</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredInvoices.slice(0, 5).map((invoice) => (
-                  <TableRow key={invoice.id}>
-                    <TableCell>
-                        <div className="font-medium">{invoice.customer}</div>
-                        <div className="hidden text-sm text-muted-foreground md:inline">
-                            {invoice.customerEmail}
-                        </div>
-                    </TableCell>
-                      <TableCell>
-                      <div className="font-medium">{new Date(invoice.date).toLocaleDateString()}</div>
-                      <div className="text-sm text-muted-foreground">{new Date(invoice.date).toLocaleTimeString()}</div>
-                    </TableCell>
-                    <TableCell>{currencySymbol}{(invoice.totalAmount ?? 0).toLocaleString()}</TableCell>
-                    <TableCell>
-                        <Badge variant={getStatusVariant(invoice.status)}>
-                          {invoice.status}
-                        </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <Card className="lg:col-span-3">
+                <CardHeader>
+                    <CardTitle>Sales Overview</CardTitle>
+                    <CardDescription>A summary of sales revenue for the selected period.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <SalesChart dateRange={dateRange} />
+                </CardContent>
+            </Card>
+            <div className="lg:col-span-2 grid gap-6">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Recent Invoices</CardTitle>
+                        <CardDescription>Your most recent sales activity.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                    <Table>
+                        <TableHeader>
+                        <TableRow>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Status</TableHead>
+                        </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                        {isLoading ? (
+                            <TableRow>
+                            <TableCell colSpan={4} className="h-24 text-center">
+                                Loading...
+                            </TableCell>
+                            </TableRow>
+                        ) : (
+                            filteredInvoices.slice(0, 5).map((invoice) => (
+                            <TableRow key={invoice.id}>
+                                <TableCell>
+                                    <div className="font-medium">{invoice.customer}</div>
+                                    <div className="hidden text-sm text-muted-foreground md:inline">
+                                        {invoice.customerEmail}
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                <div className="font-medium">{new Date(invoice.date).toLocaleDateString()}</div>
+                                <div className="text-sm text-muted-foreground">{new Date(invoice.date).toLocaleTimeString()}</div>
+                                </TableCell>
+                                <TableCell>{currencySymbol}{(invoice.totalAmount ?? 0).toLocaleString()}</TableCell>
+                                <TableCell>
+                                    <Badge variant={getStatusVariant(invoice.status)}>
+                                    {invoice.status}
+                                    </Badge>
+                                </TableCell>
+                            </TableRow>
+                            ))
+                        )}
+                        </TableBody>
+                    </Table>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Top Performing Products</CardTitle>
+                        <CardDescription>Products generating the most revenue in the selected period.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="h-[300px] p-0 pt-4">
+                        <ProductPerformanceChart />
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
     </div>
   )
 }
+
+    
