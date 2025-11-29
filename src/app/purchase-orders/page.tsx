@@ -9,6 +9,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card"
 import {
   Table,
@@ -37,6 +38,7 @@ import { collection, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { useSettings } from "@/context/settings-context";
 import { MakePaymentDialog } from "@/components/dues/make-payment-dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 export default function PurchaseOrdersPage() {
@@ -54,6 +56,9 @@ export default function PurchaseOrdersPage() {
 
   const [paymentPo, setPaymentPo] = useState<PurchaseOrder | null>(null);
   const [orderToCancel, setOrderToCancel] = useState<PurchaseOrder | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [activeTab, setActiveTab] = useState("all");
 
   const safePOs = purchaseOrders || [];
   const safeSuppliers = suppliers || [];
@@ -63,6 +68,33 @@ export default function PurchaseOrdersPage() {
     safePOs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
     [safePOs]
   );
+  
+  const getFilteredOrders = (status?: PurchaseOrder['deliveryStatus'], paymentStatus?: PurchaseOrder['paymentStatus']) => {
+    if (!status && !paymentStatus) return sortedPOs;
+    return sortedPOs.filter(o => (status && o.deliveryStatus === status) || (paymentStatus && o.paymentStatus === paymentStatus));
+  };
+
+  const getPaginatedOrders = (orders: PurchaseOrder[]) => {
+      const startIndex = (currentPage - 1) * rowsPerPage;
+      const endIndex = startIndex + rowsPerPage;
+      return orders.slice(startIndex, endIndex);
+  }
+
+  const allOrders = sortedPOs;
+  const pendingOrders = getFilteredOrders('Pending');
+  const receivedOrders = getFilteredOrders('Received');
+  const paidOrders = getFilteredOrders(undefined, 'Paid');
+
+  let currentOrders: PurchaseOrder[];
+  switch(activeTab) {
+    case 'pending': currentOrders = pendingOrders; break;
+    case 'received': currentOrders = receivedOrders; break;
+    case 'paid': currentOrders = paidOrders; break;
+    default: currentOrders = allOrders;
+  }
+  
+  const totalPages = Math.ceil(currentOrders.length / rowsPerPage);
+  const paginatedOrders = getPaginatedOrders(currentOrders);
 
   const totalPOValue = sortedPOs.reduce((sum, order) => sum + order.amount, 0);
   const pendingShipment = sortedPOs.filter(o => o.deliveryStatus === 'Pending').length;
@@ -196,7 +228,7 @@ export default function PurchaseOrdersPage() {
     }
   }
 
-  const renderPurchaseOrderTable = (orders: PurchaseOrder[]) => (
+  const renderPurchaseOrderTable = (orders: PurchaseOrder[], totalOrdersCount: number) => (
     <Card>
       <CardHeader>
         <CardTitle>Purchase Orders</CardTitle>
@@ -276,6 +308,55 @@ export default function PurchaseOrdersPage() {
           </TableBody>
         </Table>
       </CardContent>
+       <CardFooter className="flex items-center justify-between">
+            <div className="text-xs text-muted-foreground">
+                Showing <strong>{orders.length}</strong> of <strong>{totalOrdersCount}</strong> orders
+            </div>
+            <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                     <p className="text-xs font-medium">Rows per page</p>
+                     <Select
+                        value={`${rowsPerPage}`}
+                        onValueChange={(value) => {
+                        setRowsPerPage(Number(value));
+                        setCurrentPage(1);
+                        }}
+                    >
+                        <SelectTrigger className="h-8 w-[70px]">
+                        <SelectValue placeholder={rowsPerPage} />
+                        </SelectTrigger>
+                        <SelectContent side="top">
+                        {[10, 20, 30, 40, 50].map((pageSize) => (
+                            <SelectItem key={pageSize} value={`${pageSize}`}>
+                            {pageSize}
+                            </SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="text-xs font-medium">
+                    Page {currentPage} of {totalPages}
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                    >
+                        Previous
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                    >
+                        Next
+                    </Button>
+                </div>
+            </div>
+        </CardFooter>
     </Card>
   );
 
@@ -324,7 +405,7 @@ export default function PurchaseOrdersPage() {
           </CardContent>
         </Card>
       </div>
-      <Tabs defaultValue="all">
+      <Tabs defaultValue="all" onValueChange={setActiveTab}>
         <div className="flex items-center">
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
@@ -344,16 +425,16 @@ export default function PurchaseOrdersPage() {
           </div>
         </div>
         <TabsContent value="all" className="mt-4">
-          {renderPurchaseOrderTable(sortedPOs)}
+          {renderPurchaseOrderTable(paginatedOrders, allOrders.length)}
         </TabsContent>
         <TabsContent value="pending" className="mt-4">
-          {renderPurchaseOrderTable(sortedPOs.filter(o => o.deliveryStatus === 'Pending'))}
+          {renderPurchaseOrderTable(paginatedOrders, pendingOrders.length)}
         </TabsContent>
         <TabsContent value="received" className="mt-4">
-          {renderPurchaseOrderTable(sortedPOs.filter(o => o.deliveryStatus === 'Received'))}
+          {renderPurchaseOrderTable(paginatedOrders, receivedOrders.length)}
         </TabsContent>
         <TabsContent value="paid" className="mt-4">
-          {renderPurchaseOrderTable(sortedPOs.filter(o => o.paymentStatus === 'Paid'))}
+          {renderPurchaseOrderTable(paginatedOrders, paidOrders.length)}
         </TabsContent>
       </Tabs>
     </div>
