@@ -17,11 +17,12 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
   const { currencySymbol } = useSettings();
   const router = useRouter();
   const firestore = useFirestore();
+  const { id } = params;
 
   const invoiceRef = useMemoFirebase(() => {
-    if (!params.id || !firestore) return null;
-    return doc(firestore, 'invoices', params.id);
-  }, [firestore, params.id]);
+    if (!id || !firestore) return null;
+    return doc(firestore, 'invoices', id);
+  }, [firestore, id]);
 
   const { data: invoice, isLoading } = useDoc<Invoice>(invoiceRef);
 
