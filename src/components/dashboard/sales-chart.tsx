@@ -9,6 +9,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 import { Skeleton } from "../ui/skeleton";
 import { useSettings } from "@/context/settings-context";
+import { DateRange } from "react-day-picker";
 
 const chartConfig = {
   revenue: {
@@ -17,11 +18,23 @@ const chartConfig = {
   },
 };
 
-export default function SalesChart() {
+export default function SalesChart({ dateRange }: { dateRange?: DateRange }) {
   const firestore = useFirestore();
   const { currencySymbol } = useSettings();
   const invoicesCollection = useMemoFirebase(() => collection(firestore, 'invoices'), [firestore]);
   const { data: invoices, isLoading } = useCollection<Invoice>(invoicesCollection);
+  
+  const filteredInvoices = useMemo(() => {
+    let items = invoices || [];
+    if (dateRange?.from) {
+      items = items.filter(item => new Date(item.date) >= dateRange.from!);
+    }
+    if (dateRange?.to) {
+      items = items.filter(item => new Date(item.date) <= dateRange.to!);
+    }
+    return items;
+  }, [invoices, dateRange]);
+
 
   const salesData = useMemo(() => {
     const monthlyRevenue: { [key: string]: number } = {};
@@ -31,12 +44,12 @@ export default function SalesChart() {
         monthlyRevenue[month] = 0;
     });
 
-    invoices?.forEach(invoice => {
-      if (invoice.status === 'Paid') {
+    filteredInvoices?.forEach(invoice => {
+      if (invoice.status === 'Paid' || invoice.status === 'Partially Paid') {
         const date = new Date(invoice.date);
         const month = monthOrder[date.getMonth()];
         if (month) {
-            monthlyRevenue[month] += invoice.amount;
+            monthlyRevenue[month] += invoice.paidAmount;
         }
       }
     });
@@ -45,7 +58,7 @@ export default function SalesChart() {
       month,
       revenue: monthlyRevenue[month],
     }));
-  }, [invoices]);
+  }, [filteredInvoices]);
 
   if (isLoading) {
     return <Skeleton className="h-[350px] w-full" />;

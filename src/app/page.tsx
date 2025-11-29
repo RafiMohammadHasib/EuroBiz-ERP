@@ -1,6 +1,8 @@
 
 'use client';
 
+import { useState, useMemo } from 'react';
+import type { DateRange } from 'react-day-picker';
 import {
   Card,
   CardContent,
@@ -22,10 +24,12 @@ import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
 import type { Invoice, Distributor, Supplier, PurchaseOrder } from "@/lib/data";
 import { useSettings } from "@/context/settings-context";
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 
 export default function Home() {
   const firestore = useFirestore();
   const { currencySymbol } = useSettings();
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   const invoicesCollection = useMemoFirebase(() => collection(firestore, 'invoices'), [firestore]);
   const purchaseOrdersCollection = useMemoFirebase(() => collection(firestore, 'purchaseOrders'), [firestore]);
@@ -37,14 +41,36 @@ export default function Home() {
   const { data: distributors, isLoading: distributorsLoading } = useCollection<Distributor>(distributorsCollection);
   const { data: suppliers, isLoading: suppliersLoading } = useCollection<Supplier>(suppliersCollection);
 
-  const safeInvoices = invoices?.filter(inv => inv.status !== 'Cancelled') || [];
-  const safePOs = purchaseOrders || [];
+  const filteredInvoices = useMemo(() => {
+    let items = invoices || [];
+    if (dateRange?.from) {
+        items = items.filter(item => new Date(item.date) >= dateRange.from!);
+    }
+    if (dateRange?.to) {
+        items = items.filter(item => new Date(item.date) <= dateRange.to!);
+    }
+    return items;
+  }, [invoices, dateRange]);
+  
+  const filteredPOs = useMemo(() => {
+    let items = purchaseOrders || [];
+    if (dateRange?.from) {
+        items = items.filter(item => new Date(item.date) >= dateRange.from!);
+    }
+    if (dateRange?.to) {
+        items = items.filter(item => new Date(item.date) <= dateRange.to!);
+    }
+    return items;
+  }, [purchaseOrders, dateRange]);
+
+
+  const safeInvoices = filteredInvoices.filter(inv => inv.status !== 'Cancelled') || [];
+  const safePOs = filteredPOs || [];
   const safeDistributors = distributors || [];
   const safeSuppliers = suppliers || [];
 
   const totalRevenue = safeInvoices.reduce((acc, i) => acc + (i.paidAmount ?? 0), 0);
   const outstandingDues = safeInvoices.filter(i => i.status !== 'Paid').reduce((acc, i) => acc + (i.dueAmount ?? 0), 0);
-  const paidInvoices = safeInvoices.filter(i => i.status === 'Paid').length;
   const uniqueCustomers = new Set(safeInvoices.map(i => i.customer)).size;
   
   const pendingPurchaseOrders = safePOs.filter(p => p.deliveryStatus === 'Pending').length;
@@ -56,6 +82,11 @@ export default function Home() {
 
   return (
     <div className="flex flex-col gap-6">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <DateRangePicker onUpdate={(range) => setDateRange(range.range)} />
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -145,7 +176,7 @@ export default function Home() {
             <CardTitle>Sales Overview</CardTitle>
           </CardHeader>
           <CardContent>
-            <SalesChart />
+            <SalesChart dateRange={dateRange} />
           </CardContent>
         </Card>
 
