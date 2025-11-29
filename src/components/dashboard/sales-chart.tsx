@@ -89,5 +89,3 @@ export default function SalesChart({ dateRange }: { dateRange?: DateRange }) {
     </div>
   );
 }
-
-    
