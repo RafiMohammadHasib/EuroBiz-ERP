@@ -37,6 +37,8 @@ import {
   ChevronDown,
   Percent,
   LifeBuoy,
+  Undo2,
+  Wallet,
 } from "lucide-react";
 import { useAuth, useUser } from "@/firebase";
 import { signOut } from "firebase/auth";
@@ -62,6 +64,7 @@ export const navGroups: NavGroup[] = [
         items: [
             { href: "/sales", label: "Sales", icon: DollarSign },
             { href: "/purchase-orders", label: "Purchase Orders", icon: ShoppingCart },
+            { href: "/returns", label: "Sales Returns", icon: Undo2 },
             { href: "/distributors", label: "Distributors", icon: Truck },
             { href: "/suppliers", label: "Suppliers", icon: Building },
         ]
@@ -78,6 +81,7 @@ export const navGroups: NavGroup[] = [
         label: "Financials",
         items: [
             { href: "/dues", label: "Outstanding Dues", icon: Landmark },
+            { href: "/salaries", label: "Salaries", icon: Wallet },
         ]
     },
 ]

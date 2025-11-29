@@ -348,3 +348,25 @@ export const notifications: Notification[] = [
         read: true,
     },
 ];
+
+export type SalaryPayment = {
+    id: string;
+    employeeName: string;
+    position: string;
+    paymentDate: string;
+    amount: number;
+}
+
+export type SalesReturn = {
+    id: string;
+    invoiceId: string;
+    returnDate: string;
+    items: {
+        productId: string;
+        productName: string;
+        quantity: number;
+        unitPrice: number;
+    }[];
+    totalReturnValue: number;
+    reason: string;
+}
