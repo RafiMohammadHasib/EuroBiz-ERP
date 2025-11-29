@@ -1,6 +1,6 @@
 
 'use client';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { invoices, companyDetails, type Invoice } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -10,22 +10,42 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Printer } from 'lucide-react';
 import { Landmark } from 'lucide-react';
 import { useSettings } from '@/context/settings-context';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { Loader2 } from 'lucide-react';
 
-export default function InvoicePage({ params }: { params: { id: string } }) {
+export default function InvoicePage() {
+  const params = useParams();
+  const id = typeof params.id === 'string' ? params.id : '';
   const { currencySymbol } = useSettings();
-  const invoice = invoices.find((inv) => inv.id === params.id.toUpperCase());
+  const firestore = useFirestore();
+
+  const invoiceRef = useMemoFirebase(() => {
+    if (!firestore || !id) return null;
+    return doc(firestore, 'invoices', id);
+  }, [firestore, id]);
+
+  const { data: invoice, isLoading } = useDoc<Invoice>(invoiceRef);
+
+  const handlePrint = () => {
+    window.print();
+  };
+  
+  if (isLoading) {
+    return (
+        <div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    )
+  }
 
   if (!invoice) {
     notFound();
   }
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 no-print">
             <h1 className="text-2xl font-bold">Invoice {invoice.id}</h1>
             <Button onClick={handlePrint} variant="outline" size="sm">
                 <Printer className="mr-2 h-4 w-4" />
