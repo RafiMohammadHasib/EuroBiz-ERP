@@ -4,15 +4,14 @@
 import { useMemo, useState } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
-import type { Invoice, PurchaseOrder, SalaryPayment, SalesCommission } from "@/lib/data";
+import type { Invoice, PurchaseOrder } from "@/lib/data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Download, Search, DollarSign, Landmark, Wallet } from "lucide-react";
+import { Download, Search, DollarSign, Landmark } from "lucide-react";
 import { useSettings } from "@/context/settings-context";
 import FinancialsChart from "../financials-chart";
-import IncomeExpenseChart from "../income-expense-chart";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -25,33 +24,30 @@ export function FinancialsDataTable() {
 
     const invoicesCol = useMemoFirebase(() => collection(firestore, 'invoices'), [firestore]);
     const poCol = useMemoFirebase(() => collection(firestore, 'purchaseOrders'), [firestore]);
-    const salaryCol = useMemoFirebase(() => collection(firestore, 'salary_payments'), [firestore]);
-    const commissionCol = useMemoFirebase(() => collection(firestore, 'sales_commissions'), [firestore]);
 
     const { data: invoices, isLoading: l1 } = useCollection<Invoice>(invoicesCol);
     const { data: purchaseOrders, isLoading: l2 } = useCollection<PurchaseOrder>(poCol);
-    const { data: salaryPayments, isLoading: l3 } = useCollection<SalaryPayment>(salaryCol);
-    const { data: salesCommissions, isLoading: l4 } = useCollection<SalesCommission>(commissionCol);
 
     const [searchTerm, setSearchTerm] = useState("");
     const [sortConfigReceivable, setSortConfigReceivable] = useState<{ key: ReceivableSortKey, direction: 'asc' | 'desc' } | null>(null);
     const [sortConfigPayable, setSortConfigPayable] = useState<{ key: PayableSortKey, direction: 'asc' | 'desc' } | null>(null);
 
-    const isLoading = l1 || l2 || l3 || l4;
+    const isLoading = l1 || l2;
 
     const kpiData = useMemo(() => {
         const accountsReceivable = (invoices || []).reduce((acc, inv) => acc + inv.dueAmount, 0);
         const accountsPayable = (purchaseOrders || []).reduce((acc, po) => acc + po.dueAmount, 0);
-        const totalSalaries = (salaryPayments || []).reduce((acc, p) => acc + p.amount, 0);
-        return { accountsReceivable, accountsPayable, totalSalaries };
-    }, [invoices, purchaseOrders, salaryPayments]);
+        return { accountsReceivable, accountsPayable };
+    }, [invoices, purchaseOrders]);
 
     const sortedReceivables = useMemo(() => {
         let items = (invoices || []).filter(i => i.dueAmount > 0);
         if (sortConfigReceivable) {
             items.sort((a, b) => {
-                if (a[sortConfigReceivable.key] < b[sortConfigReceivable.key]) return sortConfigReceivable.direction === 'asc' ? -1 : 1;
-                if (a[sortConfigReceivable.key] > b[sortConfigReceivable.key]) return sortConfigReceivable.direction === 'asc' ? 1 : -1;
+                const aVal = a[sortConfigReceivable.key];
+                const bVal = b[sortConfigReceivable.key];
+                if (aVal < bVal) return sortConfigReceivable.direction === 'asc' ? -1 : 1;
+                if (aVal > bVal) return sortConfigReceivable.direction === 'asc' ? 1 : -1;
                 return 0;
             });
         }
@@ -62,8 +58,10 @@ export function FinancialsDataTable() {
         let items = (purchaseOrders || []).filter(p => p.dueAmount > 0);
         if (sortConfigPayable) {
             items.sort((a, b) => {
-                if (a[sortConfigPayable.key] < b[sortConfigPayable.key]) return sortConfigPayable.direction === 'asc' ? -1 : 1;
-                if (a[sortConfigPayable.key] > b[sortConfigPayable.key]) return sortConfigPayable.direction === 'asc' ? 1 : -1;
+                const aVal = a[sortConfigPayable.key];
+                const bVal = b[sortConfigPayable.key];
+                if (aVal < bVal) return sortConfigPayable.direction === 'asc' ? -1 : 1;
+                if (aVal > bVal) return sortConfigPayable.direction === 'asc' ? 1 : -1;
                 return 0;
             });
         }
@@ -94,7 +92,7 @@ export function FinancialsDataTable() {
 
     return (
         <div className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Accounts Receivable</CardTitle>
@@ -115,28 +113,12 @@ export function FinancialsDataTable() {
                         <p className="text-xs text-muted-foreground">Total money to be paid</p>
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Salaries Paid</CardTitle>
-                        <Wallet className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{currencySymbol}{kpiData.totalSalaries.toLocaleString()}</div>
-                        <p className="text-xs text-muted-foreground">Total recorded salary payments</p>
-                    </CardContent>
-                </Card>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                    <CardHeader><CardTitle>Income vs. Expense</CardTitle></CardHeader>
-                    <CardContent className="h-[300px]"><IncomeExpenseChart /></CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader><CardTitle>AR vs. AP</CardTitle></CardHeader>
-                    <CardContent className="h-[300px]"><FinancialsChart /></CardContent>
-                </Card>
-            </div>
+            <Card>
+                <CardHeader><CardTitle>AR vs. AP</CardTitle></CardHeader>
+                <CardContent className="h-[300px]"><FinancialsChart /></CardContent>
+            </Card>
             
             <Tabs defaultValue="receivable">
                  <div className="flex items-center gap-4">
@@ -156,7 +138,7 @@ export function FinancialsDataTable() {
                     </div>
                 </div>
 
-                <TabsContent value="receivable">
+                <TabsContent value="receivable" className="mt-4">
                     <Card>
                         <CardHeader>
                             <div className="flex items-center">
@@ -188,7 +170,7 @@ export function FinancialsDataTable() {
                         </CardContent>
                     </Card>
                 </TabsContent>
-                <TabsContent value="payable">
+                <TabsContent value="payable" className="mt-4">
                      <Card>
                         <CardHeader>
                              <div className="flex items-center">
