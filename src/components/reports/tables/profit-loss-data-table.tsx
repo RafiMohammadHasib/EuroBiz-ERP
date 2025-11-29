@@ -54,16 +54,20 @@ export function ProfitLossDataTable({ dateRange }: { dateRange?: DateRange }) {
         const profitMap: { [key: string]: { revenue: number, cogs: number } } = {};
 
         filteredInvoices.forEach(inv => {
-            if (inv.status === 'Paid') {
+            // Include revenue and COGS from any invoice that has received payment.
+            if (inv.paidAmount > 0) {
+                const proportionOfTotalPaid = inv.totalAmount > 0 ? inv.paidAmount / inv.totalAmount : 0;
                 inv.items.forEach(item => {
                     if (!profitMap[item.description]) {
                         profitMap[item.description] = { revenue: 0, cogs: 0 };
                     }
-                    profitMap[item.description].revenue += item.total;
+                    // Recognize revenue based on the proportion of the invoice that has been paid.
+                    profitMap[item.description].revenue += item.total * proportionOfTotalPaid;
                     
                     const product = finishedGoods.find(fg => fg.productName === item.description);
                     if (product) {
-                        profitMap[item.description].cogs += item.quantity * product.unitCost;
+                        // Recognize COGS based on the proportion of the invoice that has been paid.
+                        profitMap[item.description].cogs += (item.quantity * product.unitCost) * proportionOfTotalPaid;
                     }
                 });
             }
