@@ -1,13 +1,14 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import {
   Table,
@@ -28,6 +29,7 @@ import { collection, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import type { Invoice, PurchaseOrder } from '@/lib/data';
 import { MakePaymentDialog } from '@/components/dues/make-payment-dialog';
 import { RecordSalePaymentDialog } from '@/components/dues/record-sale-payment-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function DuesPage() {
   const { toast } = useToast();
@@ -37,6 +39,11 @@ export default function DuesPage() {
   const [paymentPo, setPaymentPo] = useState<PurchaseOrder | null>(null);
   const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null);
 
+  const [currentPageReceivable, setCurrentPageReceivable] = useState(1);
+  const [rowsPerPageReceivable, setRowsPerPageReceivable] = useState(10);
+  const [currentPagePayable, setCurrentPagePayable] = useState(1);
+  const [rowsPerPagePayable, setRowsPerPagePayable] = useState(10);
+
   // Firestore collections
   const invoicesCollection = useMemoFirebase(() => collection(firestore, 'invoices'), [firestore]);
   const purchaseOrdersCollection = useMemoFirebase(() => collection(firestore, 'purchaseOrders'), [firestore]);
@@ -45,11 +52,27 @@ export default function DuesPage() {
   const { data: invoices, isLoading: invoicesLoading } = useCollection<Invoice>(invoicesCollection);
   const { data: purchaseOrders, isLoading: poLoading } = useCollection<PurchaseOrder>(purchaseOrdersCollection);
 
-  const outstandingInvoices = invoices?.filter((i) => i.status !== 'Paid' && i.dueAmount > 0) || [];
+  const outstandingInvoices = useMemo(() => invoices?.filter((i) => i.status !== 'Paid' && i.dueAmount > 0) || [], [invoices]);
   const totalSalesDue = outstandingInvoices.reduce((acc, i) => acc + i.dueAmount, 0);
+  
+  const paginatedOutstandingInvoices = useMemo(() => {
+    const startIndex = (currentPageReceivable - 1) * rowsPerPageReceivable;
+    const endIndex = startIndex + rowsPerPageReceivable;
+    return outstandingInvoices.slice(startIndex, endIndex);
+  }, [outstandingInvoices, currentPageReceivable, rowsPerPageReceivable]);
+  const totalPagesReceivable = Math.ceil(outstandingInvoices.length / rowsPerPageReceivable);
 
-  const pendingPurchaseOrders = purchaseOrders?.filter((po) => po.paymentStatus !== 'Paid') || [];
+
+  const pendingPurchaseOrders = useMemo(() => purchaseOrders?.filter((po) => po.paymentStatus !== 'Paid') || [], [purchaseOrders]);
   const totalPurchaseDue = pendingPurchaseOrders.reduce((acc, po) => acc + po.dueAmount, 0);
+
+  const paginatedPendingPurchaseOrders = useMemo(() => {
+    const startIndex = (currentPagePayable - 1) * rowsPerPagePayable;
+    const endIndex = startIndex + rowsPerPagePayable;
+    return pendingPurchaseOrders.slice(startIndex, endIndex);
+  }, [pendingPurchaseOrders, currentPagePayable, rowsPerPagePayable]);
+  const totalPagesPayable = Math.ceil(pendingPurchaseOrders.length / rowsPerPagePayable);
+
 
   const handleRecordSalePayment = async (invoiceId: string, paymentAmount: number) => {
     if (!firestore) return;
@@ -185,8 +208,8 @@ export default function DuesPage() {
                                 Loading...
                             </TableCell>
                         </TableRow>
-                    ) : outstandingInvoices.length > 0 ? (
-                    outstandingInvoices.map((invoice) => (
+                    ) : paginatedOutstandingInvoices.length > 0 ? (
+                    paginatedOutstandingInvoices.map((invoice) => (
                         <TableRow key={invoice.id}>
                         <TableCell className="font-medium">{invoice.customer}</TableCell>
                         <TableCell>{invoice.id}</TableCell>
@@ -217,6 +240,55 @@ export default function DuesPage() {
                 </TableBody>
                 </Table>
             </CardContent>
+             <CardFooter className="flex items-center justify-between">
+                <div className="text-xs text-muted-foreground">
+                    Showing <strong>{paginatedOutstandingInvoices.length}</strong> of <strong>{outstandingInvoices.length}</strong> dues
+                </div>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                         <p className="text-xs font-medium">Rows per page</p>
+                         <Select
+                            value={`${rowsPerPageReceivable}`}
+                            onValueChange={(value) => {
+                            setRowsPerPageReceivable(Number(value));
+                            setCurrentPageReceivable(1);
+                            }}
+                        >
+                            <SelectTrigger className="h-8 w-[70px]">
+                            <SelectValue placeholder={rowsPerPageReceivable} />
+                            </SelectTrigger>
+                            <SelectContent side="top">
+                            {[10, 20, 30, 40, 50].map((pageSize) => (
+                                <SelectItem key={pageSize} value={`${pageSize}`}>
+                                {pageSize}
+                                </SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="text-xs font-medium">
+                        Page {currentPageReceivable} of {totalPagesReceivable}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPageReceivable(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPageReceivable === 1}
+                        >
+                            Previous
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPageReceivable(prev => Math.min(prev + 1, totalPagesReceivable))}
+                            disabled={currentPageReceivable === totalPagesReceivable}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                </div>
+            </CardFooter>
             </Card>
         </TabsContent>
         <TabsContent value="payable">
@@ -245,8 +317,8 @@ export default function DuesPage() {
                                     Loading...
                                 </TableCell>
                             </TableRow>
-                        ) : pendingPurchaseOrders.length > 0 ? (
-                        pendingPurchaseOrders.map((po) => (
+                        ) : paginatedPendingPurchaseOrders.length > 0 ? (
+                        paginatedPendingPurchaseOrders.map((po) => (
                             <TableRow key={po.id}>
                             <TableCell className="font-medium">{po.supplier}</TableCell>
                             <TableCell>{po.id}</TableCell>
@@ -271,6 +343,55 @@ export default function DuesPage() {
                     </TableBody>
                 </Table>
             </CardContent>
+            <CardFooter className="flex items-center justify-between">
+                <div className="text-xs text-muted-foreground">
+                    Showing <strong>{paginatedPendingPurchaseOrders.length}</strong> of <strong>{pendingPurchaseOrders.length}</strong> dues
+                </div>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                         <p className="text-xs font-medium">Rows per page</p>
+                         <Select
+                            value={`${rowsPerPagePayable}`}
+                            onValueChange={(value) => {
+                            setRowsPerPagePayable(Number(value));
+                            setCurrentPagePayable(1);
+                            }}
+                        >
+                            <SelectTrigger className="h-8 w-[70px]">
+                            <SelectValue placeholder={rowsPerPagePayable} />
+                            </SelectTrigger>
+                            <SelectContent side="top">
+                            {[10, 20, 30, 40, 50].map((pageSize) => (
+                                <SelectItem key={pageSize} value={`${pageSize}`}>
+                                {pageSize}
+                                </SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="text-xs font-medium">
+                        Page {currentPagePayable} of {totalPagesPayable}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPagePayable(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPagePayable === 1}
+                        >
+                            Previous
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPagePayable(prev => Math.min(prev + 1, totalPagesPayable))}
+                            disabled={currentPagePayable === totalPagesPayable}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                </div>
+            </CardFooter>
             </Card>
         </TabsContent>
         </Tabs>
