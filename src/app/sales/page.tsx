@@ -23,10 +23,18 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, Search, DollarSign, CreditCard, FileText } from "lucide-react"
+import { PlusCircle, Search, DollarSign, CreditCard, FileText, MoreHorizontal } from "lucide-react"
 import { useSettings } from "@/context/settings-context";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 
 export default function SalesPage() {
@@ -182,9 +190,26 @@ export default function SalesPage() {
                                 {currencySymbol}{(invoice.totalAmount ?? 0).toLocaleString()}
                             </TableCell>
                             <TableCell className="text-center">
-                                <Link href={`/sales/${invoice.id}`} passHref>
-                                    <Button size="sm" variant="outline">View Invoice</Button>
-                                </Link>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                    <Button aria-haspopup="true" size="icon" variant="ghost">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                        <span className="sr-only">Toggle menu</span>
+                                    </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <DropdownMenuItem asChild>
+                                        <Link href={`/sales/${invoice.id}`}>View Details</Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem disabled>Edit</DropdownMenuItem>
+                                    <DropdownMenuItem disabled>Generate Invoice</DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem className="text-destructive" disabled>
+                                        Cancel Sale
+                                    </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </TableCell>
                             </TableRow>
                         ))
