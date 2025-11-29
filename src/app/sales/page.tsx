@@ -10,9 +10,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { collection } from "firebase/firestore";
-import type { Invoice } from "@/lib/data";
+import type { Invoice, SalesCommission, UserRole } from "@/lib/data";
 import {
   Table,
   TableBody,
@@ -35,21 +35,42 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { SalesDetailsDialog } from "@/components/sales/sales-details-dialog";
 
 
 export default function SalesPage() {
   const firestore = useFirestore();
   const { currencySymbol } = useSettings();
   const invoicesCollection = useMemoFirebase(() => collection(firestore, 'invoices'), [firestore]);
-  const { data: invoices, isLoading } = useCollection<Invoice>(invoicesCollection);
+  const salesCommissionsCollection = useMemoFirebase(() => collection(firestore, 'sales_commissions'), [firestore]);
+  const usersCollection = useMemoFirebase(() => collection(firestore, 'salespeople'), [firestore]);
+  
+  const { data: invoices, isLoading: invoicesLoading } = useCollection<Invoice>(invoicesCollection);
+  const { data: salesCommissions, isLoading: commissionsLoading } = useCollection<SalesCommission>(salesCommissionsCollection);
+  const { data: users, isLoading: usersLoading } = useCollection<UserRole>(usersCollection);
   
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
   const safeInvoices = invoices || [];
+  const safeCommissions = salesCommissions || [];
+  const safeUsers = users || [];
+  
+  const isLoading = invoicesLoading || commissionsLoading || usersLoading;
+
+  const invoiceWithSalesperson = useMemo(() => {
+    return safeInvoices.map(invoice => {
+      const commission = safeCommissions.find(c => c.invoiceId === invoice.id);
+      const salesperson = safeUsers.find(u => u.uid === commission?.salespersonId);
+      return {
+        ...invoice,
+        salespersonName: salesperson ? `${salesperson.firstName} ${salesperson.lastName}` : 'N/A',
+      };
+    });
+  }, [safeInvoices, safeCommissions, safeUsers]);
 
   const kpiData = useMemo(() => {
-    // Correctly calculate total revenue by summing all paid amounts across ALL invoices
     const totalRevenue = safeInvoices
       .reduce((acc, inv) => acc + (inv.paidAmount ?? 0), 0);
 
@@ -63,7 +84,7 @@ export default function SalesPage() {
   }, [safeInvoices]);
 
   const filteredInvoices = useMemo(() => {
-    return safeInvoices
+    return invoiceWithSalesperson
       .filter(invoice => {
         // Status filter
         if (statusFilter !== 'all' && invoice.status.toLowerCase().replace(' ', '-') !== statusFilter) {
@@ -76,7 +97,7 @@ export default function SalesPage() {
         return true;
       })
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [safeInvoices, searchTerm, statusFilter]);
+  }, [invoiceWithSalesperson, searchTerm, statusFilter]);
 
   const getStatusVariant = (status: Invoice['status']) => {
     switch (status) {
@@ -199,9 +220,7 @@ export default function SalesPage() {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                    <DropdownMenuItem asChild>
-                                        <Link href={`/sales/${invoice.id}`}>View Details</Link>
-                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setSelectedInvoice(invoice)}>View Details</DropdownMenuItem>
                                     <DropdownMenuItem disabled>Edit</DropdownMenuItem>
                                     <DropdownMenuItem disabled>Generate Invoice</DropdownMenuItem>
                                     <DropdownMenuSeparator />
@@ -226,6 +245,13 @@ export default function SalesPage() {
             </Card>
         </Tabs>
     </div>
+    {selectedInvoice && (
+        <SalesDetailsDialog 
+            isOpen={!!selectedInvoice}
+            onOpenChange={() => setSelectedInvoice(null)}
+            invoice={selectedInvoice}
+        />
+    )}
     </>
   );
 }

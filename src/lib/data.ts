@@ -1,5 +1,6 @@
 
 
+
 export type Invoice = {
   id: string;
   customer: string;
@@ -12,6 +13,13 @@ export type Invoice = {
   status: 'Paid' | 'Unpaid' | 'Overdue' | 'Partially Paid';
   items: InvoiceItem[];
 };
+
+export type UserRole = {
+    uid: string;
+    role: 'admin' | 'salesperson';
+    firstName: string;
+    lastName: string;
+}
 
 export type Customer = {
     id: string;
@@ -357,6 +365,20 @@ export type SalaryPayment = {
     amount: number;
 };
 
+
+export type SalesReturn = {
+    id: string;
+    invoiceId: string;
+    returnDate: string;
+    items: {
+        productId: string;
+        productName: string;
+        quantity: number;
+        unitPrice: number;
+    }[];
+    totalReturnValue: number;
+    reason: string;
+}
 
 export type Expense = {
     id: string;
