@@ -255,8 +255,8 @@ export default function Home() {
                         <TableRow key={invoice.id}>
                             <TableCell>
                                 <div className="font-medium">{invoice.customer}</div>
-                                <div className="hidden text-sm text-muted-foreground md:inline">
-                                    {invoice.customerEmail}
+                                <div className="text-sm text-muted-foreground">
+                                    {invoice.items.map(item => `${item.quantity}x ${item.description}`).join(', ')}
                                 </div>
                             </TableCell>
                             <TableCell>
@@ -289,5 +289,7 @@ export default function Home() {
     </div>
   )
 }
+
+    
 
     
