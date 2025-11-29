@@ -43,7 +43,7 @@ export default function ProductPerformanceChart() {
     return Object.entries(productRevenue).map(([name, revenue]) => ({
         name: name.substring(0,15) + (name.length > 15 ? '...' : ''),
         revenue,
-    })).sort((a,b) => b.revenue - a.revenue);
+    })).sort((a,b) => b.revenue - a.revenue).slice(0, 10);
 
   }, [invoices]);
 
@@ -76,3 +76,4 @@ export default function ProductPerformanceChart() {
       </ChartContainer>
   );
 }
+
