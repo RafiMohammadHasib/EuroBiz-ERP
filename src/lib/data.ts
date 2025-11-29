@@ -349,24 +349,10 @@ export const notifications: Notification[] = [
     },
 ];
 
-export type SalaryPayment = {
+export type Expense = {
     id: string;
-    employeeName: string;
-    position: string;
-    paymentDate: string;
+    category: string;
+    description: string;
+    date: string;
     amount: number;
-}
-
-export type SalesReturn = {
-    id: string;
-    invoiceId: string;
-    returnDate: string;
-    items: {
-        productId: string;
-        productName: string;
-        quantity: number;
-        unitPrice: number;
-    }[];
-    totalReturnValue: number;
-    reason: string;
 }

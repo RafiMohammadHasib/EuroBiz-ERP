@@ -156,6 +156,10 @@ service cloud.firestore {
     match /sales_returns/{returnId} {
         allow read, write: if isSignedIn();
     }
+    
+    match /expenses/{expenseId} {
+        allow read, write: if isSignedIn();
+    }
 
 
     // ---------------------------

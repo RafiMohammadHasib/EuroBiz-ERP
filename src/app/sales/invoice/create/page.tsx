@@ -17,7 +17,7 @@ import { CreateInvoiceDialog } from "@/components/invoices/create-invoice-dialog
 import { useRouter } from "next/navigation";
 
 
-export default function CreateSalePage() {
+export default function GenerateInvoicePage() {
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
@@ -155,9 +155,9 @@ export default function CreateSalePage() {
     <div className="space-y-6">
        <Card>
           <CardHeader>
-            <CardTitle>Create Sale</CardTitle>
+            <CardTitle>Generate New Invoice</CardTitle>
             <CardDescription>
-              Select a distributor and add products to generate a new invoice. Commissions will be calculated automatically.
+              Select a distributor and add products to the invoice. Commissions and stock levels will be updated automatically upon generation.
             </CardDescription>
           </CardHeader>
           <CardContent>
