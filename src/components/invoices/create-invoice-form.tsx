@@ -440,8 +440,48 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                     </div>
                 </Card>
                 
-                 <div className="flex justify-end mt-6">
-                    <div className="w-full md:w-80 space-y-2">
+                <Separator className="my-6" />
+
+                <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-2 gap-6">
+                            <Card className="p-4 grid gap-2">
+                                <Label>PAYMENT INSTRUCTIONS</Label>
+                                <div className="text-sm text-muted-foreground pt-2 space-y-1">
+                                    <p><span className="font-medium text-foreground">Bank Name:</span> United Commercial Bank PLC</p>
+                                    <p><span className="font-medium text-foreground">Account Name:</span> Euro Marble & Granite Ltd.</p>
+                                    <p><span className="font-medium text-foreground">Account Number:</span> 1041101000000928</p>
+                                </div>
+                            </Card>
+                             <Card className="p-4 grid gap-2">
+                                <Label>TERMS & CONDITIONS</Label>
+                                <div className="text-sm text-muted-foreground pt-2">
+                                  <p>{terms}</p>
+                                </div>
+                            </Card>
+                        </div>
+                        <div className="grid grid-cols-2 gap-6">
+                            <Card className="p-4 grid gap-2">
+                                <Label>NOTES / MEMO</Label>
+                                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
+                            </Card>
+                             <Card className="p-4 grid gap-2">
+                                <Label>SIGNATURE</Label>
+                                 <canvas
+                                    ref={signatureCanvasRef}
+                                    width="250"
+                                    height="100"
+                                    className="border rounded-md bg-white cursor-crosshair"
+                                    onMouseDown={startDrawing}
+                                    onMouseMove={draw}
+                                    onMouseUp={stopDrawing}
+                                    onMouseLeave={stopDrawing}
+                                />
+                                <Button variant="link" size="sm" onClick={clearSignature} className="self-start">Clear</Button>
+                            </Card>
+                        </div>
+                    </div>
+                    <div className="space-y-2">
                         <div className="flex justify-between"><span>Subtotal</span><span className="font-medium">{currencySymbol}{subTotal.toFixed(2)}</span></div>
                         <div className="flex justify-between items-center">
                             <span>Discount</span>
@@ -462,44 +502,6 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                     </div>
                 </div>
 
-                <Separator className="my-6" />
-
-                <div className="grid grid-cols-2 gap-6">
-                    <Card className="p-4 grid gap-2">
-                        <Label>PAYMENT INSTRUCTIONS</Label>
-                        <div className="text-sm text-muted-foreground pt-2 space-y-1">
-                            <p><span className="font-medium text-foreground">Bank Name:</span> United Commercial Bank PLC</p>
-                            <p><span className="font-medium text-foreground">Account Name:</span> Euro Marble & Granite Ltd.</p>
-                            <p><span className="font-medium text-foreground">Account Number:</span> 1041101000000928</p>
-                        </div>
-                    </Card>
-                     <Card className="p-4 grid gap-2">
-                        <Label>TERMS & CONDITIONS</Label>
-                        <div className="text-sm text-muted-foreground pt-2">
-                          <p>{terms}</p>
-                        </div>
-                    </Card>
-                </div>
-                 <div className="grid grid-cols-2 gap-6 mt-6">
-                    <Card className="p-4 grid gap-2">
-                        <Label>NOTES / MEMO</Label>
-                        <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
-                    </Card>
-                     <Card className="p-4 grid gap-2">
-                        <Label>SIGNATURE</Label>
-                         <canvas
-                            ref={signatureCanvasRef}
-                            width="250"
-                            height="100"
-                            className="border rounded-md bg-white cursor-crosshair"
-                            onMouseDown={startDrawing}
-                            onMouseMove={draw}
-                            onMouseUp={stopDrawing}
-                            onMouseLeave={stopDrawing}
-                        />
-                        <Button variant="link" size="sm" onClick={clearSignature} className="self-start">Clear</Button>
-                    </Card>
-                </div>
             </div>
         </div>
     </div>
