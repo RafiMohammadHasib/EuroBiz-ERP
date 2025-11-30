@@ -209,18 +209,24 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                     <div className="grid grid-cols-2 gap-6">
                         <div>
                              <Label className="text-xs text-muted-foreground">FROM (BUSINESS)</Label>
-                            <div className="flex items-center gap-4 mt-4">
-                                <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center">
-                                    <Image src="/logo-placeholder.svg" alt="logo" width={32} height={32} />
+                            <div className="flex items-start gap-4 mt-4">
+                                <div className="w-24 h-24 border-2 border-dashed rounded-md flex flex-col items-center justify-center text-muted-foreground">
+                                    <Image src={companyDetails.logoUrl} alt="logo" width={48} height={48} />
+                                    <span className='text-xs mt-1'>Logo</span>
                                 </div>
                                 <div>
-                                    <p className="font-semibold">{companyDetails.name}</p>
-                                    <p className="text-sm text-muted-foreground">{companyDetails.email}</p>
+                                    <p className="font-semibold text-lg">{companyDetails.name}</p>
+                                    <p className="text-sm text-muted-foreground">Upload a square or landscape logo.</p>
                                 </div>
                             </div>
-                             <div className="text-sm text-muted-foreground mt-4 space-y-1">
+                             <div className="text-sm text-muted-foreground mt-4 space-y-2">
+                                <Separator />
+                                <p>{companyDetails.email}</p>
+                                <Separator />
                                 <p>{companyDetails.address}</p>
+                                 <Separator />
                                 <p>{companyDetails.phone}</p>
+                                 <Separator />
                                 <p>{companyDetails.name}.com</p>
                             </div>
                         </div>
