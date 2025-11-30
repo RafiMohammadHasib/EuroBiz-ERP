@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -59,12 +60,11 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
           @media print {
             @page {
               size: A4;
-              margin: 0;
+              margin: 20px; /* Added margin for printing */
             }
             body {
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
-              margin: 0;
               font-family: sans-serif;
             }
           }
@@ -132,12 +132,16 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
                     </tbody>
                 </table>
                 
-                <div className="grid grid-cols-2 mt-6">
+                <div className="grid grid-cols-2 mt-6 items-start">
                     <div className="text-xs text-gray-500 pr-8">
-                        <h4 className="font-semibold text-black mb-1">Notes</h4>
-                        <p>{notes}</p>
-                        <h4 className="font-semibold text-black mt-4 mb-1">Terms & Conditions</h4>
-                        <p>{terms}</p>
+                        <div className='mb-4'>
+                            <h4 className="font-semibold text-black mb-1">Notes</h4>
+                            <p>{notes}</p>
+                        </div>
+                        <div>
+                             <h4 className="font-semibold text-black mb-1">Terms & Conditions</h4>
+                            <p>{terms}</p>
+                        </div>
                     </div>
                     <div className="space-y-2 text-sm">
                         <div className="flex justify-between"><span>Subtotal</span><span>{currencySymbol}{subTotal.toFixed(2)}</span></div>
