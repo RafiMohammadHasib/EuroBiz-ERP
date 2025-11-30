@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -297,14 +298,14 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                 </Card>
 
                 <Card className="p-6">
-                     <div className="grid grid-cols-[3fr_1fr_1fr_1fr_auto] gap-2 text-sm font-bold text-blue-800 mb-2">
+                    <div className="grid grid-cols-[3fr_1fr_1fr_1fr_auto] gap-2 text-sm font-bold text-blue-800 mb-2">
                         <Label>DESCRIPTION</Label>
                         <Label className="text-right">QTY</Label>
                         <Label className="text-right">PRICE</Label>
                         <Label className="text-right">TOTAL</Label>
                         <span></span>
                     </div>
-                     <div className="space-y-2">
+                    <div className="space-y-2">
                         {items.map((item, index) => (
                             <InvoiceItemForm
                                 key={index}
@@ -314,11 +315,12 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                                 onRemove={() => handleRemoveItem(index)}
                             />
                         ))}
-                     </div>
-                     <Button variant="outline" size="sm" onClick={handleAddItem} className="mt-4">
+                    </div>
+                    <Button variant="outline" size="sm" onClick={handleAddItem} className="mt-4">
                         <PlusCircle className="mr-2 h-4 w-4" /> Add Item
                     </Button>
                 </Card>
+
 
                 <div className="grid grid-cols-2 gap-6">
                     <Card className="p-4 grid gap-2">
