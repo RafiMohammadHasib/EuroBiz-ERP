@@ -30,13 +30,6 @@ interface CreateInvoiceFormProps {
   isLoading: boolean;
 }
 
-interface InvoiceItemFormProps {
-  item: Omit<InvoiceItemType, 'id' | 'total'>;
-  products: FinishedGood[];
-  onChange: (item: Omit<InvoiceItemType, 'id' | 'total'>) => void;
-  onRemove: () => void;
-}
-
 function InvoiceItemForm({ item, products, onChange, onRemove }: InvoiceItemFormProps) {
   const { currencySymbol } = useSettings();
 
@@ -466,18 +459,18 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                                 <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
                             </Card>
                              <Card className="p-4 grid gap-2">
-                                <Label>SIGNATURE</Label>
+                                <div className="flex justify-between items-center">
+                                    <Label>SIGNATURE</Label>
+                                    <Button variant="link" size="sm" onClick={clearSignature} className="h-auto p-0 text-destructive">Clear</Button>
+                                </div>
                                  <canvas
                                     ref={signatureCanvasRef}
-                                    width={250}
-                                    height={100}
-                                    className="border rounded-md bg-white cursor-crosshair w-full"
+                                    className="border rounded-md bg-white cursor-crosshair w-full h-[100px]"
                                     onMouseDown={startDrawing}
                                     onMouseMove={draw}
                                     onMouseUp={stopDrawing}
                                     onMouseLeave={stopDrawing}
                                 />
-                                <Button variant="link" size="sm" onClick={clearSignature} className="self-start">Clear</Button>
                             </Card>
                         </div>
                     </div>
