@@ -41,10 +41,24 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
     if (printContent) {
       const originalContents = document.body.innerHTML;
       const printContents = printContent.innerHTML;
-      document.body.innerHTML = printContents;
+      const styles = `
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+          body { font-family: 'Inter', sans-serif; }
+          @page { size: A4; margin: 0; }
+          .invoice-container { 
+            width: 210mm; 
+            min-height: 297mm; 
+            padding: 20mm; 
+            margin: 0 auto; 
+            box-sizing: border-box;
+          }
+        </style>
+      `;
+      document.body.innerHTML = styles + printContents;
       window.print();
       document.body.innerHTML = originalContents;
-      window.location.reload(); // To restore event listeners
+      window.location.reload();
     }
   };
 
@@ -55,13 +69,13 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
           <DialogHeader className="p-6 print:hidden">
             <DialogTitle className="text-2xl">Invoice Preview</DialogTitle>
           </DialogHeader>
-          <div className="p-6">
-            <div className="p-6 border rounded-lg bg-white text-black shadow-lg">
+          <div className="p-6 bg-gray-100">
+            <div className="a4-preview mx-auto p-12 border rounded-lg bg-white text-black shadow-lg">
                 <div className="flex justify-between items-start mb-6">
                     <div>
                         <h2 className="text-2xl font-bold text-teal-600">INVOICE</h2>
-                        <div className="text-sm text-gray-500">
-                            <p>BILL TO</p>
+                        <div className="text-sm text-gray-500 mt-4">
+                            <p className="font-semibold text-xs uppercase">BILL TO</p>
                             <p className="font-semibold text-black">{distributor?.name || invoice.customer}</p>
                             <p>{distributor?.location}</p>
                             <p>{distributor?.email}</p>
@@ -78,20 +92,20 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
 
                 <table className="w-full text-sm">
                     <thead>
-                        <tr className="border-b">
-                            <th className="text-left py-2 font-semibold">DESCRIPTION</th>
-                            <th className="text-right py-2 font-semibold">PRICE</th>
-                            <th className="text-right py-2 font-semibold">QTY</th>
-                            <th className="text-right py-2 font-semibold">TOTAL</th>
+                        <tr className="border-b bg-gray-50">
+                            <th className="text-left py-2 px-3 font-semibold uppercase">DESCRIPTION</th>
+                            <th className="text-right py-2 px-3 font-semibold uppercase">PRICE</th>
+                            <th className="text-right py-2 px-3 font-semibold uppercase">QTY</th>
+                            <th className="text-right py-2 px-3 font-semibold uppercase">TOTAL</th>
                         </tr>
                     </thead>
                     <tbody>
                         {invoice.items.map((item) => (
                             <tr key={item.id} className="border-b">
-                                <td className="py-2">{item.description}</td>
-                                <td className="text-right py-2">{currencySymbol}{item.unitPrice.toFixed(2)}</td>
-                                <td className="text-right py-2">{item.quantity}</td>
-                                <td className="text-right py-2">{currencySymbol}{(item.unitPrice * item.quantity).toFixed(2)}</td>
+                                <td className="py-2 px-3">{item.description}</td>
+                                <td className="text-right py-2 px-3">{currencySymbol}{item.unitPrice.toFixed(2)}</td>
+                                <td className="text-right py-2 px-3">{item.quantity}</td>
+                                <td className="text-right py-2 px-3">{currencySymbol}{(item.unitPrice * item.quantity).toFixed(2)}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -122,14 +136,29 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
                     </div>
                 </div>
 
-                 <div className="mt-8 pt-4 border-t-2 border-teal-600 flex justify-between text-xs text-white bg-teal-600 -m-6 px-6 py-2 rounded-b-lg">
+                 <div className="mt-8 pt-4 border-t-2 border-teal-600 flex justify-between text-xs text-white bg-teal-600 -m-12 mt-12 px-12 py-2 rounded-b-lg">
                    <span>{companyDetails.email}</span>
                    <span>www.deshchemicals.com</span>
                 </div>
             </div>
           </div>
            <style jsx global>{`
+                .a4-preview {
+                  width: 210mm;
+                  min-height: 297mm;
+                  display: flex;
+                  flex-direction: column;
+                  justify-content: space-between;
+                }
                 @media print {
+                    @page {
+                        size: A4;
+                        margin: 0;
+                    }
+                    body {
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
                     body * {
                         visibility: hidden;
                     }
@@ -141,6 +170,10 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
                         left: 0;
                         top: 0;
                         width: 100%;
+                    }
+                    .a4-preview {
+                        box-shadow: none;
+                        border: none;
                     }
                 }
             `}</style>
