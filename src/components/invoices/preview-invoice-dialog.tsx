@@ -38,12 +38,6 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
   const handlePrint = () => {
     const printContent = document.getElementById('invoice-preview-content');
     if (printContent) {
-      const originalContents = document.body.innerHTML;
-      
-      // Clone the content to avoid altering the live DOM
-      const printClone = printContent.cloneNode(true) as HTMLElement;
-      
-      // Get all stylesheets from the main document
       const stylesheets = Array.from(document.styleSheets)
         .map(sheet => {
           try {
@@ -51,19 +45,17 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
               .map(rule => rule.cssText)
               .join('');
           } catch (e) {
-            // Some stylesheets may have cross-origin restrictions
             console.warn('Could not read stylesheet: ', sheet.href);
             return '';
           }
         })
-        .join('\\n');
+        .join('\n');
 
       const printWindow = window.open('', '', 'height=800,width=800');
       if (printWindow) {
         printWindow.document.write('<html><head><title>Print Invoice</title>');
         printWindow.document.write('<style>');
         printWindow.document.write(stylesheets);
-        // Add specific print styles
         printWindow.document.write(`
           @media print {
             @page {
@@ -74,24 +66,16 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
               margin: 0;
-            }
-            .invoice-print-container {
-              padding: 20mm;
-              box-sizing: border-box;
-              width: 210mm;
-              height: 297mm;
+              font-family: sans-serif;
             }
           }
         `);
         printWindow.document.write('</style></head><body>');
-        printWindow.document.write('<div class="invoice-print-container">');
-        printWindow.document.write(printClone.innerHTML);
-        printWindow.document.write('</div>');
+        printWindow.document.write(printContent.innerHTML);
         printWindow.document.write('</body></html>');
         printWindow.document.close();
         printWindow.focus();
         
-        // Use a timeout to ensure content is loaded before printing
         setTimeout(() => {
           printWindow.print();
           printWindow.close();
@@ -149,8 +133,14 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
                     </tbody>
                 </table>
                 
-                <div className="flex justify-end mt-6">
-                    <div className="w-full md:w-80 space-y-2 text-sm">
+                <div className="grid grid-cols-2 mt-6">
+                    <div className="text-xs text-gray-500">
+                        <h4 className="font-semibold text-black mb-1">Notes</h4>
+                        <p>{notes}</p>
+                        <h4 className="font-semibold text-black mt-4 mb-1">Terms & Conditions</h4>
+                        <p>{terms}</p>
+                    </div>
+                    <div className="space-y-2 text-sm">
                         <div className="flex justify-between"><span>Subtotal</span><span>{currencySymbol}{subTotal.toFixed(2)}</span></div>
                         <div className="flex justify-between"><span>Discount</span><span>{currencySymbol}{discount.toFixed(2)}</span></div>
                         <div className="flex justify-between"><span>Tax</span><span>{currencySymbol}{tax.toFixed(2)}</span></div>
@@ -159,7 +149,6 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
                         
                         {payments.length > 0 && (
                             <div className="pt-2">
-                                <Separator className="bg-gray-300 my-2"/>
                                 {payments.map((p, i) => (
                                     <div key={i} className="flex justify-between items-center text-gray-500">
                                         <span>Payment ({format(p.date, "PP")})</span>
@@ -173,11 +162,6 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
                         <div className="flex justify-between text-base font-bold mt-2 text-red-600"><span>AMOUNT DUE</span><span>{currencySymbol}{invoice.dueAmount.toFixed(2)}</span></div>
                     </div>
                 </div>
-
-                 <div className="mt-8 pt-4 border-t-2 border-gray-300 text-xs text-gray-500">
-                    <h4 className="font-semibold text-black mb-1">Notes</h4>
-                    <p>{notes}</p>
-                 </div>
             </div>
           </div>
        
