@@ -207,7 +207,7 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
             <div className="space-y-6">
                 <Card className="p-6">
                     <div className="grid grid-cols-2 gap-6">
-                        <div style={{ backgroundColor: '#d0d6e7' }} className="p-4 rounded-md">
+                        <div style={{ backgroundColor: '#f1f3f8' }} className="p-4 rounded-md">
                              <Label className="text-xs text-blue-800 font-semibold">FROM (BUSINESS)</Label>
                             <div className="flex items-start gap-4 mt-4">
                                 <div className="w-24 h-24 border-2 border-dashed border-gray-400 rounded-md flex flex-col items-center justify-center text-muted-foreground bg-white">
@@ -423,3 +423,5 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
     </div>
   );
 }
+
+    
