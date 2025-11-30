@@ -17,10 +17,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { CreateDistributorDialog } from "@/components/distributors/create-distributor-dialog";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useSettings } from "@/context/settings-context";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { EditDistributorDialog } from "@/components/distributors/edit-distributor-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function DistributorsPage() {
     const firestore = useFirestore();
@@ -35,6 +37,8 @@ export default function DistributorsPage() {
     const { data: salesCommissions, isLoading: scLoading } = useCollection<SalesCommission>(salesCommissionsCollection);
     
     const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
+    const [distributorToEdit, setDistributorToEdit] = useState<Distributor | null>(null);
+    const [distributorToDelete, setDistributorToDelete] = useState<Distributor | null>(null);
     const { toast } = useToast();
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -79,6 +83,7 @@ export default function DistributorsPage() {
 
     const addDistributor = async (newDistributorData: Omit<Distributor, 'id' | 'totalSales' | 'totalCommission' | 'outstandingDues'>) => {
       try {
+        if (!firestore) return;
         const newDistributor = {
             ...newDistributorData,
             totalSales: 0,
@@ -99,6 +104,52 @@ export default function DistributorsPage() {
         });
       }
     }
+
+    const handleUpdateDistributor = async (updatedDistributor: Distributor) => {
+        if (!firestore) return;
+        try {
+            const distRef = doc(firestore, 'distributors', updatedDistributor.id);
+            await updateDoc(distRef, {
+                name: updatedDistributor.name,
+                location: updatedDistributor.location,
+                tier: updatedDistributor.tier,
+                email: updatedDistributor.email,
+                phone: updatedDistributor.phone,
+            });
+            toast({
+                title: 'Distributor Updated',
+                description: `Distributor "${updatedDistributor.name}" has been updated.`,
+            });
+            setDistributorToEdit(null);
+        } catch (error) {
+            console.error("Error updating distributor: ", error);
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not update distributor details.',
+            });
+        }
+    };
+
+    const handleDeleteDistributor = async () => {
+        if (!distributorToDelete || !firestore) return;
+        try {
+            const distRef = doc(firestore, 'distributors', distributorToDelete.id);
+            await deleteDoc(distRef);
+            toast({
+                title: 'Distributor Deleted',
+                description: `Distributor "${distributorToDelete.name}" has been deleted.`,
+            });
+            setDistributorToDelete(null);
+        } catch (error) {
+            console.error("Error deleting distributor: ", error);
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not delete the distributor.',
+            });
+        }
+    };
 
   return (
     <>
@@ -209,8 +260,8 @@ export default function DistributorsPage() {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                    <DropdownMenuItem>Edit</DropdownMenuItem>
-                                    <DropdownMenuItem>Delete</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setDistributorToEdit(dist)}>Edit</DropdownMenuItem>
+                                    <DropdownMenuItem className="text-destructive" onClick={() => setDistributorToDelete(dist)}>Delete</DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </TableCell>
@@ -276,6 +327,30 @@ export default function DistributorsPage() {
         onOpenChange={setCreateDialogOpen}
         onCreate={addDistributor}
     />
+    {distributorToEdit && (
+        <EditDistributorDialog
+            isOpen={!!distributorToEdit}
+            onOpenChange={(open) => !open && setDistributorToEdit(null)}
+            distributor={distributorToEdit}
+            onUpdate={handleUpdateDistributor}
+        />
+    )}
+    <AlertDialog open={!!distributorToDelete} onOpenChange={(open) => !open && setDistributorToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This will permanently delete the distributor "{distributorToDelete?.name}". This action cannot be undone.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteDistributor} className="bg-destructive hover:bg-destructive/90">
+                    Delete
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }
