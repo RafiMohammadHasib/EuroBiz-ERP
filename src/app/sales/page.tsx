@@ -245,6 +245,7 @@ export default function SalesPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
+                        <TableHead>Invoice #</TableHead>
                         <TableHead>Customer</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Status</TableHead>
@@ -255,14 +256,15 @@ export default function SalesPage() {
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">
+                                <TableCell colSpan={6} className="h-24 text-center">
                                     Loading...
                                 </TableCell>
                             </TableRow>
                         ) : paginatedInvoices.length > 0 ? (
                         paginatedInvoices.map((invoice) => (
                             <TableRow key={invoice.id}>
-                            <TableCell className="font-medium">{invoice.customer}</TableCell>
+                            <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
+                            <TableCell>{invoice.customer}</TableCell>
                             <TableCell>{new Date(invoice.date).toLocaleString()}</TableCell>
                             <TableCell>
                                 <Badge
@@ -286,7 +288,7 @@ export default function SalesPage() {
                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                     <DropdownMenuItem onClick={() => setSelectedInvoice(invoice)}>View Sale Details</DropdownMenuItem>
                                     <DropdownMenuItem asChild>
-                                        <Link href={`/sales/invoice/${invoice.id}`} passHref>View Invoice</Link>
+                                        <Link href={`/sales/invoice/${invoice.invoiceNumber}`} passHref>View Invoice</Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem disabled>Edit</DropdownMenuItem>
                                     <DropdownMenuSeparator />
@@ -304,7 +306,7 @@ export default function SalesPage() {
                         ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center h-24">
+                                <TableCell colSpan={6} className="text-center h-24">
                                     No invoices found.
                                 </TableCell>
                             </TableRow>

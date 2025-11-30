@@ -1,4 +1,5 @@
 
+
 'use client';
 import { notFound, useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -8,8 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Printer, Landmark, ArrowLeft, Loader2 } from 'lucide-react';
 import { useSettings } from '@/context/settings-context';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 import type { Invoice } from '@/lib/data';
 import { companyDetails } from '@/lib/data';
 
@@ -20,12 +21,13 @@ export default function InvoicePage() {
   const params = useParams();
   const id = params.id as string;
 
-  const invoiceRef = useMemoFirebase(() => {
+  const invoiceQuery = useMemoFirebase(() => {
     if (!id || !firestore) return null;
-    return doc(firestore, 'invoices', id);
+    return query(collection(firestore, 'invoices'), where('invoiceNumber', '==', id));
   }, [firestore, id]);
 
-  const { data: invoice, isLoading } = useDoc<Invoice>(invoiceRef);
+  const { data, isLoading } = useCollection<Invoice>(invoiceQuery);
+  const invoice = data?.[0];
 
   const handlePrint = () => {
     window.print();
@@ -39,8 +41,12 @@ export default function InvoicePage() {
     )
   }
 
-  if (!invoice) {
+  if (!invoice && !isLoading) {
     notFound();
+  }
+
+  if (!invoice) {
+      return null;
   }
 
   return (
@@ -69,7 +75,7 @@ export default function InvoicePage() {
                 </div>
                 <div className="text-right">
                     <h3 className="text-3xl font-bold tracking-tight">INVOICE</h3>
-                    <p className="text-muted-foreground text-sm mt-1">{invoice.id}</p>
+                    <p className="text-muted-foreground text-sm mt-1">{invoice.invoiceNumber}</p>
                     <Badge 
                         variant={invoice.status === 'Paid' ? 'secondary' : invoice.status === 'Unpaid' ? 'outline' : 'destructive'}
                         className="mt-4 text-lg"

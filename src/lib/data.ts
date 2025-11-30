@@ -3,8 +3,10 @@
 
 
 
+
 export type Invoice = {
   id: string;
+  invoiceNumber: string;
   customer: string;
   customerEmail: string;
   date: string;
@@ -55,7 +57,8 @@ export const customers: Customer[] = [
 
 export const invoices: Invoice[] = [
   { 
-    id: 'INV-001', 
+    id: 'inv-doc-1',
+    invoiceNumber: 'INV-001', 
     customer: 'Stark Industries', 
     customerEmail: 'tony@stark.com', 
     date: '2023-10-01T10:00:00Z', 
@@ -70,7 +73,8 @@ export const invoices: Invoice[] = [
     ]
   },
   { 
-    id: 'INV-002', 
+    id: 'inv-doc-2',
+    invoiceNumber: 'INV-002', 
     customer: 'Wayne Enterprises', 
     customerEmail: 'bruce@wayne.com', 
     date: '2023-10-05T11:30:00Z', 
@@ -84,7 +88,8 @@ export const invoices: Invoice[] = [
     ]
   },
   { 
-    id: 'INV-003', 
+    id: 'inv-doc-3',
+    invoiceNumber: 'INV-003', 
     customer: 'Oscorp', 
     customerEmail: 'norman@oscorp.com', 
     date: '2023-11-15T14:00:00Z', 
@@ -98,7 +103,8 @@ export const invoices: Invoice[] = [
     ]
   },
   { 
-    id: 'INV-004', 
+    id: 'inv-doc-4',
+    invoiceNumber: 'INV-004', 
     customer: 'Cyberdyne Systems', 
     customerEmail: 'miles@cyberdyne.com', 
     date: '2023-09-20T09:00:00Z', 
@@ -112,7 +118,8 @@ export const invoices: Invoice[] = [
     ]
   },
   {
-    id: 'INV-005',
+    id: 'inv-doc-5',
+    invoiceNumber: 'INV-005',
     customer: 'Queen Consolidated',
     customerEmail: 'oliver@queen.com',
     date: '2023-12-01T16:45:00Z',

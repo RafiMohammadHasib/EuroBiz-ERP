@@ -69,7 +69,7 @@ export default function InvoicePage() {
                 </div>
                 <div className="text-right">
                     <h3 className="text-3xl font-bold tracking-tight">INVOICE</h3>
-                    <p className="text-muted-foreground text-sm mt-1">{invoice.id}</p>
+                    <p className="text-muted-foreground text-sm mt-1">{invoice.invoiceNumber}</p>
                     <Badge 
                         variant={invoice.status === 'Paid' ? 'secondary' : invoice.status === 'Unpaid' ? 'outline' : 'destructive'}
                         className="mt-4 text-lg"

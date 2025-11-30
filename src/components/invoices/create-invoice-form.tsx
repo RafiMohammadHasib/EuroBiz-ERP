@@ -131,6 +131,7 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
   const [terms, setTerms] = useState('The origins of the first constellations date back to their beliefs experiences');
   const [saved, setSaved] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [invoiceNumber, setInvoiceNumber] = useState('INV-001');
 
   // State for payments
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -208,6 +209,7 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
     }
 
     const newInvoice: Omit<Invoice, 'id'> = {
+      invoiceNumber,
       customer: customerName,
       customerEmail: distributors.find(d => d.name === customerName)?.email || '',
       totalAmount: grandTotal,
@@ -244,6 +246,7 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
       }
 
       return {
+          invoiceNumber: invoiceNumber,
           customer: customerName || "Select a Customer",
           customerEmail: selectedDistributor?.email || '',
           totalAmount: grandTotal,
@@ -258,7 +261,7 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
               total: item.quantity * item.unitPrice,
           })) : [{id: 'placeholder', description: 'Sample Item', quantity: 1, unitPrice: 100, total: 100}],
       };
-  }, [customerName, selectedDistributor, grandTotal, totalPaidAmount, dueAmount, dateIssued, dueDate, items]);
+  }, [invoiceNumber, customerName, selectedDistributor, grandTotal, totalPaidAmount, dueAmount, dateIssued, dueDate, items]);
 
   return (
     <>
@@ -314,7 +317,7 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                          <div className="space-y-4">
                             <div className="grid gap-2">
                                 <Label htmlFor="invoice-number">Invoice Number</Label>
-                                <Input id="invoice-number" defaultValue="INV-001" />
+                                <Input id="invoice-number" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} />
                             </div>
                              <div className="grid gap-2">
                                 <Label htmlFor="status">Status</Label>
@@ -405,18 +408,8 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                     </div>
                 </Card>
 
-                <Separator className="my-6" />
-
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid md:grid-cols-2 gap-6 items-start">
                     <div className="space-y-6">
-                        <Card className="p-4 grid gap-2">
-                            <Label>PAYMENT INSTRUCTIONS</Label>
-                            <div className="text-sm text-muted-foreground pt-2 space-y-1">
-                                <p><span className="font-medium text-foreground">Bank Name:</span> United Commercial Bank PLC</p>
-                                <p><span className="font-medium text-foreground">Account Name:</span> Euro Marble & Granite Ltd.</p>
-                                <p><span className="font-medium text-foreground">Account Number:</span> 1041101000000928</p>
-                            </div>
-                        </Card>
                          <Card className="p-4 grid gap-2">
                             <Label>TERMS & CONDITIONS</Label>
                             <div className="text-sm text-muted-foreground pt-2">
@@ -453,17 +446,28 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                                 <span>Total</span>
                                 <span>{currencySymbol}{grandTotal.toFixed(2)}</span>
                             </div>
+                             <div className="pt-4 space-y-2">
+                                {payments.length > 0 && (
+                                    <div className="pt-2">
+                                        {payments.map((p, i) => (
+                                            <div key={i} className="flex justify-between items-center text-gray-500 text-sm">
+                                                <span>Payment ({format(p.date, "PP")})</span>
+                                                <span>-{currencySymbol}{p.amount.toFixed(2)}</span>
+                                            </div>
+                                        ))}
+                                        <Separator className="my-2"/>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className="flex justify-between font-bold text-lg pt-2">
+                                <span>BALANCE DUE</span>
+                                <span className="text-red-600">{currencySymbol}{dueAmount.toFixed(2)}</span>
+                            </div>
                         </div>
 
                          <div className="space-y-2 p-4 border rounded-lg bg-white">
-                            <p className="text-sm font-medium text-muted-foreground">PAYMENTS RECEIVED</p>
-                             {payments.map((p, i) => (
-                                <div key={i} className="flex justify-between items-center text-sm">
-                                    <span className="text-muted-foreground">{format(p.date, "PPP")} ({p.method})</span>
-                                    <span>{currencySymbol}{p.amount.toFixed(2)}</span>
-                                </div>
-                            ))}
-                            <Separator />
+                            <p className="text-sm font-medium text-muted-foreground">RECORD A NEW PAYMENT</p>
                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
                                 <div className="grid gap-2">
                                     <Label htmlFor="paymentDate">Date</Label>
@@ -504,11 +508,6 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                                 </div>
                             </div>
                             <Button size="sm" className="w-full mt-2" onClick={handleSavePayment}>Save Payment</Button>
-                        </div>
-                        
-                        <div className="flex justify-between font-bold text-lg pt-4">
-                            <span>BALANCE DUE</span>
-                            <span className="text-red-600">{currencySymbol}{dueAmount.toFixed(2)}</span>
                         </div>
                     </div>
                 </div>

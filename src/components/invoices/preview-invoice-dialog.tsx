@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -60,7 +61,7 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
           @media print {
             @page {
               size: A4;
-              margin: 20px; /* Added margin for printing */
+              margin: 20px;
             }
             body {
               -webkit-print-color-adjust: exact;
@@ -105,7 +106,7 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
                     </div>
                     <div className="text-right">
                         <h3 className="font-bold text-lg">{companyDetails.name}</h3>
-                        <p className="text-sm text-gray-500">#INV-001</p>
+                        <p className="text-sm text-gray-500">#{invoice.invoiceNumber}</p>
                         <p className="text-sm text-gray-500">Date: {format(new Date(invoice.date), 'yyyy-MM-dd')}</p>
                         <p className="text-sm text-gray-500">Due Date: {format(new Date(invoice.dueDate), 'yyyy-MM-dd')}</p>
                     </div>
