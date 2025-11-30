@@ -31,7 +31,7 @@ interface CreateInvoiceFormProps {
   isLoading: boolean;
 }
 
-type Payment = {
+export type Payment = {
   amount: number;
   date: Date;
   method: 'Cash' | 'Card' | 'Bank Transfer';
@@ -527,6 +527,7 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
             tax={taxAmount}
             notes={notes}
             terms={terms}
+            payments={payments}
         />
     )}
     </>

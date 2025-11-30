@@ -17,6 +17,7 @@ import { Badge } from '../ui/badge';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { Printer } from 'lucide-react';
+import type { Payment } from './create-invoice-form';
 
 interface PreviewInvoiceDialogProps {
   isOpen: boolean;
@@ -27,9 +28,10 @@ interface PreviewInvoiceDialogProps {
   tax: number;
   notes: string;
   terms: string;
+  payments: Payment[];
 }
 
-export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, subTotal, discount, tax, notes, terms }: PreviewInvoiceDialogProps) {
+export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, subTotal, discount, tax, notes, terms, payments }: PreviewInvoiceDialogProps) {
   const { currencySymbol } = useSettings();
 
   const handlePrint = () => {
@@ -91,14 +93,27 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, subTotal, 
                     </tbody>
                 </table>
                 
-                <div className="flex justify-end mt-6">
+                <div className="flex justify-between mt-6">
+                    <div className='w-1/2'>
+                         {payments.length > 0 && (
+                            <div className="space-y-2 text-sm">
+                                <p className="font-semibold">PAYMENTS RECEIVED</p>
+                                {payments.map((p, i) => (
+                                    <div key={i} className="flex justify-between items-center text-gray-500">
+                                        <span>{format(p.date, "PP")} ({p.method})</span>
+                                        <span>{currencySymbol}{p.amount.toFixed(2)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                     <div className="w-64 space-y-2 text-sm">
                         <div className="flex justify-between"><span>Subtotal</span><span>{currencySymbol}{subTotal.toFixed(2)}</span></div>
                         <div className="flex justify-between"><span>Discount</span><span>{currencySymbol}{discount.toFixed(2)}</span></div>
                         <div className="flex justify-between"><span>Tax</span><span>{currencySymbol}{tax.toFixed(2)}</span></div>
                         <Separator className="bg-gray-300 my-2"/>
                         <div className="flex justify-between font-bold text-base"><span>Total</span><span>{currencySymbol}{invoice.totalAmount.toFixed(2)}</span></div>
-                        <div className="flex justify-between text-base font-bold mt-4"><span>AMOUNT DUE</span><span>{currencySymbol}{invoice.dueAmount.toFixed(2)}</span></div>
+                         <div className="flex justify-between text-base font-bold mt-4 text-red-600"><span>AMOUNT DUE</span><span>{currencySymbol}{invoice.dueAmount.toFixed(2)}</span></div>
                     </div>
                 </div>
 
