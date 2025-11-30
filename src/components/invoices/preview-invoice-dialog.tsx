@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,7 @@ import { Badge } from '../ui/badge';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { Printer } from 'lucide-react';
-import type { Payment } from './create-invoice-form';
+import type { Payment } from '../invoices/create-invoice-form';
 
 interface PreviewInvoiceDialogProps {
   isOpen: boolean;
@@ -134,7 +133,7 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
                 </table>
                 
                 <div className="grid grid-cols-2 mt-6">
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-500 pr-8">
                         <h4 className="font-semibold text-black mb-1">Notes</h4>
                         <p>{notes}</p>
                         <h4 className="font-semibold text-black mt-4 mb-1">Terms & Conditions</h4>
