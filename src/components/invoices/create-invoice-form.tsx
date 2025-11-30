@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Invoice, FinishedGood, InvoiceItem as InvoiceItemType, Distributor, Commission, companyDetails } from '@/lib/data';
 import { useSettings } from '@/context/settings-context';
-import { PlusCircle, ArrowLeft, Download, Printer, Check, Trash2, Eye } from 'lucide-react';
+import { PlusCircle, ArrowLeft, Download, Printer, Check, Trash2, Eye, X } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { Card } from '../ui/card';
 import { Textarea } from '../ui/textarea';
@@ -30,7 +30,12 @@ interface CreateInvoiceFormProps {
   isLoading: boolean;
 }
 
-function InvoiceItemForm({ item, products, onChange, onRemove }: InvoiceItemFormProps) {
+function InvoiceItemForm({ item, products, onChange, onRemove }: {
+    item: Omit<InvoiceItemType, 'id' | 'total'>;
+    products: FinishedGood[];
+    onChange: (item: Omit<InvoiceItemType, 'id' | 'total'>) => void;
+    onRemove: () => void;
+}) {
   const { currencySymbol } = useSettings();
 
   const selectedProduct = useMemo(() => {
@@ -120,64 +125,8 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
   const [saved, setSaved] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   
-  const signatureCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
-  useEffect(() => {
-    const canvas = signatureCanvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 2;
-      }
-    }
-  }, []);
-
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = signatureCanvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.beginPath();
-        ctx.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-        setIsDrawing(true);
-      }
-    }
-  };
-
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return;
-    const canvas = signatureCanvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-        ctx.stroke();
-      }
-    }
-  };
-
-  const stopDrawing = () => {
-    const canvas = signatureCanvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.closePath();
-        setIsDrawing(false);
-      }
-    }
-  };
-  
-  const clearSignature = () => {
-    const canvas = signatureCanvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-      }
-    }
-  };
 
   const handleItemChange = (index: number, updatedItem: Omit<InvoiceItemType, 'id' | 'total'>) => {
     const newItems = [...items];
@@ -256,7 +205,6 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
   const selectedDistributor = useMemo(() => distributors.find(d => d.name === customerName), [customerName, distributors]);
   
   const previewInvoiceData: Omit<Invoice, 'id'> | null = useMemo(() => {
-      if (!customerName || !dateIssued || !dueDate) return null;
       
       const numericPaidAmount = parseFloat(paidAmount) || 0;
        let invoiceStatus: Invoice['status'] = 'Unpaid';
@@ -272,19 +220,19 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
         }
 
       return {
-          customer: customerName,
+          customer: customerName || "Select a Customer",
           customerEmail: selectedDistributor?.email || '',
           totalAmount: grandTotal,
           paidAmount: numericPaidAmount,
           dueAmount: dueAmount,
           status: invoiceStatus,
-          date: dateIssued.toISOString(),
-          dueDate: dueDate.toISOString(),
-          items: items.map((item, index) => ({
+          date: dateIssued ? dateIssued.toISOString() : new Date().toISOString(),
+          dueDate: dueDate ? dueDate.toISOString() : new Date().toISOString(),
+          items: items.length > 0 ? items.map((item, index) => ({
               ...item,
               id: `item-preview-${index}`,
               total: item.quantity * item.unitPrice,
-          })),
+          })) : [{id: 'placeholder', description: 'Sample Item', quantity: 1, unitPrice: 100, total: 100}],
       };
   }, [customerName, selectedDistributor, grandTotal, paidAmount, dueAmount, dateIssued, dueDate, items]);
 
@@ -301,11 +249,11 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                 </div>
                 <div className="flex items-center gap-2">
                    {saved && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Check className="h-4 w-4" /> Saved</div>}
-                    <Button variant="outline" size="sm" onClick={() => setIsPreviewOpen(true)} disabled={!previewInvoiceData}>
+                    <Button variant="outline" size="sm" onClick={() => setIsPreviewOpen(true)} >
                         <Eye className="h-4 w-4 mr-2" />
                         Preview Invoice
                     </Button>
-                    <Button onClick={handleSubmit} disabled={isLoading || !previewInvoiceData} size="sm">
+                    <Button onClick={handleSubmit} disabled={isLoading} size="sm">
                       {isLoading ? 'Saving...' : 'Save & Send'}
                     </Button>
                 </div>
@@ -437,61 +385,90 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
 
                 <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-6">
-                        <div className="grid grid-cols-2 gap-6">
-                            <Card className="p-4 grid gap-2">
-                                <Label>PAYMENT INSTRUCTIONS</Label>
-                                <div className="text-sm text-muted-foreground pt-2 space-y-1">
-                                    <p><span className="font-medium text-foreground">Bank Name:</span> United Commercial Bank PLC</p>
-                                    <p><span className="font-medium text-foreground">Account Name:</span> Euro Marble & Granite Ltd.</p>
-                                    <p><span className="font-medium text-foreground">Account Number:</span> 1041101000000928</p>
-                                </div>
-                            </Card>
-                             <Card className="p-4 grid gap-2">
-                                <Label>TERMS & CONDITIONS</Label>
-                                <div className="text-sm text-muted-foreground pt-2">
-                                  <p>{terms}</p>
-                                </div>
-                            </Card>
-                        </div>
-                        <div className="grid grid-cols-2 gap-6">
-                            <Card className="p-4 grid gap-2">
-                                <Label>NOTES / MEMO</Label>
-                                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
-                            </Card>
-                             <Card className="p-4 grid gap-2">
-                                <div className="flex justify-between items-center">
-                                    <Label>SIGNATURE</Label>
-                                    <Button variant="link" size="sm" onClick={clearSignature} className="h-auto p-0 text-destructive">Clear</Button>
-                                </div>
-                                 <canvas
-                                    ref={signatureCanvasRef}
-                                    className="border rounded-md bg-white cursor-crosshair w-full h-[100px]"
-                                    onMouseDown={startDrawing}
-                                    onMouseMove={draw}
-                                    onMouseUp={stopDrawing}
-                                    onMouseLeave={stopDrawing}
-                                />
-                            </Card>
-                        </div>
+                        <Card className="p-4 grid gap-2">
+                            <Label>PAYMENT INSTRUCTIONS</Label>
+                            <div className="text-sm text-muted-foreground pt-2 space-y-1">
+                                <p><span className="font-medium text-foreground">Bank Name:</span> United Commercial Bank PLC</p>
+                                <p><span className="font-medium text-foreground">Account Name:</span> Euro Marble & Granite Ltd.</p>
+                                <p><span className="font-medium text-foreground">Account Number:</span> 1041101000000928</p>
+                            </div>
+                        </Card>
+                         <Card className="p-4 grid gap-2">
+                            <Label>TERMS & CONDITIONS</Label>
+                            <div className="text-sm text-muted-foreground pt-2">
+                              <p>{terms}</p>
+                            </div>
+                        </Card>
+                         <Card className="p-4 grid gap-2">
+                            <Label>NOTES / MEMO</Label>
+                            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
+                        </Card>
                     </div>
-                    <div className="space-y-2">
-                        <div className="flex justify-between"><span>Subtotal</span><span className="font-medium">{currencySymbol}{subTotal.toFixed(2)}</span></div>
-                        <div className="flex justify-between items-center">
-                            <span>Discount</span>
-                            <Input className="w-28 text-right" type="number" value={discount} onChange={e => setDiscount(e.target.value)} />
+                    <div className="space-y-4">
+                        <div className="space-y-2 p-4 border rounded-lg bg-white">
+                            <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">Subtotal</span>
+                                <span className="font-medium">{currencySymbol}{subTotal.toFixed(2)}</span>
+                            </div>
+                             <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">Discount</span>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
+                                    <Input className="w-28 text-right pl-7" type="number" value={discount} onChange={e => setDiscount(e.target.value)} />
+                                </div>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">Tax Rate</span>
+                                <div className="relative">
+                                    <Input className="w-28 text-right pr-7" type="number" value={taxRate} onChange={e => setTaxRate(e.target.value)} />
+                                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+                                </div>
+                            </div>
+                            <Separator />
+                            <div className="flex justify-between font-bold text-lg">
+                                <span>Total</span>
+                                <span>{currencySymbol}{grandTotal.toFixed(2)}</span>
+                            </div>
                         </div>
-                        <div className="flex justify-between items-center">
-                            <span>Tax (%)</span>
-                            <Input className="w-28 text-right" type="number" value={taxRate} onChange={e => setTaxRate(e.target.value)} />
+
+                         <div className="space-y-2 p-4 border rounded-lg bg-white">
+                            <p className="text-sm font-medium text-muted-foreground">PAYMENTS RECEIVED</p>
+                             <Card className="p-4">
+                                <div className="flex justify-between items-center">
+                                    <p className="font-semibold">New Payment</p>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6"><X className="h-4 w-4" /></Button>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 mt-2">
+                                     <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" className={cn("font-normal bg-white", !dateIssued && "text-muted-foreground")}>
+                                                {dateIssued ? format(dateIssued, "MM/dd/yy") : <span>Pick a date</span>}
+                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={dateIssued} onSelect={setDateIssued} /></PopoverContent>
+                                    </Popover>
+                                     <Select defaultValue="Bank Transfer">
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                                            <SelectItem value="Cash">Cash</SelectItem>
+                                            <SelectItem value="Card">Card</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="relative mt-2">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
+                                    <Input className="pl-7" type="number" value={paidAmount} onChange={e => setPaidAmount(e.target.value)} />
+                                </div>
+                                <Button className="w-full mt-3">Save Payment</Button>
+                            </Card>
                         </div>
-                        <Separator />
-                        <div className="flex justify-between font-bold text-lg"><span>Total</span><span>{currencySymbol}{grandTotal.toFixed(2)}</span></div>
-                        <div className="flex justify-between items-center">
-                            <span>Amount Paid</span>
-                            <Input className="w-28 text-right" type="number" value={paidAmount} onChange={e => setPaidAmount(e.target.value)} />
+                        
+                        <div className="flex justify-between font-bold text-lg pt-4">
+                            <span>BALANCE DUE</span>
+                            <span>{currencySymbol}{dueAmount.toFixed(2)}</span>
                         </div>
-                        <Separator />
-                        <div className="flex justify-between font-bold text-lg text-destructive"><span>Balance Due</span><span>{currencySymbol}{dueAmount.toFixed(2)}</span></div>
                     </div>
                 </div>
 
