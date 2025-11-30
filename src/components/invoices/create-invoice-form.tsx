@@ -369,10 +369,10 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                             </div>
                         </div>
                      </div>
-                </Card>>
+                </Card>
 
                 <Card className="p-6">
-                     <div className="flex justify-between items-center mb-4">
+                    <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold">Line Items</h3>
                         <Button variant="default" size="sm" onClick={handleAddItem}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Add Item
@@ -402,7 +402,7 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                 <div className="grid grid-cols-2 gap-6">
                     <Card className="p-4 grid gap-2">
                         <Label>PAYMENT INSTRUCTIONS</Label>
-                        <div className="text-sm text-muted-foreground pt-2">
+                        <div className="text-sm text-muted-foreground pt-2 space-y-1">
                             <p><span className="font-medium text-foreground">Bank Name:</span> United Commercial Bank PLC</p>
                             <p><span className="font-medium text-foreground">Account Name:</span> Euro Marble & Granite Ltd.</p>
                             <p><span className="font-medium text-foreground">Account Number:</span> 1041101000000928</p>
@@ -410,7 +410,9 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                     </Card>
                      <Card className="p-4 grid gap-2">
                         <Label>TERMS & CONDITIONS</Label>
-                        <Textarea value={terms} onChange={(e) => setTerms(e.target.value)} className="min-h-[80px]" />
+                        <div className="text-sm text-muted-foreground pt-2">
+                          <p>The origins of the first constellations date back to their beliefs experiences</p>
+                        </div>
                     </Card>
                 </div>
                  <div className="grid grid-cols-2 gap-6">
