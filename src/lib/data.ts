@@ -1,6 +1,7 @@
 
 
 
+
 export type Invoice = {
   id: string;
   customer: string;
@@ -37,11 +38,11 @@ export type InvoiceItem = {
 }
 
 export const companyDetails = {
-    name: 'BizFin Inc.',
-    address: '123 Innovation Drive, Tech City, 12345',
-    email: 'accounts@bizfin.com',
-    phone: '+1 (555) 123-4567',
-    logoUrl: '/logo.png' // You can add a logo here
+    name: 'EuroBiz',
+    address: 'House 123, Road 45, Gulshan 2, Dhaka 1212, Bangladesh',
+    email: 'contact@eurobiz.com',
+    phone: '+880 1712 345678',
+    logoUrl: '/logo.png'
 }
 
 export const customers: Customer[] = [
