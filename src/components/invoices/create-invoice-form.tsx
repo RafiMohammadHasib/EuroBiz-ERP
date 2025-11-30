@@ -248,9 +248,9 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                             </div>
                          </div>
                     </div>
-                     <div className="grid grid-cols-2 gap-6 mt-6">
+                     <div className="grid grid-cols-2 gap-6 mt-6 bg-[#f1f3f8] p-4 rounded-md">
                         <div>
-                             <Label className="text-xs text-muted-foreground">BILL TO (CLIENT)</Label>
+                             <Label className="text-xs text-blue-800 font-semibold">BILL TO (CLIENT)</Label>
                              <Select value={customerName} onValueChange={setCustomerName}>
                                 <SelectTrigger className="mt-2">
                                     <SelectValue placeholder="Select a distributor" />
@@ -273,7 +273,7 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                                 <Label>Date Issued</Label>
                                 <Popover>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("font-normal", !dateIssued && "text-muted-foreground")}>
+                                        <Button variant="outline" className={cn("font-normal bg-white", !dateIssued && "text-muted-foreground")}>
                                             {dateIssued ? format(dateIssued, "MM/dd/yyyy") : <span>Pick a date</span>}
                                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                         </Button>
@@ -285,7 +285,7 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                                 <Label>Due Date</Label>
                                  <Popover>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("font-normal", !dueDate && "text-muted-foreground")}>
+                                        <Button variant="outline" className={cn("font-normal bg-white", !dueDate && "text-muted-foreground")}>
                                             {dueDate ? format(dueDate, "MM/dd/yyyy") : <span>Pick a date</span>}
                                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                         </Button>
