@@ -10,9 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Invoice, FinishedGood, InvoiceItem as InvoiceItemType, Distributor, Commission, companyDetails } from '@/lib/data';
 import { useSettings } from '@/context/settings-context';
-import { PlusCircle, ArrowLeft, Download, Printer, Check } from 'lucide-react';
+import { PlusCircle, ArrowLeft, Download, Printer, Check, Trash2 } from 'lucide-react';
 import { Separator } from '../ui/separator';
-import { InvoiceItemForm } from './invoice-item-form';
 import { Card } from '../ui/card';
 import { Textarea } from '../ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -29,6 +28,82 @@ interface CreateInvoiceFormProps {
   onCreateInvoice: (invoice: Omit<Invoice, 'id'>, totalDiscount: number) => void;
   isLoading: boolean;
 }
+
+interface InvoiceItemFormProps {
+  item: Omit<InvoiceItemType, 'id' | 'total'>;
+  products: FinishedGood[];
+  onChange: (item: Omit<InvoiceItemType, 'id' | 'total'>) => void;
+  onRemove: () => void;
+}
+
+function InvoiceItemForm({ item, products, onChange, onRemove }: InvoiceItemFormProps) {
+  const { currencySymbol } = useSettings();
+
+  const selectedProduct = useMemo(() => {
+    return products.find(p => p.productName === item.description);
+  }, [item.description, products]);
+
+  const handleProductChange = (productName: string) => {
+    const product = products.find(p => p.productName === productName);
+    onChange({
+      ...item,
+      description: productName,
+      unitPrice: product?.sellingPrice || 0,
+      quantity: 1, // Reset quantity to 1 on product change
+    });
+  };
+
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange({ ...item, quantity: parseInt(e.target.value, 10) || 0 });
+  };
+  
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange({ ...item, unitPrice: parseFloat(e.target.value) || 0 });
+  };
+  
+  const total = item.quantity * item.unitPrice;
+
+  return (
+    <div className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-2 items-center">
+      <Select value={item.description} onValueChange={handleProductChange}>
+        <SelectTrigger>
+          <SelectValue placeholder="Select a product" />
+        </SelectTrigger>
+        <SelectContent>
+          {products.map(p => (
+            <SelectItem key={p.id} value={p.productName}>
+              {p.productName} ({p.quantity} available)
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Input
+        type="number"
+        placeholder="Qty"
+        value={item.quantity}
+        onChange={handleQuantityChange}
+        min="1"
+        max={selectedProduct?.quantity}
+        className="text-right"
+      />
+      <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
+          <Input
+            type="number"
+            placeholder="Price"
+            value={item.unitPrice}
+            onChange={handlePriceChange}
+            className="text-right pl-7"
+          />
+      </div>
+      <div className="text-right font-medium pr-2">{currencySymbol}{total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+      <Button variant="ghost" size="icon" onClick={onRemove}>
+        <Trash2 className="h-4 w-4 text-destructive" />
+      </Button>
+    </div>
+  );
+}
+
 
 export function CreateInvoiceForm({ distributors, products, commissionRules, onCreateInvoice, isLoading }: CreateInvoiceFormProps) {
   const { toast } = useToast();
@@ -48,7 +123,6 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
   const [taxRate, setTaxRate] = useState('0');
   const [notes, setNotes] = useState('Thank you for your business!');
   const [terms, setTerms] = useState('The origins of the first constellations date back to their beliefs experiences');
-  const [paymentInstructions, setPaymentInstructions] = useState('By Bank London State Bank\nLN34 00\n1258 QQ RR74 15587');
   const [saved, setSaved] = useState(false);
   const signatureCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -227,7 +301,7 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                                  <Separator className="bg-blue-200"/>
                                 <p>{companyDetails.phone}</p>
                                  <Separator className="bg-blue-200"/>
-                                <p>{companyDetails.name}.com</p>
+                                <p>www.deshchemicals.com</p>
                             </div>
                         </div>
                          <div className="space-y-4">
@@ -295,10 +369,10 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                             </div>
                         </div>
                      </div>
-                </Card>
+                </Card>>
 
                 <Card className="p-6">
-                    <div className="flex justify-between items-center mb-4">
+                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold">Line Items</h3>
                         <Button variant="default" size="sm" onClick={handleAddItem}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Add Item
@@ -328,7 +402,11 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                 <div className="grid grid-cols-2 gap-6">
                     <Card className="p-4 grid gap-2">
                         <Label>PAYMENT INSTRUCTIONS</Label>
-                        <Textarea value={paymentInstructions} onChange={(e) => setPaymentInstructions(e.target.value)} className="min-h-[80px]" />
+                        <div className="text-sm text-muted-foreground pt-2">
+                            <p><span className="font-medium text-foreground">Bank Name:</span> United Commercial Bank PLC</p>
+                            <p><span className="font-medium text-foreground">Account Name:</span> Euro Marble & Granite Ltd.</p>
+                            <p><span className="font-medium text-foreground">Account Number:</span> 1041101000000928</p>
+                        </div>
                     </Card>
                      <Card className="p-4 grid gap-2">
                         <Label>TERMS & CONDITIONS</Label>
@@ -426,5 +504,3 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
     </div>
   );
 }
-
-    
