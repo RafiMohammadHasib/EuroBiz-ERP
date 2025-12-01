@@ -197,10 +197,14 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
     }
     
     let invoiceStatus: Invoice['status'] = 'Unpaid';
-    if (dueAmount <= 0.001) { // Use a small epsilon for float comparison
+    const finalDue = grandTotal - totalPaidAmount;
+
+    if (finalDue <= 0.001) { 
         invoiceStatus = 'Paid';
     } else if (totalPaidAmount > 0 && totalPaidAmount < grandTotal) {
         invoiceStatus = 'Partially Paid';
+    } else if (new Date(dueDate) < new Date()) {
+        invoiceStatus = 'Overdue';
     } else {
         invoiceStatus = 'Unpaid';
     }
@@ -210,7 +214,7 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
       customerEmail: distributors.find(d => d.name === customerName)?.email || '',
       totalAmount: grandTotal,
       paidAmount: totalPaidAmount,
-      dueAmount: dueAmount < 0 ? 0 : dueAmount,
+      dueAmount: finalDue < 0 ? 0 : finalDue,
       status: invoiceStatus,
       date: dateIssued.toISOString(),
       dueDate: dueDate.toISOString(),
