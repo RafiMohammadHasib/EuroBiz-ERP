@@ -18,7 +18,7 @@ import { Badge } from '../ui/badge';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { Printer } from 'lucide-react';
-import type { Payment } from '../invoices/create-invoice-form';
+import type { Payment } from './create-invoice-form';
 
 interface PreviewInvoiceDialogProps {
   isOpen: boolean;
@@ -93,41 +93,41 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
           </DialogHeader>
           <div className="p-6 overflow-y-auto max-h-[80vh]">
             <div id="invoice-preview-content" className="p-8 border rounded-lg bg-white text-black shadow-lg">
-                <div className="flex justify-between items-start mb-6">
+                <div className="flex justify-between items-start mb-8">
                     <div>
                         <h2 className="text-2xl font-bold text-teal-600">INVOICE</h2>
-                        <div className="text-sm text-gray-500 mt-4">
-                            <p className="font-semibold text-xs uppercase">BILL TO</p>
-                            <p className="font-semibold text-black">{distributor?.name || invoice.customer}</p>
+                        <div className="text-sm text-gray-500 mt-6">
+                            <p className="font-semibold text-xs uppercase tracking-wider">BILL TO</p>
+                            <p className="font-semibold text-black mt-1">{distributor?.name || invoice.customer}</p>
                             <p>{distributor?.location}</p>
-                            <p>{distributor?.email}</p>
-                            <p>{distributor?.phone}</p>
                         </div>
                     </div>
                     <div className="text-right">
                         <h3 className="font-bold text-lg">{companyDetails.name}</h3>
-                        <p className="text-sm text-gray-500">#{invoice.invoiceNumber}</p>
-                        <p className="text-sm text-gray-500">Date: {format(new Date(invoice.date), 'yyyy-MM-dd')}</p>
-                        <p className="text-sm text-gray-500">Due Date: {format(new Date(invoice.dueDate), 'yyyy-MM-dd')}</p>
+                        <p className="text-sm text-gray-500">{invoice.invoiceNumber}</p>
+                        <div className="text-sm text-gray-500 mt-2">
+                          <p>Date: {format(new Date(invoice.date), 'yyyy-MM-dd')}</p>
+                          <p>Due Date: {format(new Date(invoice.dueDate), 'yyyy-MM-dd')}</p>
+                        </div>
                     </div>
                 </div>
 
-                <table className="w-full text-sm">
+                <table className="w-full text-sm mb-8">
                     <thead>
                         <tr className="border-b bg-gray-50">
-                            <th className="text-left py-2 px-3 font-semibold uppercase">DESCRIPTION</th>
-                            <th className="text-right py-2 px-3 font-semibold uppercase">PRICE</th>
-                            <th className="text-right py-2 px-3 font-semibold uppercase">QTY</th>
-                            <th className="text-right py-2 px-3 font-semibold uppercase">TOTAL</th>
+                            <th className="text-left py-2 px-3 font-semibold uppercase tracking-wider">DESCRIPTION</th>
+                            <th className="text-right py-2 px-3 font-semibold uppercase tracking-wider">PRICE</th>
+                            <th className="text-center py-2 px-3 font-semibold uppercase tracking-wider">QTY</th>
+                            <th className="text-right py-2 px-3 font-semibold uppercase tracking-wider">TOTAL</th>
                         </tr>
                     </thead>
                     <tbody>
                         {invoice.items.map((item, index) => (
                             <tr key={index} className="border-b">
-                                <td className="py-2 px-3">{item.description}</td>
-                                <td className="text-right py-2 px-3">{currencySymbol}{item.unitPrice.toFixed(2)}</td>
-                                <td className="text-right py-2 px-3">{item.quantity}</td>
-                                <td className="text-right py-2 px-3">{currencySymbol}{(item.unitPrice * item.quantity).toFixed(2)}</td>
+                                <td className="py-3 px-3">{item.description}</td>
+                                <td className="text-right py-3 px-3">{currencySymbol}{item.unitPrice.toFixed(2)}</td>
+                                <td className="text-center py-3 px-3">{item.quantity}</td>
+                                <td className="text-right py-3 px-3">{currencySymbol}{(item.unitPrice * item.quantity).toFixed(2)}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -136,15 +136,15 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
                 <div className="grid grid-cols-2 mt-6 items-start">
                     <div className="text-xs text-gray-500 pr-8">
                         <div className='mb-4'>
-                            <h4 className="font-semibold text-black mb-1">Notes</h4>
+                            <h4 className="font-semibold text-black uppercase tracking-wider mb-1">Notes</h4>
                             <p>{notes}</p>
                         </div>
                         <div>
-                             <h4 className="font-semibold text-black mb-1">Terms & Conditions</h4>
+                             <h4 className="font-semibold text-black uppercase tracking-wider mb-1">Terms & Conditions</h4>
                             <p>{terms}</p>
                         </div>
                     </div>
-                    <div className="space-y-2 text-sm">
+                    <div className="space-y-2 text-sm text-right">
                         <div className="flex justify-between"><span>Subtotal</span><span>{currencySymbol}{subTotal.toFixed(2)}</span></div>
                         <div className="flex justify-between"><span>Discount</span><span>-{currencySymbol}{discount.toFixed(2)}</span></div>
                         <div className="flex justify-between"><span>Tax</span><span>{currencySymbol}{tax.toFixed(2)}</span></div>
@@ -166,9 +166,9 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
             </div>
           </div>
        
-        <DialogFooter className="p-6 pt-0">
+        <DialogFooter className="p-6 pt-0 bg-white">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
-          <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Print</Button>
+          <Button onClick={handlePrint} className="bg-teal-600 hover:bg-teal-700 text-white"><Printer className="mr-2 h-4 w-4" /> Print</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

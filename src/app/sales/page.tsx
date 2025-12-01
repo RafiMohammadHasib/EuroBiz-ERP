@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card"
 import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { collection, doc, writeBatch } from "firebase/firestore";
-import type { Invoice, SalesCommission, UserRole, FinishedGood, Distributor } from "@/lib/data";
+import type { Invoice, SalesCommission, UserRole, FinishedGood, Distributor, Payment } from "@/lib/data";
 import {
   Table,
   TableBody,
@@ -184,16 +184,26 @@ export default function SalesPage() {
     // The actual discount logic is complex and applied at creation.
     // For preview, we'll derive it from the total.
     const derivedDiscount = subTotal - invoiceToPreview.totalAmount;
+    
+    const payments: Payment[] = [];
+    if (invoiceToPreview.paidAmount > 0) {
+        payments.push({
+            amount: invoiceToPreview.paidAmount,
+            date: new Date(invoiceToPreview.date), // Assuming payment date is same as invoice date for simplicity
+            method: 'Bank Transfer' // Default method
+        });
+    }
+
 
     return {
       invoice: invoiceToPreview,
       distributor: distributors?.find(d => d.name === invoiceToPreview.customer),
       subTotal: subTotal,
-      discount: derivedDiscount, // This might not be 100% accurate if complex logic was used.
+      discount: derivedDiscount < 0 ? -derivedDiscount : 0, // Ensure discount is positive
       tax: 0, // Assuming tax is 0 for now as it's not stored
       notes: "Thank you for your business!", // Default notes
       terms: "The origins of the first constellations date back to their beliefs experiences", // Default terms
-      payments: [] // Payment details are not stored on the invoice doc in a way we can list them here.
+      payments: payments
     }
   }, [invoiceToPreview, distributors]);
 
