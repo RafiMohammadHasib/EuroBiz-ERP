@@ -1,7 +1,5 @@
 
 'use client';
-import type { ImagePlaceholder } from '@/lib/placeholder-images';
-import placeholder from '@/lib/placeholder-images.json';
 import {
   Avatar,
   AvatarFallback,
@@ -18,6 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import { useSettings } from '@/context/settings-context';
 import { PieChart, Search } from 'lucide-react';
 import Link from 'next/link';
 
@@ -27,7 +26,7 @@ interface HeaderProps {
 }
 
 export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
-  const userAvatar = placeholder.placeholderImages.find(p => p.id === 'user-avatar') as ImagePlaceholder | undefined;
+  const { businessSettings } = useSettings();
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm lg:px-6">
@@ -52,7 +51,7 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="rounded-full">
             <Avatar className="h-8 w-8">
-              {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="Admin" data-ai-hint={userAvatar.imageHint} />}
+              {businessSettings.logoUrl && <AvatarImage src={businessSettings.logoUrl} alt={businessSettings.name} />}
               <AvatarFallback>AD</AvatarFallback>
             </Avatar>
           </Button>
@@ -61,7 +60,7 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild><Link href="/settings">Settings</Link></DropdownMenuItem>
-          <DropdownMenuItem>Support</DropdownMenuItem>
+          <DropdownMenuItem asChild><Link href="/support">Support</Link></DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem>Logout</DropdownMenuItem>
         </DropdownMenuContent>

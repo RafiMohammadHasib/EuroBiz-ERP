@@ -4,18 +4,25 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { companyDetails as initialCompanyDetails } from '@/lib/data';
 
 type Currency = 'BDT' | 'USD';
+
+type BusinessSettings = {
+    name: string;
+    address: string;
+    email: string;
+    phone: string;
+    logoUrl: string;
+    currency?: Currency;
+};
 
 interface SettingsContextType {
   currency: Currency;
   currencySymbol: string;
   setCurrency: (currency: Currency) => void;
+  businessSettings: BusinessSettings;
 }
-
-type BusinessSettings = {
-    currency?: Currency;
-};
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
@@ -24,19 +31,23 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const firestore = useFirestore();
   const { user } = useUser(); // Get the user status
 
-  // Only attempt to fetch settings if the user is logged in
   const settingsDocRef = useMemoFirebase(() => {
     if (firestore && user) {
       return doc(firestore, 'settings', 'business');
     }
-    return null; // Return null if not authenticated
+    return null;
   }, [firestore, user]);
 
   const { data: settingsData } = useDoc<BusinessSettings>(settingsDocRef);
   
+  const [businessSettings, setBusinessSettings] = useState<BusinessSettings>(initialCompanyDetails);
+
   useEffect(() => {
-    if (settingsData?.currency) {
-      setCurrency(settingsData.currency);
+    if (settingsData) {
+        setBusinessSettings(settingsData);
+        if (settingsData.currency) {
+            setCurrency(settingsData.currency);
+        }
     }
   }, [settingsData]);
 
@@ -46,6 +57,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     currency,
     currencySymbol,
     setCurrency,
+    businessSettings,
   };
 
   return (

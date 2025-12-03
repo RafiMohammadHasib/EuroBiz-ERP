@@ -44,6 +44,7 @@ import {
 import { useAuth, useUser } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useMemo } from "react";
+import { useSettings } from "@/context/settings-context";
 
 interface NavItem {
     href: string;
@@ -85,8 +86,16 @@ export const navGroups: NavGroup[] = [
             { href: "/dues", label: "Outstanding Dues", icon: Landmark },
             { href: "/expenses", label: "Expenses", icon: Receipt },
             { href: "/salaries", label: "Salaries", icon: Wallet },
+            { href: "/commissions", label: "Commissions", icon: Percent },
         ]
     },
+     {
+        label: "Analysis & Reporting",
+        items: [
+            { href: "/reports", label: "Reports", icon: PieChart },
+            { href: "/forecast", label: "AI Sales Forecast", icon: BrainCircuit },
+        ]
+    }
 ]
 
 const bottomNavItems: NavItem[] = [
@@ -103,6 +112,7 @@ export default function SidebarNav({ searchQuery }: SidebarNavProps) {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const router = useRouter();
+  const { businessSettings } = useSettings();
 
   const handleLogout = async () => {
     if (auth) {
@@ -141,7 +151,7 @@ export default function SidebarNav({ searchQuery }: SidebarNavProps) {
         <Link href="/" className="flex items-center gap-2.5">
           <Landmark className="h-7 w-7 text-primary" />
           <span className="font-bold text-xl whitespace-nowrap group-data-[collapsible=icon]:hidden">
-            EuroBiz
+            {businessSettings.name || 'EuroBiz'}
           </span>
         </Link>
       </SidebarHeader>
