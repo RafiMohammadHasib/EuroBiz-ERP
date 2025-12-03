@@ -12,12 +12,12 @@ import {
 } from '@/components/ui/dialog';
 import { useSettings } from '@/context/settings-context';
 import type { Invoice, Distributor } from '@/lib/data';
-import { companyDetails } from '@/lib/data';
+import { companyDetails as initialCompanyDetails } from '@/lib/data';
 import { Separator } from '../ui/separator';
 import { Badge } from '../ui/badge';
 import Image from 'next/image';
 import { format } from 'date-fns';
-import { Printer } from 'lucide-react';
+import { Printer, User } from 'lucide-react';
 import type { Payment } from './create-invoice-form';
 
 interface PreviewInvoiceDialogProps {
@@ -34,7 +34,8 @@ interface PreviewInvoiceDialogProps {
 }
 
 export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributor, subTotal, discount, tax, notes, terms, payments }: PreviewInvoiceDialogProps) {
-  const { currencySymbol } = useSettings();
+  const { currencySymbol, businessSettings } = useSettings();
+  const companyDetails = businessSettings || initialCompanyDetails;
 
   const handlePrint = () => {
     const printContent = document.getElementById('invoice-preview-content');
@@ -95,6 +96,9 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
             <div id="invoice-preview-content" className="p-8 border rounded-lg bg-white text-black shadow-lg">
                 <div className="flex justify-between items-start mb-8">
                     <div>
+                         {companyDetails.logoUrl && (
+                            <Image src={companyDetails.logoUrl} alt={companyDetails.name} width={120} height={40} className="mb-4" />
+                        )}
                         <h2 className="text-2xl font-bold text-teal-600">INVOICE</h2>
                         <div className="text-sm text-gray-500 mt-6">
                             <p className="font-semibold text-xs uppercase tracking-wider">BILL TO</p>
@@ -109,6 +113,12 @@ export function PreviewInvoiceDialog({ isOpen, onOpenChange, invoice, distributo
                           <p>Date: {format(new Date(invoice.date), 'yyyy-MM-dd')}</p>
                           <p>Due Date: {format(new Date(invoice.dueDate), 'yyyy-MM-dd')}</p>
                         </div>
+                        {invoice.salesperson && (
+                            <div className="text-sm text-gray-500 mt-4 flex items-center justify-end gap-2">
+                                <User className="h-4 w-4"/>
+                                <span>{invoice.salesperson}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
 

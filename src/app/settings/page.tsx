@@ -11,9 +11,9 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlusCircle, Copy, Check, Download, Upload } from 'lucide-react';
+import { PlusCircle, Copy, Check, Download, Upload, Loader2 } from 'lucide-react';
 import { collection, doc, setDoc, addDoc } from 'firebase/firestore';
-import type { Commission, FinishedGood, RawMaterial, Distributor, PurchaseOrder, SalesCommission, Supplier } from '@/lib/data';
+import type { Commission, FinishedGood, RawMaterial, Distributor, PurchaseOrder, SalesCommission, Supplier, Salesperson } from '@/lib/data';
 import { CreateCommissionRuleDialog } from '@/components/commissions/create-commission-rule-dialog';
 import { CreateFormulaDialog } from '@/components/settings/create-formula-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -52,6 +52,21 @@ export default function SettingsPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const { setCurrency, businessSettings: contextBusinessSettings, setBusinessSettings: setContextBusinessSettings } = useSettings();
+
+  // --- Profile State ---
+  const salespersonDocRef = useMemoFirebase(() => user ? doc(firestore, 'salespeople', user.uid) : null, [user, firestore]);
+  const { data: salespersonData, isLoading: salespersonLoading } = useDoc<Salesperson>(salespersonDocRef);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  
+  useEffect(() => {
+    if (salespersonData) {
+        setFirstName(salespersonData.firstName || '');
+        setLastName(salespersonData.lastName || '');
+    }
+  }, [salespersonData]);
+
 
   // --- Firestore References ---
   const systemSettingsDocRef = useMemoFirebase(() => doc(firestore, 'settings', 'system'), [firestore]);
@@ -110,6 +125,23 @@ export default function SettingsPage() {
 
 
   // --- Handlers ---
+  const handleProfileSave = async () => {
+    if (!user || !salespersonDocRef) return;
+    if (!firstName || !lastName) {
+      toast({ variant: 'destructive', title: 'Name is required', description: 'Please enter both first and last name.' });
+      return;
+    }
+    setIsSavingProfile(true);
+    try {
+      await setDoc(salespersonDocRef, { firstName, lastName, email: user.email }, { merge: true });
+      toast({ title: 'Profile Updated', description: 'Your name has been saved successfully.' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error saving profile', description: error.message });
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
   const handlePasswordUpdate = async () => {
     if (!user || !auth?.currentUser) return;
     if (newPassword !== confirmPassword) {
@@ -361,14 +393,30 @@ export default function SettingsPage() {
                   <Card>
                       <CardHeader>
                           <CardTitle>User Profile</CardTitle>
-                          <CardDescription>Your user account details.</CardDescription>
+                          <CardDescription>This information will appear on sales records.</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
                           <div className="space-y-2">
                               <Label htmlFor="email">Email Address</Label>
                               <Input id="email" type="email" value={user?.email || ''} disabled />
                           </div>
+                          <div className='grid grid-cols-2 gap-4'>
+                            <div className="space-y-2">
+                                <Label htmlFor="firstName">First Name</Label>
+                                <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="e.g. John" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="lastName">Last Name</Label>
+                                <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="e.g. Doe" />
+                            </div>
+                          </div>
                       </CardContent>
+                      <CardFooter>
+                          <Button onClick={handleProfileSave} disabled={isSavingProfile || salespersonLoading}>
+                              {isSavingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                              {isSavingProfile ? 'Saving...' : 'Save Profile'}
+                          </Button>
+                      </CardFooter>
                   </Card>
                   <Card>
                       <CardHeader>
@@ -391,7 +439,7 @@ export default function SettingsPage() {
                       </CardContent>
                       <CardFooter>
                           <Button onClick={handlePasswordUpdate} disabled={isSavingPassword}>
-                              {isSavingPassword ? 'Saving...' : 'Update Password'}
+                              {isSavingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Update Password'}
                           </Button>
                       </CardFooter>
                   </Card>
@@ -533,7 +581,7 @@ export default function SettingsPage() {
                       <div className="grid md:grid-cols-2 gap-4 pt-4">
                           <div className="space-y-2">
                               <Label htmlFor="name">Company Name</Label>
-                              <Input id="name" value={businessSettings.name} onChange={handleBusinessDetailsChange} />
+                              <Input id="name" value={businessSettings.name} onChange={handleBusinessDetailsChange} disabled/>
                           </div>
                            <div className="space-y-2">
                               <Label htmlFor="email">Company Email</Label>

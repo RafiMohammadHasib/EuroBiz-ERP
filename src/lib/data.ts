@@ -5,6 +5,7 @@ export type Invoice = {
   invoiceNumber: string;
   customer: string;
   customerEmail: string;
+  salesperson?: string;
   date: string;
   dueDate: string;
   totalAmount: number;
@@ -20,6 +21,13 @@ export type UserRole = {
     role: 'admin' | 'salesperson';
     firstName: string;
     lastName: string;
+}
+
+export type Salesperson = {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
 }
 
 export type Customer = {
@@ -42,7 +50,7 @@ export const companyDetails = {
     address: 'Tegharia, West Keraniganj, Dhaka',
     email: 'info@deshchemicals.com',
     phone: '+880 1332-854803',
-    logoUrl: 'https://i.imgur.com/Cay4pyH.png'
+    logoUrl: 'https://i.imgur.com/z8AYItM.png'
 }
 
 export const customers: Customer[] = [

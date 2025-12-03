@@ -9,9 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Invoice, FinishedGood, InvoiceItem as InvoiceItemType, Distributor, Commission, companyDetails as initialCompanyDetails } from '@/lib/data';
+import { Invoice, FinishedGood, InvoiceItem as InvoiceItemType, Distributor, Commission, companyDetails as initialCompanyDetails, Salesperson } from '@/lib/data';
 import { useSettings } from '@/context/settings-context';
-import { PlusCircle, ArrowLeft, Download, Printer, Check, Trash2, Eye, X } from 'lucide-react';
+import { PlusCircle, ArrowLeft, Download, Printer, Check, Trash2, Eye, X, User } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { Card } from '../ui/card';
 import { Textarea } from '../ui/textarea';
@@ -22,7 +22,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { PreviewInvoiceDialog } from './preview-invoice-dialog';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
 
@@ -32,6 +32,7 @@ interface CreateInvoiceFormProps {
   commissionRules: Commission[];
   onCreateInvoice: (invoice: Omit<Invoice, 'id' | 'invoiceNumber'>, totalDiscount: number) => void;
   isLoading: boolean;
+  salesperson?: Salesperson | null;
 }
 
 export type Payment = {
@@ -123,16 +124,12 @@ function InvoiceItemForm({ item, products, onChange, onRemove }: {
 }
 
 
-export function CreateInvoiceForm({ distributors, products, commissionRules, onCreateInvoice, isLoading }: CreateInvoiceFormProps) {
+export function CreateInvoiceForm({ distributors, products, commissionRules, onCreateInvoice, isLoading, salesperson }: CreateInvoiceFormProps) {
   const { toast } = useToast();
   const router = useRouter();
-  const { currencySymbol } = useSettings();
-  const firestore = useFirestore();
-
-  const businessSettingsDocRef = useMemoFirebase(() => doc(firestore, 'settings', 'business'), [firestore]);
-  const { data: businessSettingsData } = useDoc<BusinessSettings>(businessSettingsDocRef);
-
-  const companyDetails = businessSettingsData || initialCompanyDetails;
+  const { currencySymbol, businessSettings } = useSettings();
+  const { user } = useUser();
+  const companyDetails = businessSettings || initialCompanyDetails;
   
   const [customerName, setCustomerName] = useState('');
   const [items, setItems] = useState<Omit<InvoiceItemType, 'id' | 'total'>[]>([]);
@@ -240,6 +237,7 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
           id: `item-${Date.now()}-${index}`,
           total: item.quantity * item.unitPrice,
       })),
+      salesperson: salesperson ? `${salesperson.firstName} ${salesperson.lastName}` : user?.email || 'N/A'
     };
     
     onCreateInvoice(newInvoice, totalDiscountValue);
@@ -272,8 +270,9 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
               id: `item-preview-${index}`,
               total: item.quantity * item.unitPrice,
           })) : [{id: 'placeholder', description: 'Sample Item', quantity: 1, unitPrice: 100, total: 100}],
+          salesperson: salesperson ? `${salesperson.firstName} ${salesperson.lastName}` : user?.email || 'N/A'
       };
-  }, [invoiceNumber, customerName, selectedDistributor, grandTotal, totalPaidAmount, dueAmount, dateIssued, dueDate, items]);
+  }, [invoiceNumber, customerName, selectedDistributor, grandTotal, totalPaidAmount, dueAmount, dateIssued, dueDate, items, salesperson, user]);
 
   return (
     <>
@@ -347,6 +346,15 @@ export function CreateInvoiceForm({ distributors, products, commissionRules, onC
                                         <SelectItem value="Unpaid">Unpaid</SelectItem>
                                     </SelectContent>
                                 </Select>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Sales Person</Label>
+                                <div className="flex items-center h-10 rounded-md border border-input bg-muted px-3 text-sm">
+                                    <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                                    <span className="text-muted-foreground">
+                                        {salesperson ? `${salesperson.firstName} ${salesperson.lastName}` : (user?.email || 'Loading...')}
+                                    </span>
+                                </div>
                             </div>
                          </div>
                     </div>

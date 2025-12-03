@@ -2,9 +2,9 @@
 'use client';
 
 import { useState } from "react";
-import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from "@/firebase";
 import { collection, addDoc, serverTimestamp, writeBatch, doc, query, where, getDocs, Timestamp } from "firebase/firestore";
-import type { Invoice, FinishedGood, Distributor, Commission, SalesCommission } from "@/lib/data";
+import type { Invoice, FinishedGood, Distributor, Commission, SalesCommission, Salesperson } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
 import { CreateInvoiceForm } from "@/components/invoices/create-invoice-form";
 import { useRouter } from "next/navigation";
@@ -20,10 +20,13 @@ export default function GenerateInvoicePage() {
   const distributorsCollection = useMemoFirebase(() => collection(firestore, 'distributors'), [firestore]);
   const commissionsCollection = useMemoFirebase(() => collection(firestore, 'commissions'), [firestore]);
   const invoicesCollection = useMemoFirebase(() => collection(firestore, 'invoices'), [firestore]);
+  const salespersonDocRef = useMemoFirebase(() => user ? doc(firestore, 'salespeople', user.uid) : null, [user, firestore]);
   
   const { data: products, isLoading: productsLoading } = useCollection<FinishedGood>(productsCollection);
   const { data: distributors, isLoading: distributorsLoading } = useCollection<Distributor>(distributorsCollection);
   const { data: commissionRules, isLoading: commissionsLoading } = useCollection<Commission>(commissionsCollection);
+  const { data: salesperson, isLoading: salespersonLoading } = useDoc<Salesperson>(salespersonDocRef);
+
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -67,11 +70,14 @@ export default function GenerateInvoicePage() {
 
 
     const batch = writeBatch(firestore);
+    
+    const salespersonName = salesperson ? `${salesperson.firstName} ${salesperson.lastName}` : user.email || 'N/A';
 
     // 1. Add the new invoice
     const invoiceWithTimestampAndNumber = {
       ...newInvoiceData,
       invoiceNumber: newInvoiceNumber,
+      salesperson: salespersonName,
       createdAt: serverTimestamp(),
     };
     const invoiceRef = doc(collection(firestore, "invoices"));
@@ -175,7 +181,7 @@ export default function GenerateInvoicePage() {
     }
   }
 
-  const isLoading = productsLoading || distributorsLoading || commissionsLoading;
+  const isLoading = productsLoading || distributorsLoading || commissionsLoading || salespersonLoading;
 
   return (
     <CreateInvoiceForm 
@@ -184,6 +190,7 @@ export default function GenerateInvoicePage() {
         commissionRules={commissionRules || []}
         onCreateInvoice={addInvoice}
         isLoading={isLoading || isSaving}
+        salesperson={salesperson}
     />
   );
 }
