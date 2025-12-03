@@ -204,7 +204,10 @@ export default function FinishedGoodsPage() {
                               <span className="sr-only">Toggle</span>
                             </Button>
                           </CollapsibleTrigger>
-                          <span>{item.productName}</span>
+                          <div>
+                            <span>{item.productName}</span>
+                            {item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}
+                          </div>
                         </div>
                         <CollapsibleContent>
                            <div className="p-4 pl-12 bg-muted/50 rounded-md mt-2">

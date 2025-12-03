@@ -237,6 +237,7 @@ export const rawMaterials: RawMaterial[] = [
 export type FinishedGood = {
     id: string;
     productName: string;
+    description?: string;
     quantity: number;
     unitCost: number;
     sellingPrice?: number;
@@ -247,6 +248,7 @@ export const finishedGoods: FinishedGood[] = [
     { 
         id: 'FG-001', 
         productName: 'Premium Wall Paint', 
+        description: 'A high-quality, long-lasting wall paint with a smooth finish.',
         quantity: 150, 
         unitCost: 75.5, 
         sellingPrice: 110,
@@ -261,6 +263,7 @@ export const finishedGoods: FinishedGood[] = [
     { 
         id: 'FG-002', 
         productName: 'Weather-Proof Exterior', 
+        description: 'A durable exterior paint designed to withstand harsh weather conditions.',
         quantity: 200, 
         unitCost: 95.0, 
         sellingPrice: 140,

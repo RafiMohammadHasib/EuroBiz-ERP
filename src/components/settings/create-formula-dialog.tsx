@@ -20,6 +20,7 @@ import { PlusCircle, Trash2 } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
 import { useSettings } from '@/context/settings-context';
+import { Textarea } from '../ui/textarea';
 
 interface CreateFormulaDialogProps {
   isOpen: boolean;
@@ -32,6 +33,7 @@ export function CreateFormulaDialog({ isOpen, onOpenChange, onCreate, rawMateria
   const { toast } = useToast();
   const { currencySymbol } = useSettings();
   const [productName, setProductName] = useState('');
+  const [description, setDescription] = useState('');
   const [sellingPrice, setSellingPrice] = useState('');
   const [components, setComponents] = useState<{ materialId: string; quantity: number }[]>([]);
 
@@ -68,6 +70,7 @@ export function CreateFormulaDialog({ isOpen, onOpenChange, onCreate, rawMateria
 
   const resetForm = () => {
     setProductName('');
+    setDescription('');
     setSellingPrice('');
     setComponents([]);
   }
@@ -87,6 +90,7 @@ export function CreateFormulaDialog({ isOpen, onOpenChange, onCreate, rawMateria
 
     const newFormula: Omit<FinishedGood, 'id'> = {
       productName,
+      description,
       quantity: 0, // Initial quantity is 0
       unitCost,
       components,
@@ -118,6 +122,10 @@ export function CreateFormulaDialog({ isOpen, onOpenChange, onCreate, rawMateria
                 <Label htmlFor="sellingPrice">Selling Price (Optional)</Label>
                 <Input id="sellingPrice" type="number" value={sellingPrice} onChange={e => setSellingPrice(e.target.value)} placeholder="e.g., 120" />
             </div>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="A short description of the product." />
           </div>
 
           <div className="space-y-2">
