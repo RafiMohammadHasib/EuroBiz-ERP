@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, Search, DollarSign, CreditCard, FileText, MoreHorizontal } from "lucide-react"
+import { PlusCircle, Search, DollarSign, CreditCard, FileText, MoreHorizontal, ArrowUpDown } from "lucide-react"
 import { useSettings } from "@/context/settings-context";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -43,6 +43,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast";
 import { PreviewInvoiceDialog } from "@/components/invoices/preview-invoice-dialog";
 
+type SortKey = keyof (Invoice & { salespersonName: string });
 
 export default function SalesPage() {
   const firestore = useFirestore();
@@ -67,6 +68,7 @@ export default function SalesPage() {
   const [invoiceToPreview, setInvoiceToPreview] = useState<Invoice | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' } | null>(null);
 
   const safeInvoices = invoices || [];
   const safeCommissions = salesCommissions || [];
@@ -99,10 +101,19 @@ export default function SalesPage() {
 
     return { totalRevenue, outstandingDues, totalInvoices };
   }, [safeInvoices]);
+  
+  const requestSort = (key: SortKey) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+        direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
 
   const filteredInvoices = useMemo(() => {
-    return invoiceWithSalesperson
-      .filter(invoice => {
+    let sortableItems = [...invoiceWithSalesperson];
+    
+    sortableItems = sortableItems.filter(invoice => {
         // Status filter
         if (statusFilter !== 'all' && invoice.status.toLowerCase().replace(' ', '-') !== statusFilter) {
           return false;
@@ -112,9 +123,26 @@ export default function SalesPage() {
           return false;
         }
         return true;
-      })
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [invoiceWithSalesperson, searchTerm, statusFilter]);
+      });
+
+    if (sortConfig !== null) {
+        sortableItems.sort((a, b) => {
+            const aValue = a[sortConfig.key];
+            const bValue = b[sortConfig.key];
+            if (aValue < bValue) {
+                return sortConfig.direction === 'ascending' ? -1 : 1;
+            }
+            if (aValue > bValue) {
+                return sortConfig.direction === 'ascending' ? 1 : -1;
+            }
+            return 0;
+        });
+    } else {
+        sortableItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }
+
+    return sortableItems;
+  }, [invoiceWithSalesperson, searchTerm, statusFilter, sortConfig]);
 
   const paginatedInvoices = useMemo(() => {
     const startIndex = (currentPage - 1) * rowsPerPage;
@@ -280,12 +308,22 @@ export default function SalesPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                        <TableHead>Invoice #</TableHead>
-                        <TableHead>Customer</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead className="text-center">Action</TableHead>
+                            <TableHead onClick={() => requestSort('invoiceNumber')}>
+                                <div className="flex items-center gap-2 cursor-pointer">Invoice # <ArrowUpDown className="h-4 w-4" /></div>
+                            </TableHead>
+                            <TableHead onClick={() => requestSort('customer')}>
+                                <div className="flex items-center gap-2 cursor-pointer">Customer <ArrowUpDown className="h-4 w-4" /></div>
+                            </TableHead>
+                            <TableHead onClick={() => requestSort('date')}>
+                                <div className="flex items-center gap-2 cursor-pointer">Date <ArrowUpDown className="h-4 w-4" /></div>
+                            </TableHead>
+                            <TableHead onClick={() => requestSort('status')}>
+                                <div className="flex items-center gap-2 cursor-pointer">Status <ArrowUpDown className="h-4 w-4" /></div>
+                            </TableHead>
+                            <TableHead className="text-right" onClick={() => requestSort('totalAmount')}>
+                                <div className="flex items-center justify-end gap-2 cursor-pointer">Amount <ArrowUpDown className="h-4 w-4" /></div>
+                            </TableHead>
+                            <TableHead className="text-center">Action</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
