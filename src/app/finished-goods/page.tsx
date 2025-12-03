@@ -21,7 +21,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { MoreHorizontal, DollarSign, TrendingUp, Boxes, ChevronDown, PackageCheck, ArrowUpDown, Search } from 'lucide-react';
+import { MoreHorizontal, DollarSign, TrendingUp, Boxes, ChevronDown, PackageCheck, ArrowUpDown, Search, Download } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, doc, updateDoc } from 'firebase/firestore';
 import type { FinishedGood, RawMaterial } from '@/lib/data';
@@ -120,6 +120,23 @@ export default function FinishedGoodsPage() {
     }
   };
   
+    const handleExport = () => {
+        const headers = ["ID", "Product Name", "Description", "Quantity", "Unit Cost", "Selling Price"];
+        const csvRows = [
+            headers.join(','),
+            ...filteredAndSortedFinishedGoods.map(fg => [fg.id, `"${fg.productName}"`, `"${fg.description}"`, fg.quantity, fg.unitCost, fg.sellingPrice].join(','))
+        ];
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'finished_goods.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+  
   return (
     <>
     <div className="space-y-6">
@@ -180,15 +197,21 @@ export default function FinishedGoodsPage() {
             <h2 className="text-lg font-semibold">
               Finished Goods Inventory
             </h2>
-            <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                    type="search"
-                    placeholder="Search by product name..."
-                    className="pl-8 w-full"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
+            <div className="flex items-center gap-2">
+                <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        type="search"
+                        placeholder="Search by product name..."
+                        className="pl-8 w-full"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <Button size="sm" variant="outline" className="h-9 gap-1" onClick={handleExport}>
+                    <Download className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Export</span>
+                </Button>
             </div>
           </div>
         </CardHeader>

@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, MoreHorizontal, Percent, BarChart, ArrowUpDown, Search } from "lucide-react"
+import { PlusCircle, MoreHorizontal, Percent, BarChart, ArrowUpDown, Search, Download } from "lucide-react"
 import { type Commission, type FinishedGood, type Distributor } from "@/lib/data"
 import {
   DropdownMenu,
@@ -178,6 +178,23 @@ export default function CommissionsPage() {
             });
         }
     };
+    
+    const handleExport = () => {
+        const headers = ["ID", "Rule Name", "Applies To", "Type", "Rate"];
+        const csvRows = [
+            headers.join(','),
+            ...filteredAndSortedCommissions.map(c => [c.id, `"${c.ruleName}"`, `"${Array.isArray(c.appliesTo) ? c.appliesTo.join('; ') : c.appliesTo}"`, c.type, c.rate].join(','))
+        ];
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'commission_rules.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
   return (
     <>
@@ -227,6 +244,10 @@ export default function CommissionsPage() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
+                     <Button size="sm" variant="outline" className="h-9 gap-1" onClick={handleExport}>
+                        <Download className="h-3.5 w-3.5" />
+                        <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Export</span>
+                    </Button>
                     <Button size="sm" className="h-9 gap-1" onClick={() => setCreateDialogOpen(true)}>
                         <PlusCircle className="h-3.5 w-3.5" />
                         <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">

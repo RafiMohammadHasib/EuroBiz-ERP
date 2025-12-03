@@ -26,7 +26,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Wallet, Receipt, TrendingUp, ArrowUpDown, Search } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Wallet, Receipt, TrendingUp, ArrowUpDown, Search, Download } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, doc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -157,6 +157,23 @@ export default function ExpensesPage() {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not delete expense record.' });
     }
   };
+  
+    const handleExport = () => {
+        const headers = ["ID", "Date", "Category", "Description", "Amount"];
+        const csvRows = [
+            headers.join(','),
+            ...filteredAndSortedExpenses.map(e => [e.id, e.date, `"${e.category}"`, `"${e.description}"`, e.amount].join(','))
+        ];
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'expenses.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
   return (
     <>
@@ -215,6 +232,10 @@ export default function ExpensesPage() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
+                     <Button size="sm" variant="outline" className="h-9 gap-1" onClick={handleExport}>
+                        <Download className="h-3.5 w-3.5" />
+                        <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Export</span>
+                    </Button>
                   <Button size="sm" className="h-9 gap-1" onClick={() => setCreateDialogOpen(true)}>
                     <PlusCircle className="h-3.5 w-3.5" />
                     <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Record Expense</span>

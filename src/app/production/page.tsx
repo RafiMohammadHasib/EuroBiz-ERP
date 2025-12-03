@@ -11,7 +11,7 @@ import {
   CardFooter,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, CheckCircle, Clock, Package, Factory, DollarSign, MoreHorizontal, ArrowUpDown, Search } from "lucide-react"
+import { PlusCircle, CheckCircle, Clock, Package, Factory, DollarSign, MoreHorizontal, ArrowUpDown, Search, Download } from "lucide-react"
 import { type ProductionOrder, type FinishedGood, type RawMaterial } from "@/lib/data"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -181,6 +181,23 @@ export default function ProductionPage() {
         await handleUpdateStatus(orderToCancel.id, 'Cancelled');
         setOrderToCancel(null);
     };
+    
+    const handleExport = () => {
+        const headers = ["ID", "Product Name", "Quantity", "Total Cost", "Unit Cost", "Status", "Start Date"];
+        const csvRows = [
+            headers.join(','),
+            ...filteredAndSortedProductionOrders.map(po => [po.id, `"${po.productName}"`, po.quantity, po.totalCost, po.unitCost, po.status, po.startDate].join(','))
+        ];
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'production_orders.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
   return (
     <>
@@ -250,6 +267,10 @@ export default function ProductionPage() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
+                     <Button size="sm" variant="outline" className="h-9 gap-1" onClick={handleExport}>
+                        <Download className="h-3.5 w-3.5" />
+                        <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Export</span>
+                    </Button>
                     <Button size="sm" className="h-9 gap-1" onClick={() => setCreateDialogOpen(true)}>
                         <PlusCircle className="h-3.5 w-3.5" />
                         <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">

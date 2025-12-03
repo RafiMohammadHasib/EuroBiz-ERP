@@ -11,7 +11,7 @@ import {
   CardFooter,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, MoreHorizontal, Building, Package, TrendingUp, UserCheck, ArrowUpDown, Search } from "lucide-react"
+import { PlusCircle, MoreHorizontal, Building, Package, TrendingUp, UserCheck, ArrowUpDown, Search, Download } from "lucide-react"
 import { type Supplier, type PurchaseOrder } from "@/lib/data"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -163,6 +163,23 @@ export default function SuppliersPage() {
             });
         }
     };
+    
+    const handleExport = () => {
+        const headers = ["ID", "Name", "Category", "Status", "Total PO Value"];
+        const csvRows = [
+            headers.join(','),
+            ...filteredAndSortedSuppliers.map(s => [s.id, `"${s.name}"`, `"${s.category}"`, s.status, s.totalPOValue].join(','))
+        ];
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'suppliers.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
 
   return (
@@ -233,6 +250,10 @@ export default function SuppliersPage() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
+                    <Button size="sm" variant="outline" className="h-9 gap-1" onClick={handleExport}>
+                        <Download className="h-3.5 w-3.5" />
+                        <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Export</span>
+                    </Button>
                     <Button size="sm" className="h-9 gap-1" onClick={() => setCreateDialogOpen(true)}>
                         <PlusCircle className="h-3.5 w-3.5" />
                         <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">

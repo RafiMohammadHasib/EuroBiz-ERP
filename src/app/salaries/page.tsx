@@ -26,7 +26,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Wallet, Users, Landmark, ArrowUpDown, Search } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Wallet, Users, Landmark, ArrowUpDown, Search, Download } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -150,6 +150,23 @@ export default function SalariesPage() {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not delete salary payment.' });
     }
   };
+  
+  const handleExport = () => {
+    const headers = ["ID", "Employee Name", "Position", "Payment Date", "Amount"];
+    const csvRows = [
+        headers.join(','),
+        ...filteredAndSortedPayments.map(p => [p.id, `"${p.employeeName}"`, `"${p.position}"`, p.paymentDate, p.amount].join(','))
+    ];
+    const csvString = csvRows.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'salary_payments.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
 
   return (
     <>
@@ -208,6 +225,10 @@ export default function SalariesPage() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
+                    <Button size="sm" variant="outline" className="h-9 gap-1" onClick={handleExport}>
+                        <Download className="h-3.5 w-3.5" />
+                        <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Export</span>
+                    </Button>
                     <Button size="sm" className="h-9 gap-1" onClick={() => setCreateDialogOpen(true)}>
                         <PlusCircle className="h-3.5 w-3.5" />
                         <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Record Payment</span>
