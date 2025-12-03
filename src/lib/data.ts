@@ -42,7 +42,7 @@ export const companyDetails = {
     address: 'Tegharia, West Keraniganj, Dhaka',
     email: 'info@deshchemicals.com',
     phone: '+880 1332-854803',
-    logoUrl: ''
+    logoUrl: 'https://i.imgur.com/Cay4pyH.png'
 }
 
 export const customers: Customer[] = [

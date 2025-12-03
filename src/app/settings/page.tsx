@@ -50,7 +50,7 @@ export default function SettingsPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const { setCurrency } = useSettings();
+  const { setCurrency, businessSettings: contextBusinessSettings, setBusinessSettings: setContextBusinessSettings } = useSettings();
 
   // --- Firestore References ---
   const systemSettingsDocRef = useMemoFirebase(() => doc(firestore, 'settings', 'system'), [firestore]);
@@ -84,13 +84,7 @@ export default function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const [systemSettings, setSystemSettings] = useState<SystemSettings>({ language: 'English', currency: 'BDT' });
-  const [businessSettings, setBusinessSettings] = useState<BusinessSettings>({
-      name: initialCompanyDetails.name, 
-      address: initialCompanyDetails.address, 
-      email: initialCompanyDetails.email, 
-      phone: initialCompanyDetails.phone, 
-      logoUrl: initialCompanyDetails.logoUrl,
-  });
+  const [businessSettings, setBusinessSettings] = useState<BusinessSettings>(contextBusinessSettings);
 
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [isSavingSystem, setIsSavingSystem] = useState(false);
@@ -110,10 +104,8 @@ export default function SettingsPage() {
   }, [systemSettingsData, setCurrency]);
 
   useEffect(() => {
-    if (businessSettingsData) {
-      setBusinessSettings(businessSettingsData);
-    }
-  }, [businessSettingsData]);
+    setBusinessSettings(contextBusinessSettings);
+  }, [contextBusinessSettings]);
 
 
   // --- Handlers ---
@@ -165,6 +157,7 @@ export default function SettingsPage() {
     setIsSavingBusiness(true);
     try {
         await setDoc(businessSettingsDocRef, businessSettings, { merge: true });
+        setContextBusinessSettings(businessSettings); // Update context
         toast({ title: 'Business Details Updated', description: 'Your new business details have been saved.' });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error Saving Details', description: error.message });
