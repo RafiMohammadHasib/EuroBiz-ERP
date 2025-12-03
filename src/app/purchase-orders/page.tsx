@@ -103,6 +103,8 @@ export default function PurchaseOrdersPage() {
             }
             return 0;
         });
+    } else {
+        sortableItems.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }
     return sortableItems;
   }
@@ -266,13 +268,7 @@ export default function PurchaseOrdersPage() {
 
   const renderPurchaseOrderTable = (orders: PurchaseOrder[], totalCount: number) => (
     <Card>
-      <CardHeader>
-        <CardTitle>Purchase Orders</CardTitle>
-        <CardDescription>
-          Manage your purchase orders and track their status.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         <Table>
           <TableHeader>
             <TableRow>
@@ -399,6 +395,14 @@ export default function PurchaseOrdersPage() {
   return (
     <>
     <div className="space-y-6">
+        <Card>
+            <CardHeader>
+                <CardTitle>Purchase Orders</CardTitle>
+                <CardDescription>
+                Manage your purchase orders and track their status.
+                </CardDescription>
+            </CardHeader>
+        </Card>
        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -514,5 +518,7 @@ export default function PurchaseOrdersPage() {
     </>
   );
 }
+
+    
 
     
