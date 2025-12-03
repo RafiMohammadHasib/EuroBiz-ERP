@@ -110,6 +110,20 @@ export default function SettingsPage() {
   const [isFormulaDialogOpen, setFormulaDialogOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Pagination state for formulas
+  const [formulasCurrentPage, setFormulasCurrentPage] = useState(1);
+  const [formulasRowsPerPage, setFormulasRowsPerPage] = useState(5);
+
+  const safeFinishedGoods = finishedGoods || [];
+  
+  const paginatedFormulas = useMemo(() => {
+    const startIndex = (formulasCurrentPage - 1) * formulasRowsPerPage;
+    const endIndex = startIndex + formulasRowsPerPage;
+    return safeFinishedGoods.slice(startIndex, endIndex);
+  }, [safeFinishedGoods, formulasCurrentPage, formulasRowsPerPage]);
+
+  const totalPagesFormulas = Math.ceil(safeFinishedGoods.length / formulasRowsPerPage);
+
 
   // --- Effects to sync state with data from hooks ---
   useEffect(() => {
@@ -502,7 +516,7 @@ export default function SettingsPage() {
                 </CardHeader>
                 <CardContent>
                    <div className="space-y-4">
-                        {fgLoading ? <p>Loading formulas...</p> : finishedGoods?.map(fg => (
+                        {fgLoading ? <p>Loading formulas...</p> : paginatedFormulas.map(fg => (
                             <Card key={fg.id} className="bg-muted/50">
                                 <CardHeader className="pb-4">
                                     <CardTitle className="text-lg">{fg.productName}</CardTitle>
@@ -524,6 +538,55 @@ export default function SettingsPage() {
                         ))}
                     </div>
                 </CardContent>
+                <CardFooter className="flex items-center justify-between">
+                    <div className="text-xs text-muted-foreground">
+                        Showing <strong>{paginatedFormulas.length}</strong> of <strong>{safeFinishedGoods.length}</strong> formulas
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                            <p className="text-xs font-medium">Rows per page</p>
+                            <Select
+                                value={`${formulasRowsPerPage}`}
+                                onValueChange={(value) => {
+                                    setFormulasRowsPerPage(Number(value));
+                                    setFormulasCurrentPage(1);
+                                }}
+                            >
+                                <SelectTrigger className="h-8 w-[70px]">
+                                <SelectValue placeholder={formulasRowsPerPage} />
+                                </SelectTrigger>
+                                <SelectContent side="top">
+                                {[5, 10, 15].map((pageSize) => (
+                                    <SelectItem key={pageSize} value={`${pageSize}`}>
+                                    {pageSize}
+                                    </SelectItem>
+                                ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="text-xs font-medium">
+                            Page {formulasCurrentPage} of {totalPagesFormulas}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setFormulasCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={formulasCurrentPage === 1}
+                            >
+                                Previous
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setFormulasCurrentPage(prev => Math.min(prev + 1, totalPagesFormulas))}
+                                disabled={formulasCurrentPage === totalPagesFormulas}
+                            >
+                                Next
+                            </Button>
+                        </div>
+                    </div>
+                </CardFooter>
             </Card>
             
             <Card>
