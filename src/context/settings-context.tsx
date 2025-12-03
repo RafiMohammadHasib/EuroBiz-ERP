@@ -2,9 +2,6 @@
 'use client';
 
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import { companyDetails as initialCompanyDetails } from '@/lib/data';
 
 type Currency = 'BDT' | 'USD';
 
@@ -26,30 +23,21 @@ interface SettingsContextType {
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
-export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [currency, setCurrency] = useState<Currency>('BDT');
-  const firestore = useFirestore();
-  const { user } = useUser(); // Get the user status
+interface SettingsProviderProps {
+  children: ReactNode;
+  initialBusinessSettings: BusinessSettings;
+}
 
-  const settingsDocRef = useMemoFirebase(() => {
-    if (firestore && user) {
-      return doc(firestore, 'settings', 'business');
-    }
-    return null;
-  }, [firestore, user]);
-
-  const { data: settingsData } = useDoc<BusinessSettings>(settingsDocRef);
-  
-  const [businessSettings, setBusinessSettings] = useState<BusinessSettings>(initialCompanyDetails);
+export function SettingsProvider({ children, initialBusinessSettings }: SettingsProviderProps) {
+  const [currency, setCurrency] = useState<Currency>(initialBusinessSettings.currency || 'BDT');
+  const [businessSettings, setBusinessSettings] = useState<BusinessSettings>(initialBusinessSettings);
 
   useEffect(() => {
-    if (settingsData) {
-        setBusinessSettings(settingsData);
-        if (settingsData.currency) {
-            setCurrency(settingsData.currency);
-        }
+    setBusinessSettings(initialBusinessSettings);
+    if (initialBusinessSettings.currency) {
+      setCurrency(initialBusinessSettings.currency);
     }
-  }, [settingsData]);
+  }, [initialBusinessSettings]);
 
   const currencySymbol = currency === 'USD' ? '$' : '৳';
 

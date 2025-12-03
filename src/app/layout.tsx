@@ -1,9 +1,9 @@
+
 import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import { FirebaseClientProvider } from '@/firebase';
 import AuthHandler from '@/components/layout/auth-handler';
-import { SettingsProvider } from '@/context/settings-context';
 
 export const metadata: Metadata = {
   title: 'EuroBiz Sales ERP',
@@ -27,11 +27,9 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          <SettingsProvider>
             <AuthHandler>
               {children}
             </AuthHandler>
-          </SettingsProvider>
         </FirebaseClientProvider>
         <Toaster />
       </body>
