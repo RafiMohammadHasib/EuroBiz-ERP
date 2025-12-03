@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useSettings } from '@/context/settings-context';
 import { companyDetails as initialCompanyDetails } from '@/lib/data';
 import { Textarea } from '@/components/ui/textarea';
+import { LogoUploader } from '@/components/settings/logo-uploader';
 
 
 type ProfileSettings = {
@@ -521,20 +522,14 @@ export default function SettingsPage() {
                       <CardTitle>Business Details</CardTitle>
                       <CardDescription>Manage general business information used across the application, like on invoices.</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                      <div className="flex items-center gap-6">
-                        {businessSettings.logoUrl ? (
-                            <Image src={businessSettings.logoUrl} alt="Company Logo" width={80} height={80} className="rounded-md object-cover" />
-                        ) : (
-                            <div className="w-20 h-20 bg-muted rounded-md flex items-center justify-center">
-                                <Upload className="h-8 w-8 text-muted-foreground" />
-                            </div>
-                        )}
-                        <div className="grid gap-2 flex-1">
-                            <Label htmlFor="logoUrl">Logo URL</Label>
-                            <Input id="logoUrl" value={businessSettings.logoUrl} onChange={handleBusinessDetailsChange} placeholder="https://example.com/logo.png" />
-                        </div>
-                      </div>
+                  <CardContent className="space-y-6">
+                      <LogoUploader 
+                        currentLogoUrl={businessSettings.logoUrl}
+                        onUploadComplete={(newUrl) => {
+                            setBusinessSettings(prev => ({...prev, logoUrl: newUrl}));
+                            setContextBusinessSettings(prev => ({...prev, logoUrl: newUrl}));
+                        }}
+                      />
                       <div className="grid md:grid-cols-2 gap-4 pt-4">
                           <div className="space-y-2">
                               <Label htmlFor="name">Company Name</Label>
