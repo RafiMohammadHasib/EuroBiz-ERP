@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, MoreHorizontal, Package, ShoppingCart, List, CheckCircle, Truck, CreditCard, ArrowUpDown } from "lucide-react"
+import { PlusCircle, MoreHorizontal, Package, ShoppingCart, List, CheckCircle, Truck, CreditCard, ArrowUpDown, Search } from "lucide-react"
 import { type PurchaseOrder, type Supplier, type RawMaterial } from "@/lib/data"
 import {
   DropdownMenu,
@@ -39,6 +39,7 @@ import { useSettings } from "@/context/settings-context";
 import { MakePaymentDialog } from "@/components/dues/make-payment-dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 type SortKey = keyof PurchaseOrder;
 
@@ -61,6 +62,7 @@ export default function PurchaseOrdersPage() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [activeTab, setActiveTab] = useState("all");
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' } | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const safePOs = purchaseOrders || [];
   const safeSuppliers = suppliers || [];
@@ -68,6 +70,11 @@ export default function PurchaseOrdersPage() {
 
   const getFilteredOrders = (status?: PurchaseOrder['deliveryStatus'], paymentStatus?: PurchaseOrder['paymentStatus']) => {
     let filtered = safePOs;
+
+    if (searchTerm) {
+        filtered = filtered.filter(po => po.supplier.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+
     if (status) {
         filtered = filtered.filter(o => o.deliveryStatus === status);
     }
@@ -77,10 +84,10 @@ export default function PurchaseOrdersPage() {
     return filtered;
   };
 
-  const allOrders = useMemo(() => getFilteredOrders(), [safePOs]);
-  const pendingOrders = useMemo(() => getFilteredOrders('Pending'), [safePOs]);
-  const receivedOrders = useMemo(() => getFilteredOrders('Received'), [safePOs]);
-  const paidOrders = useMemo(() => getFilteredOrders(undefined, 'Paid'), [safePOs]);
+  const allOrders = useMemo(() => getFilteredOrders(), [safePOs, searchTerm]);
+  const pendingOrders = useMemo(() => getFilteredOrders('Pending'), [safePOs, searchTerm]);
+  const receivedOrders = useMemo(() => getFilteredOrders('Received'), [safePOs, searchTerm]);
+  const paidOrders = useMemo(() => getFilteredOrders(undefined, 'Paid'), [safePOs, searchTerm]);
   
   const getSortableOrders = (orders: PurchaseOrder[]) => {
     let sortableItems = [...orders];
@@ -443,8 +450,18 @@ export default function PurchaseOrdersPage() {
             <TabsTrigger value="paid">Paid</TabsTrigger>
           </TabsList>
           <div className="ml-auto flex items-center gap-2">
+            <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    type="search"
+                    placeholder="Search by supplier..."
+                    className="pl-8 w-full"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
             <Link href="/purchase-orders/create">
-              <Button size="sm" className="h-8 gap-1">
+              <Button size="sm" className="h-9 gap-1">
                 <PlusCircle className="h-3.5 w-3.5" />
                 <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                   Create Purchase Order
@@ -497,3 +514,5 @@ export default function PurchaseOrdersPage() {
     </>
   );
 }
+
+    
