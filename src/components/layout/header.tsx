@@ -42,9 +42,9 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
         />
       </div>
        <Link href="/reports">
-          <Button variant="ghost" size="icon">
-            <PieChart className="h-5 w-5" />
-            <span className="sr-only">Reports</span>
+          <Button variant="ghost">
+            <PieChart className="h-5 w-5 mr-2" />
+            Report
           </Button>
         </Link>
       <DropdownMenu>

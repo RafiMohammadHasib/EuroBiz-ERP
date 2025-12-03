@@ -88,12 +88,6 @@ export const navGroups: NavGroup[] = [
             { href: "/salaries", label: "Salaries", icon: Wallet },
             { href: "/commissions", label: "Commissions", icon: Percent },
         ]
-    },
-     {
-        label: "Analysis & Reporting",
-        items: [
-            { href: "/forecast", label: "AI Sales Forecast", icon: BrainCircuit },
-        ]
     }
 ]
 
