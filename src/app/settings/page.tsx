@@ -21,6 +21,7 @@ import { useSettings } from '@/context/settings-context';
 import { companyDetails as initialCompanyDetails } from '@/lib/data';
 import { Textarea } from '@/components/ui/textarea';
 import { LogoUploader } from '@/components/settings/logo-uploader';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 type ProfileSettings = {
@@ -707,7 +708,7 @@ export default function SettingsPage() {
                       <div className="grid md:grid-cols-2 gap-4 pt-4">
                           <div className="space-y-2">
                               <Label htmlFor="name">Company Name</Label>
-                              <Input id="name" value={businessSettings.name} onChange={handleBusinessDetailsChange} disabled/>
+                              <Input id="name" value={businessSettings.name} onChange={handleBusinessDetailsChange} />
                           </div>
                            <div className="space-y-2">
                               <Label htmlFor="email">Company Email</Label>
