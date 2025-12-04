@@ -64,7 +64,7 @@ export function IncomeExpenseDataTable({ dateRange }: { dateRange?: DateRange })
             id: p.id,
             date: p.startDate,
             source: `Production ${p.id} - ${p.productName}`,
-            amount: p.labourCost + p.otherCosts,
+            amount: (p.labourCost ?? 0) + (p.otherCosts ?? 0),
             type: 'Expense' as const
         })).filter(p => p.amount > 0);
 
