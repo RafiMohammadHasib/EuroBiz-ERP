@@ -59,7 +59,7 @@ export default function IncomeExpenseChart() {
     // Calculate Expenses
     const allExpenses = [
       ...(purchaseOrders || []).filter(p => p.paidAmount > 0).map(p => ({ date: p.date, amount: p.paidAmount })),
-      ...(productionOrders || []).map(p => ({ date: p.startDate, amount: p.labourCost + p.otherCosts })),
+      ...(productionOrders || []).map(p => ({ date: p.startDate, amount: (p.labourCost || 0) + (p.otherCosts || 0) })),
       ...(salesCommissions || []).map(s => ({ date: s.saleDate, amount: s.commissionAmount })),
       ...(salaryPayments || []).map(s => ({ date: s.paymentDate, amount: s.amount })),
       ...(expenses || []).map(e => ({ date: e.date, amount: e.amount })),
@@ -68,7 +68,7 @@ export default function IncomeExpenseChart() {
     allExpenses.forEach(exp => {
         const month = new Date(exp.date).toLocaleString('default', { month: 'short' });
         if(monthlyData[month]) {
-            monthlyData[month].expense += exp.amount;
+            monthlyData[month].expense += exp.amount || 0;
         }
     });
     
