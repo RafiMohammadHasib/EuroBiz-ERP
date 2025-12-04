@@ -141,7 +141,8 @@ service cloud.firestore {
     }
 
     match /commissions/{commissionId} {
-      allow read, write: if isSignedIn();
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
 
     match /notifications/{notificationId} {

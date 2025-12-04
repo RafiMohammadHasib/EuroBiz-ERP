@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -13,12 +13,12 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '../ui/select';
-import { Commission, Distributor, FinishedGood } from '@/lib/data';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '../ui/dropdown-menu';
-import { ChevronDown } from 'lucide-react';
-import { Badge } from '../ui/badge';
-import { ScrollArea } from '../ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Commission, FinishedGood, Distributor } from '@/lib/data';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { X } from 'lucide-react';
 
 interface CreateCommissionRuleDialogProps {
   isOpen: boolean;
@@ -29,28 +29,45 @@ interface CreateCommissionRuleDialogProps {
 }
 
 export function CreateCommissionRuleDialog({ isOpen, onOpenChange, onCreate, products, distributors }: CreateCommissionRuleDialogProps) {
+  const { toast } = useToast();
   const [ruleName, setRuleName] = useState('');
   const [appliesTo, setAppliesTo] = useState<string[]>([]);
   const [type, setType] = useState<'Percentage' | 'Fixed'>('Percentage');
   const [rate, setRate] = useState('');
 
-  const appliesToOptions = useMemo(() => {
-    const productOptions = (products || []).map(p => p.productName);
-    const distributorOptions = (distributors || []).map(d => d.name);
-    const tierOptions = [...new Set((distributors || []).map(d => d.tier))];
-    
-    return {
-      products: productOptions,
-      distributors: distributorOptions,
-      tiers: tierOptions
-    };
-  }, [products, distributors]);
+  const allApplicableItems = [
+    { type: 'Group', name: 'All Products' },
+    ...products.map(p => ({ type: 'Product', name: p.productName })),
+    ...distributors.map(d => ({ type: 'Distributor', name: d.name })),
+    ...[...new Set(distributors.map(d => d.tier))].map(t => ({ type: 'Tier', name: t })),
+  ];
+  
+  const handleSelectApplicable = (item: string) => {
+    if (!appliesTo.includes(item)) {
+      setAppliesTo([...appliesTo, item]);
+    }
+  };
 
+  const handleRemoveApplicable = (itemToRemove: string) => {
+    setAppliesTo(appliesTo.filter(item => item !== itemToRemove));
+  };
+
+
+  const resetForm = () => {
+    setRuleName('');
+    setAppliesTo([]);
+    setType('Percentage');
+    setRate('');
+  };
 
   const handleSubmit = () => {
     const numericRate = parseFloat(rate);
-    if (!ruleName || appliesTo.length === 0 || !rate || isNaN(numericRate) || numericRate <= 0) {
-      alert('Please fill out all fields with valid data.');
+    if (!ruleName || appliesTo.length === 0 || isNaN(numericRate)) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Input',
+        description: 'Please fill out all fields and select at least one application criteria.',
+      });
       return;
     }
 
@@ -61,114 +78,80 @@ export function CreateCommissionRuleDialog({ isOpen, onOpenChange, onCreate, pro
       rate: numericRate,
     });
     
-    setRuleName('');
-    setAppliesTo([]);
-    setType('Percentage');
-    setRate('');
+    resetForm();
     onOpenChange(false);
   };
-  
-  const handleAppliesToChange = (item: string, checked: boolean) => {
-    if (checked) {
-        setAppliesTo(prev => [...prev, item]);
-    } else {
-        setAppliesTo(prev => prev.filter(i => i !== item));
-    }
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Add New Commission Rule</DialogTitle>
+          <DialogTitle>Create New Commission Rule</DialogTitle>
           <DialogDescription>
-            Fill in the details for the new commission rule.
+            Define a new rule to calculate sales commissions automatically.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="rule-name" className="text-right">
+            <Label htmlFor="ruleName" className="text-right">
               Rule Name
             </Label>
             <Input
-              id="rule-name"
+              id="ruleName"
               value={ruleName}
               onChange={(e) => setRuleName(e.target.value)}
               className="col-span-3"
-              placeholder="e.g., Q4 Bonus"
+              placeholder="e.g., Q4 Electronics Bonus"
             />
           </div>
-          <div className="grid grid-cols-4 items-start gap-4 pt-2">
-            <Label htmlFor="applies-to" className="text-right pt-2">
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label htmlFor="appliesTo" className="text-right pt-2">
               Applies To
             </Label>
-            <div className="col-span-3">
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full justify-between">
-                            <span>{appliesTo.length > 0 ? `${appliesTo.length} selected` : "Select items..."}</span>
-                            <ChevronDown className="h-4 w-4 opacity-50" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-full max-w-[295px]">
-                        <ScrollArea className="h-64">
-                            <DropdownMenuLabel>Products</DropdownMenuLabel>
-                            {appliesToOptions.products.map(p => (
-                                <DropdownMenuCheckboxItem
-                                    key={p}
-                                    checked={appliesTo.includes(p)}
-                                    onCheckedChange={(checked) => handleAppliesToChange(p, checked)}
-                                >
-                                    {p}
-                                </DropdownMenuCheckboxItem>
-                            ))}
-                            <DropdownMenuSeparator />
-                             <DropdownMenuLabel>Distributors</DropdownMenuLabel>
-                            {appliesToOptions.distributors.map(d => (
-                                <DropdownMenuCheckboxItem
-                                    key={d}
-                                    checked={appliesTo.includes(d)}
-                                    onCheckedChange={(checked) => handleAppliesToChange(d, checked)}
-                                >
-                                    {d}
-                                </DropdownMenuCheckboxItem>
-                            ))}
-                             <DropdownMenuSeparator />
-                            <DropdownMenuLabel>Distributor Tiers</DropdownMenuLabel>
-                             {appliesToOptions.tiers.map(t => (
-                                <DropdownMenuCheckboxItem
-                                    key={t}
-                                    checked={appliesTo.includes(t)}
-                                    onCheckedChange={(checked) => handleAppliesToChange(t, checked)}
-                                >
-                                    {t}
-                                </DropdownMenuCheckboxItem>
-                            ))}
-                        </ScrollArea>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-                <div className="flex flex-wrap gap-1 mt-2">
-                    {appliesTo.map(item => <Badge key={item} variant="secondary">{item}</Badge>)}
-                </div>
+            <div className="col-span-3 space-y-2">
+              <Select onValueChange={handleSelectApplicable}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select products, distributors, or tiers" />
+                </SelectTrigger>
+                <SelectContent>
+                  <ScrollArea className="h-48">
+                    {allApplicableItems.map(item => (
+                      <SelectItem key={item.name} value={item.name}>
+                        {item.name} ({item.type})
+                      </SelectItem>
+                    ))}
+                  </ScrollArea>
+                </SelectContent>
+              </Select>
+              <div className="space-x-1 space-y-1">
+                {appliesTo.map(item => (
+                  <Badge key={item} variant="secondary" className="text-sm">
+                    {item}
+                    <button onClick={() => handleRemoveApplicable(item)} className="ml-2 rounded-full hover:bg-white/20">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
             </div>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
+           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="type" className="text-right">
               Type
             </Label>
-             <Select value={type} onValueChange={(value) => setType(value as 'Percentage' | 'Fixed')}>
-                <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select Type" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="Percentage">Percentage</SelectItem>
-                    <SelectItem value="Fixed">Fixed</SelectItem>
-                </SelectContent>
+            <Select value={type} onValueChange={(v) => setType(v as any)}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Percentage">Percentage (%)</SelectItem>
+                <SelectItem value="Fixed">Fixed Amount</SelectItem>
+              </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
+           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="rate" className="text-right">
-              Rate
+              Rate / Amount
             </Label>
             <Input
               id="rate"
@@ -176,11 +159,12 @@ export function CreateCommissionRuleDialog({ isOpen, onOpenChange, onCreate, pro
               value={rate}
               onChange={(e) => setRate(e.target.value)}
               className="col-span-3"
-              placeholder={type === 'Percentage' ? "e.g., 5.5" : "e.g., 1000"}
+              placeholder={type === 'Percentage' ? 'e.g., 5.5 for 5.5%' : 'e.g., 500'}
             />
           </div>
         </div>
         <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button type="submit" onClick={handleSubmit}>Save Rule</Button>
         </DialogFooter>
       </DialogContent>
