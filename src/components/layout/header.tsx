@@ -60,6 +60,12 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
       </div>
       
       <div className="flex items-center gap-4 ml-auto">
+        <Link href="/reports">
+            <Button variant="ghost" size="icon">
+                <PieChart className="h-5 w-5" />
+                <span className="sr-only">Reports</span>
+            </Button>
+        </Link>
         <Select value={currency} onValueChange={(value) => setCurrency(value as 'BDT' | 'USD')}>
             <SelectTrigger className="w-auto h-9 text-sm focus:ring-0 focus:ring-offset-0" variant="ghost">
                  <SelectValue>
