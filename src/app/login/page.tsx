@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -23,7 +24,6 @@ export default function LoginPage() {
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const loginIllustration = placeholder.placeholderImages.find(p => p.id === 'login-illustration') as ImagePlaceholder | undefined;
   const logo = placeholder.placeholderImages.find(p => p.id === 'eurobiz-logo') as ImagePlaceholder | undefined;
 
   const handleLogin = async () => {
@@ -50,108 +50,89 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="w-full h-screen lg:grid lg:grid-cols-2 font-sans relative">
-      <div className="hidden lg:flex flex-col items-center justify-center p-12 relative overflow-hidden bg-gradient-to-br from-primary/20 via-white to-primary/10">
-        <div className='absolute top-10 left-10 flex items-center gap-3 text-2xl font-bold text-[#4A4A4A]'>
-             {logo && (
-              <Image
-                src={logo.imageUrl}
-                alt="EuroBiz Logo"
-                width="40"
-                height="40"
-                data-ai-hint={logo.imageHint}
-                priority
-              />
-            )}
-            EuroBiz <span className='font-light text-gray-700'>ERP</span>
-        </div>
-        <div className="text-left w-full max-w-md">
-            <h1 className="text-4xl font-bold text-gray-800 mb-4">Everything you need to manage your business — all in one place.</h1>
-            <p className="text-gray-600 mb-8">EuroBiz helps you manage sales, inventory, suppliers, production, finance, and reporting with ease.</p>
-        </div>
-        {loginIllustration && (
-             <Image
-                src={loginIllustration.imageUrl}
-                alt="EuroBiz ERP Illustration"
-                width="1280"
-                height="853"
-                className="w-full h-auto object-contain rounded-lg"
-                data-ai-hint={loginIllustration.imageHint}
-                priority
-             />
-        )}
-         <div className='absolute -bottom-20 -right-20 w-80 h-80 bg-primary/10 rounded-full blur-3xl'></div>
-         <div className='absolute -top-20 -left-20 w-80 h-80 bg-primary/10 rounded-full blur-3xl'></div>
-      </div>
-      <div className="flex items-center justify-center py-12 px-4 bg-white">
-        <div className="mx-auto w-[380px] space-y-8">
-            <div className='bg-white rounded-xl shadow-2xl shadow-primary/10 p-8'>
-                <div className="grid gap-2 text-left mb-8">
-                    <h1 className="text-2xl font-bold text-gray-800">Welcome Back</h1>
-                    <p className="text-balance text-gray-500">
-                    Login to continue using EuroBiz ERP
-                    </p>
+    <div className="w-full min-h-screen flex items-center justify-center p-4 bg-white font-sans relative overflow-hidden">
+        <div className='absolute -bottom-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl'></div>
+        <div className='absolute -top-32 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl'></div>
+      <div className="mx-auto w-[400px] space-y-8 z-10">
+        <div className="flex flex-col items-center justify-center text-center">
+            <div className="inline-flex items-center justify-center gap-3 mb-4">
+                {logo && (
+                <Image
+                    src={logo.imageUrl}
+                    alt="EuroBiz Logo"
+                    width="40"
+                    height="40"
+                    data-ai-hint={logo.imageHint}
+                    priority
+                />
+                )}
+                <h1 className="text-3xl font-bold text-[#4A4A4A]">EuroBiz <span className='font-light'>ERP</span></h1>
+            </div>
+            <p className="text-balance text-gray-500">
+              Welcome back! Login to continue.
+            </p>
+          </div>
+
+        <div className='bg-white/70 backdrop-blur-sm rounded-xl shadow-2xl shadow-primary/10 p-8'>
+            <div className="grid gap-6">
+                <div className="grid gap-2">
+                <Label htmlFor="email">Username</Label>
+                <div className='relative'>
+                    <User className='absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
+                    <Input
+                        id="email"
+                        type="email"
+                        placeholder="Enter Username"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={isLoading}
+                        className="pl-10 h-12"
+                    />
                 </div>
-                <div className="grid gap-6">
-                    <div className="grid gap-2">
-                    <Label htmlFor="email">Username</Label>
+                </div>
+                <div className="grid gap-2">
+                    <div className="flex items-center">
+                        <Label htmlFor="password">Password</Label>
+                        <Link
+                        href="#"
+                        className="ml-auto inline-block text-sm text-primary hover:underline"
+                        >
+                        Forgot Password?
+                        </Link>
+                    </div>
                     <div className='relative'>
-                        <User className='absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
-                        <Input
-                            id="email"
-                            type="email"
-                            placeholder="Enter Username"
-                            required
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                        <Lock className='absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
+                        <Input 
+                            id="password" 
+                            type={showPassword ? 'text' : 'password'}
+                            required 
+                            placeholder='Enter Password'
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                             disabled={isLoading}
                             className="pl-10 h-12"
                         />
+                        <button type='button' onClick={() => setShowPassword(!showPassword)} className='absolute right-3 top-1/2 -translate-y-1/2'>
+                            {showPassword ? <EyeOff className='h-5 w-5 text-gray-400' /> : <Eye className='h-5 w-5 text-gray-400' />}
+                        </button>
                     </div>
-                    </div>
-                    <div className="grid gap-2">
-                        <div className="flex items-center">
-                            <Label htmlFor="password">Password</Label>
-                            <Link
-                            href="#"
-                            className="ml-auto inline-block text-sm text-primary hover:underline"
-                            >
-                            Forgot Password?
-                            </Link>
-                        </div>
-                        <div className='relative'>
-                            <Lock className='absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
-                            <Input 
-                                id="password" 
-                                type={showPassword ? 'text' : 'password'}
-                                required 
-                                placeholder='Enter Password'
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                disabled={isLoading}
-                                className="pl-10 h-12"
-                            />
-                            <button type='button' onClick={() => setShowPassword(!showPassword)} className='absolute right-3 top-1/2 -translate-y-1/2'>
-                                {showPassword ? <EyeOff className='h-5 w-5 text-gray-400' /> : <Eye className='h-5 w-5 text-gray-400' />}
-                            </button>
-                        </div>
-                    </div>
-                    {error && (
-                        <p className="text-sm text-destructive text-center">{error}</p>
-                    )}
-                    <Button type="submit" className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90" onClick={handleLogin} disabled={isLoading}>
-                    {isLoading ? 'Logging in...' : 'Login'}
-                    </Button>
                 </div>
-            </div>
-            <div className="text-center text-sm text-gray-500">
-                Need an account? Please contact the admin.
+                {error && (
+                    <p className="text-sm text-destructive text-center">{error}</p>
+                )}
+                <Button type="submit" className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90" onClick={handleLogin} disabled={isLoading}>
+                {isLoading ? 'Logging in...' : 'Login'}
+                </Button>
             </div>
         </div>
+        <div className="text-center text-sm text-gray-500">
+            Need an account? Please contact the admin.
+        </div>
       </div>
-      <footer className='absolute bottom-4 w-full text-center text-xs text-gray-400'>
+       <footer className='absolute bottom-4 w-full text-center text-xs text-gray-400'>
         © 2025 EuroBiz — All Rights Reserved
-      </footer>
+       </footer>
        <div className='absolute bottom-4 right-4 text-xs text-gray-400'>
         v1.0.0
        </div>
