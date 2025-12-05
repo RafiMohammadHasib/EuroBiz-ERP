@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -40,7 +39,7 @@ export default function LoginPage() {
       });
       router.push('/');
     } catch (error: any) {
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-email') {
           setError('Invalid username or password. Please try again.');
       } else {
         setError(error.message);
@@ -121,7 +120,7 @@ export default function LoginPage() {
                 {error && (
                     <p className="text-sm text-destructive text-center">{error}</p>
                 )}
-                <Button type="submit" className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90" onClick={handleLogin} disabled={isLoading}>
+                <Button type="submit" className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90" onClick={handleLogin} disabled={isLoading || !email || !password}>
                 {isLoading ? 'Logging in...' : 'Login'}
                 </Button>
             </div>
