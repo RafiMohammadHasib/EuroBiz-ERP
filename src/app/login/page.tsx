@@ -92,15 +92,7 @@ export default function LoginPage() {
                 </div>
                 </div>
                 <div className="grid gap-2">
-                    <div className="flex items-center">
-                        <Label htmlFor="password">Password</Label>
-                        <Link
-                        href="#"
-                        className="ml-auto inline-block text-sm text-primary hover:underline"
-                        >
-                        Forgot Password?
-                        </Link>
-                    </div>
+                    <Label htmlFor="password">Password</Label>
                     <div className='relative'>
                         <Lock className='absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
                         <Input 
@@ -116,6 +108,14 @@ export default function LoginPage() {
                         <button type='button' onClick={() => setShowPassword(!showPassword)} className='absolute right-3 top-1/2 -translate-y-1/2'>
                             {showPassword ? <EyeOff className='h-5 w-5 text-gray-400' /> : <Eye className='h-5 w-5 text-gray-400' />}
                         </button>
+                    </div>
+                     <div className="flex items-center justify-end">
+                        <Link
+                        href="#"
+                        className="inline-block text-sm text-primary hover:underline"
+                        >
+                        Forgot Password?
+                        </Link>
                     </div>
                 </div>
                 {error && (
