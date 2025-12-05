@@ -30,7 +30,7 @@ interface HeaderProps {
 }
 
 export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
-  const { businessSettings, currency, setCurrency } = useSettings();
+  const { businessSettings, currency, setCurrency, currencySymbol } = useSettings();
   const { user } = useUser();
   const auth = useAuth();
   const router = useRouter();
@@ -61,11 +61,10 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
             <span>{currentTime.toLocaleTimeString()}</span>
         </div>
         <Select value={currency} onValueChange={(value) => setCurrency(value as 'BDT' | 'USD')}>
-            <SelectTrigger className="w-[120px] h-9 text-sm">
-                <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" />
-                    <SelectValue />
-                </div>
+            <SelectTrigger className="w-auto h-9 text-sm focus:ring-0 focus:ring-offset-0" variant="ghost">
+                 <SelectValue>
+                    <span className="font-semibold">{currencySymbol}</span>
+                </SelectValue>
             </SelectTrigger>
             <SelectContent>
                 <SelectItem value="BDT">BDT (৳)</SelectItem>
@@ -73,11 +72,10 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
             </SelectContent>
         </Select>
         <Select defaultValue="en">
-            <SelectTrigger className="w-[120px] h-9 text-sm">
-                 <div className="flex items-center gap-2">
-                    <Globe className="h-4 w-4" />
-                    <SelectValue />
-                </div>
+            <SelectTrigger className="w-auto h-9 text-sm focus:ring-0 focus:ring-offset-0" variant="ghost">
+                 <SelectValue>
+                    <Globe className="h-5 w-5" />
+                 </SelectValue>
             </SelectTrigger>
             <SelectContent>
                 <SelectItem value="en">English</SelectItem>
