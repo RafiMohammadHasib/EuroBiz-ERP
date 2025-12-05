@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, CreditCard, Users, Truck, ShoppingCart, Building, Package, FileText, ArrowUp, ArrowDown, Boxes } from "lucide-react"
+import { DollarSign, CreditCard, Users, Truck, ShoppingCart, Building, Package, FileText, ArrowUp, ArrowDown, Boxes, User, Briefcase } from "lucide-react"
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
 import type { Invoice, Distributor, Supplier, PurchaseOrder, FinishedGood, ProductionOrder, SalesCommission, SalaryPayment, Expense } from "@/lib/data";
@@ -31,6 +31,7 @@ import ProductPerformanceChart from '@/components/reports/product-performance-ch
 import BalanceChart from '@/components/dashboard/balance-chart';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function Home() {
   const firestore = useFirestore();
@@ -292,47 +293,39 @@ export default function Home() {
                     <CardTitle>Recent Invoices</CardTitle>
                     <CardDescription>Your most recent sales activity.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                <Table>
-                    <TableHeader>
-                    <TableRow>
-                        <TableHead>Customer</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Status</TableHead>
-                    </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                    {isLoading ? (
-                        <TableRow>
-                        <TableCell colSpan={4} className="h-24 text-center">
-                            Loading...
-                        </TableCell>
-                        </TableRow>
+                <CardContent className="space-y-4">
+                     {isLoading ? (
+                        <div className="flex justify-center items-center h-40">
+                            <p>Loading invoices...</p>
+                        </div>
                     ) : (
                         filteredInvoices.slice(0, 5).map((invoice) => (
-                        <TableRow key={invoice.id} onClick={() => router.push(`/sales/${invoice.id}`)} className="cursor-pointer">
-                            <TableCell>
-                                <div className="font-medium">{invoice.customer}</div>
-                                <div className="text-sm text-muted-foreground">
-                                    {invoice.items.map(item => `${item.quantity}x ${item.description}`).join(', ')}
+                        <div key={invoice.id} onClick={() => router.push(`/sales/${invoice.id}`)} className="flex items-center p-4 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors">
+                            <Avatar className="h-10 w-10">
+                                <AvatarFallback>{invoice.customer.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="ml-4 flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div>
+                                    <p className="font-semibold">{invoice.customer}</p>
+                                    <p className="text-xs text-muted-foreground">{invoice.invoiceNumber}</p>
                                 </div>
-                            </TableCell>
-                            <TableCell>
-                            <div className="font-medium">{new Date(invoice.date).toLocaleDateString()}</div>
-                            <div className="text-sm text-muted-foreground">{new Date(invoice.date).toLocaleTimeString()}</div>
-                            </TableCell>
-                            <TableCell>{currencySymbol}{(invoice.totalAmount ?? 0).toLocaleString()}</TableCell>
-                            <TableCell>
-                                <Badge variant={getStatusVariant(invoice.status)}>
-                                {invoice.status}
-                                </Badge>
-                            </TableCell>
-                        </TableRow>
+                                <div className="text-muted-foreground">
+                                    <p className="text-sm">{new Date(invoice.date).toLocaleDateString()}</p>
+                                    <p className="text-xs">{new Date(invoice.date).toLocaleTimeString()}</p>
+                                </div>
+                                <div className="text-right md:text-left">
+                                    <p className="font-semibold">{currencySymbol}{(invoice.totalAmount ?? 0).toLocaleString()}</p>
+                                     <p className="text-xs text-muted-foreground">{invoice.items.map(item => `${item.quantity}x ${item.description}`).join(', ')}</p>
+                                </div>
+                                <div className="flex justify-end items-center">
+                                    <Badge variant={getStatusVariant(invoice.status)}>
+                                        {invoice.status}
+                                    </Badge>
+                                </div>
+                            </div>
+                        </div>
                         ))
                     )}
-                    </TableBody>
-                </Table>
                 </CardContent>
             </Card>
         </div>
