@@ -3,7 +3,7 @@
 
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Line } from "recharts";
 import { useMemo } from "react";
 import { useSettings } from "@/context/settings-context";
 import { collection } from "firebase/firestore";
@@ -20,6 +20,10 @@ const chartConfig = {
     label: "Expense",
     color: "hsl(var(--chart-2))",
   },
+  netProfit: {
+    label: "Net Profit",
+    color: "hsl(var(--chart-3))",
+  }
 };
 
 export default function BalanceChart({ dateRange }: { dateRange?: DateRange }) {
@@ -101,6 +105,7 @@ export default function BalanceChart({ dateRange }: { dateRange?: DateRange }) {
         month,
         income: monthlyData[month].income,
         expense: monthlyData[month].expense,
+        netProfit: monthlyData[month].income - monthlyData[month].expense,
     }));
 
   }, [invoices, purchaseOrders, productionOrders, salesCommissions, salaryPayments, expenses, dateRange]);
@@ -173,6 +178,13 @@ export default function BalanceChart({ dateRange }: { dateRange?: DateRange }) {
           type="natural"
           fill="url(#fillExpense)"
           stroke="var(--color-expense)"
+        />
+        <Line
+          dataKey="netProfit"
+          type="natural"
+          stroke="var(--color-netProfit)"
+          strokeWidth={2}
+          dot={false}
         />
       </AreaChart>
     </ChartContainer>
