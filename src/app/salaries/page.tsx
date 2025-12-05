@@ -45,62 +45,49 @@ export default function SalariesPage() {
   const { currencySymbol } = useSettings();
   const { toast } = useToast();
 
-  const salaryPaymentsQuery = useMemoFirebase(() => 
-    query(collection(firestore, 'salary_payments'), orderBy('paymentDate', 'desc')), 
-    [firestore]
-  );
-  const { data: salaryPayments, isLoading } = useCollection<SalaryPayment>(salaryPaymentsQuery);
-
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
   const [paymentToEdit, setPaymentToEdit] = useState<SalaryPayment | null>(null);
   const [paymentToDelete, setPaymentToDelete] = useState<SalaryPayment | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'desc' | 'asc' }>({ key: 'paymentDate', direction: 'desc' });
   const [searchTerm, setSearchTerm] = useState('');
+
+  const salaryPaymentsQuery = useMemoFirebase(() => {
+    return query(collection(firestore, 'salary_payments'), orderBy(sortConfig.key, sortConfig.direction));
+  }, [firestore, sortConfig]);
+
+  const { data: salaryPayments, isLoading } = useCollection<SalaryPayment>(salaryPaymentsQuery);
+
 
   const safePayments = salaryPayments || [];
 
-  const filteredAndSortedPayments = useMemo(() => {
-    let sortableItems = [...safePayments];
+  const filteredPayments = useMemo(() => {
+    let items = [...safePayments];
     
     if (searchTerm) {
-        sortableItems = sortableItems.filter(p => p.employeeName.toLowerCase().includes(searchTerm.toLowerCase()));
+        items = items.filter(p => p.employeeName.toLowerCase().includes(searchTerm.toLowerCase()));
     }
 
-    if (sortConfig !== null) {
-        sortableItems.sort((a, b) => {
-            const aValue = a[sortConfig.key];
-            const bValue = b[sortConfig.key];
-
-            if (aValue < bValue) {
-                return sortConfig.direction === 'ascending' ? -1 : 1;
-            }
-            if (aValue > bValue) {
-                return sortConfig.direction === 'ascending' ? 1 : -1;
-            }
-            return 0;
-        });
-    }
-    return sortableItems;
-}, [safePayments, sortConfig, searchTerm]);
+    return items;
+  }, [safePayments, searchTerm]);
 
   const paginatedPayments = useMemo(() => {
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
-    return filteredAndSortedPayments.slice(startIndex, endIndex);
-  }, [filteredAndSortedPayments, currentPage, rowsPerPage]);
+    return filteredPayments.slice(startIndex, endIndex);
+  }, [filteredPayments, currentPage, rowsPerPage]);
 
-  const totalPages = Math.ceil(filteredAndSortedPayments.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredPayments.length / rowsPerPage);
 
-  const totalPaid = filteredAndSortedPayments.reduce((acc, p) => acc + p.amount, 0);
-  const totalEmployees = new Set(filteredAndSortedPayments.map(p => p.employeeName)).size;
-  const totalTransactions = filteredAndSortedPayments.length;
+  const totalPaid = filteredPayments.reduce((acc, p) => acc + p.amount, 0);
+  const totalEmployees = new Set(filteredPayments.map(p => p.employeeName)).size;
+  const totalTransactions = filteredPayments.length;
 
   const requestSort = (key: SortKey) => {
-    let direction: 'ascending' | 'descending' = 'ascending';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
-        direction = 'descending';
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+        direction = 'desc';
     }
     setSortConfig({ key, direction });
   };
@@ -155,7 +142,7 @@ export default function SalariesPage() {
     const headers = ["ID", "Employee Name", "Position", "Payment Date", "Amount"];
     const csvRows = [
         headers.join(','),
-        ...filteredAndSortedPayments.map(p => [p.id, `"${p.employeeName}"`, `"${p.position}"`, p.paymentDate, p.amount].join(','))
+        ...filteredPayments.map(p => [p.id, `"${p.employeeName}"`, `"${p.position}"`, p.paymentDate, p.amount].join(','))
     ];
     const csvString = csvRows.join('\n');
     const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
@@ -296,7 +283,7 @@ export default function SalariesPage() {
           </CardContent>
           <CardFooter className="flex items-center justify-between">
                 <div className="text-xs text-muted-foreground">
-                    Showing <strong>{paginatedPayments.length}</strong> of <strong>{filteredAndSortedPayments.length}</strong> payments
+                    Showing <strong>{paginatedPayments.length}</strong> of <strong>{filteredPayments.length}</strong> payments
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
@@ -381,3 +368,5 @@ export default function SalariesPage() {
     </>
   );
 }
+
+    
