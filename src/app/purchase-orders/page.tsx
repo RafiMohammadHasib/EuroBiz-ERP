@@ -68,29 +68,29 @@ export default function PurchaseOrdersPage() {
   const safeSuppliers = suppliers || [];
   const safeRawMaterials = rawMaterials || [];
 
-  const getFilteredOrders = (status?: PurchaseOrder['deliveryStatus'], paymentStatus?: PurchaseOrder['paymentStatus']) => {
-    let filtered = safePOs;
+  const filteredOrders = useMemo(() => {
+    let items = safePOs;
 
+    if (activeTab !== "all") {
+        const statusMap = {
+            'pending': 'Pending',
+            'shipped': 'Shipped',
+            'received': 'Received',
+            'cancelled': 'Cancelled'
+        };
+        items = items.filter(o => o.deliveryStatus === statusMap[activeTab as keyof typeof statusMap]);
+    }
+    
     if (searchTerm) {
-        filtered = filtered.filter(po => po.supplier.toLowerCase().includes(searchTerm.toLowerCase()));
+        items = items.filter(po => po.supplier.toLowerCase().includes(searchTerm.toLowerCase()));
     }
+    
+    return items;
+  }, [safePOs, activeTab, searchTerm]);
 
-    if (status) {
-        filtered = filtered.filter(o => o.deliveryStatus === status);
-    }
-    if (paymentStatus) {
-         filtered = filtered.filter(o => o.paymentStatus === paymentStatus);
-    }
-    return filtered;
-  };
-
-  const allOrders = useMemo(() => getFilteredOrders(), [safePOs, searchTerm]);
-  const pendingOrders = useMemo(() => getFilteredOrders('Pending'), [safePOs, searchTerm]);
-  const receivedOrders = useMemo(() => getFilteredOrders('Received'), [safePOs, searchTerm]);
-  const paidOrders = useMemo(() => getFilteredOrders(undefined, 'Paid'), [safePOs, searchTerm]);
   
-  const getSortableOrders = (orders: PurchaseOrder[]) => {
-    let sortableItems = [...orders];
+  const sortedOrders = useMemo(() => {
+    let sortableItems = [...filteredOrders];
     if (sortConfig !== null) {
         sortableItems.sort((a, b) => {
             const aValue = a[sortConfig.key];
@@ -107,23 +107,14 @@ export default function PurchaseOrdersPage() {
         sortableItems.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }
     return sortableItems;
-  }
-
-  let currentOrders: PurchaseOrder[];
-  let totalOrdersCount: number;
-  switch(activeTab) {
-    case 'pending': currentOrders = getSortableOrders(pendingOrders); totalOrdersCount = pendingOrders.length; break;
-    case 'received': currentOrders = getSortableOrders(receivedOrders); totalOrdersCount = receivedOrders.length; break;
-    case 'paid': currentOrders = getSortableOrders(paidOrders); totalOrdersCount = paidOrders.length; break;
-    default: currentOrders = getSortableOrders(allOrders); totalOrdersCount = allOrders.length;
-  }
+  }, [filteredOrders, sortConfig]);
   
-  const totalPages = Math.ceil(totalOrdersCount / rowsPerPage);
+  const totalPages = Math.ceil(sortedOrders.length / rowsPerPage);
   const paginatedOrders = useMemo(() => {
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
-    return currentOrders.slice(startIndex, endIndex);
-  }, [currentOrders, currentPage, rowsPerPage]);
+    return sortedOrders.slice(startIndex, endIndex);
+  }, [sortedOrders, currentPage, rowsPerPage]);
 
 
   const totalPOValue = safePOs.reduce((sum, order) => sum + order.amount, 0);
@@ -266,132 +257,6 @@ export default function PurchaseOrdersPage() {
     }
   }
 
-  const renderPurchaseOrderTable = (orders: PurchaseOrder[], totalCount: number) => (
-    <Card>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead onClick={() => requestSort('date')}><div className="flex items-center gap-2 cursor-pointer">Date <ArrowUpDown className="h-4 w-4" /></div></TableHead>
-              <TableHead onClick={() => requestSort('supplier')}><div className="flex items-center gap-2 cursor-pointer">Supplier <ArrowUpDown className="h-4 w-4" /></div></TableHead>
-              <TableHead onClick={() => requestSort('paymentStatus')}><div className="flex items-center gap-2 cursor-pointer">Payment Status <ArrowUpDown className="h-4 w-4" /></div></TableHead>
-              <TableHead onClick={() => requestSort('deliveryStatus')}><div className="flex items-center gap-2 cursor-pointer">Delivery Status <ArrowUpDown className="h-4 w-4" /></div></TableHead>
-              <TableHead className="text-right" onClick={() => requestSort('amount')}><div className="flex items-center justify-end gap-2 cursor-pointer">Amount <ArrowUpDown className="h-4 w-4" /></div></TableHead>
-              <TableHead>
-                <span className="sr-only">Actions</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {poLoading ? (
-               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">Loading...</TableCell>
-               </TableRow>
-            ) : (
-                orders.map((order) => (
-                <TableRow key={order.id}>
-                    <TableCell className="font-medium">{new Date(order.date).toLocaleDateString()}</TableCell>
-                    <TableCell>{order.supplier}</TableCell>
-                    <TableCell>
-                      <Badge variant={getPaymentStatusVariant(order.paymentStatus)}>
-                        {order.paymentStatus}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getDeliveryStatusVariant(order.deliveryStatus)}>
-                        {order.deliveryStatus}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">{currencySymbol}{order.amount.toLocaleString()}</TableCell>
-                    <TableCell>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                        </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/purchase-orders/${order.id}`}>View Details</Link>
-                          </DropdownMenuItem>
-                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => setPaymentPo(order)} disabled={order.paymentStatus === 'Paid'}>
-                            Make Payment
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleMarkAsReceived(order.id)} disabled={order.deliveryStatus === 'Received' || order.deliveryStatus === 'Cancelled'}>
-                            Mark as Received
-                          </DropdownMenuItem>
-                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            className="text-destructive" 
-                            onClick={() => setOrderToCancel(order)}
-                            disabled={order.deliveryStatus === 'Cancelled' || order.deliveryStatus === 'Received'}
-                          >
-                            Cancel Order
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    </TableCell>
-                </TableRow>
-                ))
-            )}
-          </TableBody>
-        </Table>
-      </CardContent>
-       <CardFooter className="flex items-center justify-between">
-            <div className="text-xs text-muted-foreground">
-                Showing <strong>{orders.length}</strong> of <strong>{totalCount}</strong> orders
-            </div>
-            <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                     <p className="text-xs font-medium">Rows per page</p>
-                     <Select
-                        value={`${rowsPerPage}`}
-                        onValueChange={(value) => {
-                        setRowsPerPage(Number(value));
-                        setCurrentPage(1);
-                        }}
-                    >
-                        <SelectTrigger className="h-8 w-[70px]">
-                        <SelectValue placeholder={rowsPerPage} />
-                        </SelectTrigger>
-                        <SelectContent side="top">
-                        {[10, 20, 30, 40, 50].map((pageSize) => (
-                            <SelectItem key={pageSize} value={`${pageSize}`}>
-                            {pageSize}
-                            </SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="text-xs font-medium">
-                    Page {currentPage} of {totalPages}
-                </div>
-                <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                    >
-                        Previous
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                    >
-                        Next
-                    </Button>
-                </div>
-            </div>
-        </CardFooter>
-    </Card>
-  );
-
   return (
     <>
     <div className="space-y-6">
@@ -445,13 +310,14 @@ export default function PurchaseOrdersPage() {
           </CardContent>
         </Card>
       </div>
-      <Tabs defaultValue="all" onValueChange={(value) => {setActiveTab(value); setCurrentPage(1);}}>
+      <Tabs value={activeTab} onValueChange={(value) => {setActiveTab(value); setCurrentPage(1);}}>
         <div className="flex items-center">
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="pending">Pending</TabsTrigger>
+            <TabsTrigger value="shipped">Shipped</TabsTrigger>
             <TabsTrigger value="received">Received</TabsTrigger>
-            <TabsTrigger value="paid">Paid</TabsTrigger>
+            <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
           </TabsList>
           <div className="ml-auto flex items-center gap-2">
             <div className="relative">
@@ -474,18 +340,129 @@ export default function PurchaseOrdersPage() {
             </Link>
           </div>
         </div>
-        <TabsContent value="all" className="mt-4">
-          {renderPurchaseOrderTable(paginatedOrders, totalOrdersCount)}
-        </TabsContent>
-        <TabsContent value="pending" className="mt-4">
-          {renderPurchaseOrderTable(paginatedOrders, totalOrdersCount)}
-        </TabsContent>
-        <TabsContent value="received" className="mt-4">
-          {renderPurchaseOrderTable(paginatedOrders, totalOrdersCount)}
-        </TabsContent>
-        <TabsContent value="paid" className="mt-4">
-          {renderPurchaseOrderTable(paginatedOrders, totalOrdersCount)}
-        </TabsContent>
+        <Card className="mt-4">
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead onClick={() => requestSort('date')}><div className="flex items-center gap-2 cursor-pointer">Date <ArrowUpDown className="h-4 w-4" /></div></TableHead>
+                  <TableHead onClick={() => requestSort('supplier')}><div className="flex items-center gap-2 cursor-pointer">Supplier <ArrowUpDown className="h-4 w-4" /></div></TableHead>
+                  <TableHead onClick={() => requestSort('paymentStatus')}><div className="flex items-center gap-2 cursor-pointer">Payment Status <ArrowUpDown className="h-4 w-4" /></div></TableHead>
+                  <TableHead onClick={() => requestSort('deliveryStatus')}><div className="flex items-center gap-2 cursor-pointer">Delivery Status <ArrowUpDown className="h-4 w-4" /></div></TableHead>
+                  <TableHead className="text-right" onClick={() => requestSort('amount')}><div className="flex items-center justify-end gap-2 cursor-pointer">Amount <ArrowUpDown className="h-4 w-4" /></div></TableHead>
+                  <TableHead>
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {poLoading ? (
+                   <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">Loading...</TableCell>
+                   </TableRow>
+                ) : (
+                    paginatedOrders.map((order) => (
+                    <TableRow key={order.id}>
+                        <TableCell className="font-medium">{new Date(order.date).toLocaleDateString()}</TableCell>
+                        <TableCell>{order.supplier}</TableCell>
+                        <TableCell>
+                          <Badge variant={getPaymentStatusVariant(order.paymentStatus)}>
+                            {order.paymentStatus}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getDeliveryStatusVariant(order.deliveryStatus)}>
+                            {order.deliveryStatus}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">{currencySymbol}{order.amount.toLocaleString()}</TableCell>
+                        <TableCell>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Toggle menu</span>
+                            </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem asChild>
+                                <Link href={`/purchase-orders/${order.id}`}>View Details</Link>
+                              </DropdownMenuItem>
+                               <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => setPaymentPo(order)} disabled={order.paymentStatus === 'Paid'}>
+                                Make Payment
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleMarkAsReceived(order.id)} disabled={order.deliveryStatus === 'Received' || order.deliveryStatus === 'Cancelled'}>
+                                Mark as Received
+                              </DropdownMenuItem>
+                               <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                className="text-destructive" 
+                                onClick={() => setOrderToCancel(order)}
+                                disabled={order.deliveryStatus === 'Cancelled' || order.deliveryStatus === 'Received'}
+                              >
+                                Cancel Order
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        </TableCell>
+                    </TableRow>
+                    ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+           <CardFooter className="flex items-center justify-between">
+                <div className="text-xs text-muted-foreground">
+                    Showing <strong>{paginatedOrders.length}</strong> of <strong>{sortedOrders.length}</strong> orders
+                </div>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                         <p className="text-xs font-medium">Rows per page</p>
+                         <Select
+                            value={`${rowsPerPage}`}
+                            onValueChange={(value) => {
+                            setRowsPerPage(Number(value));
+                            setCurrentPage(1);
+                            }}
+                        >
+                            <SelectTrigger className="h-8 w-[70px]">
+                            <SelectValue placeholder={rowsPerPage} />
+                            </SelectTrigger>
+                            <SelectContent side="top">
+                            {[10, 20, 30, 40, 50].map((pageSize) => (
+                                <SelectItem key={pageSize} value={`${pageSize}`}>
+                                {pageSize}
+                                </SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="text-xs font-medium">
+                        Page {currentPage} of {totalPages}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                        >
+                            Previous
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                </div>
+            </CardFooter>
+        </Card>
       </Tabs>
     </div>
     {paymentPo && (

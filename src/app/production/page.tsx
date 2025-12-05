@@ -24,6 +24,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 type SortKey = keyof ProductionOrder;
 
@@ -44,21 +45,37 @@ export default function ProductionPage() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' } | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [activeTab, setActiveTab] = useState("all");
 
 
     const safeProductionOrders = productionOrders || [];
     const safeFinishedGoods = finishedGoods || [];
     const safeRawMaterials = rawMaterials || [];
+    
+    const filteredProductionOrders = useMemo(() => {
+        let items = [...safeProductionOrders];
 
-    const filteredAndSortedProductionOrders = useMemo(() => {
-        let sortableItems = [...safeProductionOrders];
+        if (activeTab !== "all") {
+            const statusMap = {
+                'pending': 'Pending',
+                'in-progress': 'In Progress',
+                'completed': 'Completed',
+                'cancelled': 'Cancelled'
+            };
+            items = items.filter(order => order.status === statusMap[activeTab as keyof typeof statusMap]);
+        }
 
         if (searchTerm) {
-            sortableItems = sortableItems.filter(order => 
+            items = items.filter(order => 
                 order.productName.toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
 
+        return items;
+    }, [safeProductionOrders, activeTab, searchTerm]);
+
+    const sortedProductionOrders = useMemo(() => {
+        let sortableItems = [...filteredProductionOrders];
         if (sortConfig !== null) {
             sortableItems.sort((a, b) => {
                 const aValue = a[sortConfig.key];
@@ -74,20 +91,20 @@ export default function ProductionPage() {
             });
         }
         return sortableItems;
-    }, [safeProductionOrders, sortConfig, searchTerm]);
+    }, [filteredProductionOrders, sortConfig]);
 
     const paginatedProductionOrders = useMemo(() => {
         const startIndex = (currentPage - 1) * rowsPerPage;
         const endIndex = startIndex + rowsPerPage;
-        return filteredAndSortedProductionOrders.slice(startIndex, endIndex);
-    }, [filteredAndSortedProductionOrders, currentPage, rowsPerPage]);
+        return sortedProductionOrders.slice(startIndex, endIndex);
+    }, [sortedProductionOrders, currentPage, rowsPerPage]);
 
-    const totalPages = Math.ceil(filteredAndSortedProductionOrders.length / rowsPerPage);
+    const totalPages = Math.ceil(sortedProductionOrders.length / rowsPerPage);
 
-    const wipOrders = filteredAndSortedProductionOrders.filter(o => o.status === "In Progress").length;
-    const completedOrders = filteredAndSortedProductionOrders.filter(o => o.status === "Completed").length;
-    const totalProductionCost = filteredAndSortedProductionOrders.reduce((acc, order) => acc + (order.totalCost || 0), 0);
-    const totalUnitsProduced = filteredAndSortedProductionOrders.filter(o => o.status === "Completed").reduce((acc, order) => acc + (order.quantity || 0), 0);
+    const wipOrders = safeProductionOrders.filter(o => o.status === "In Progress").length;
+    const completedOrders = safeProductionOrders.filter(o => o.status === "Completed").length;
+    const totalProductionCost = safeProductionOrders.reduce((acc, order) => acc + (order.totalCost || 0), 0);
+    const totalUnitsProduced = safeProductionOrders.filter(o => o.status === "Completed").reduce((acc, order) => acc + (order.quantity || 0), 0);
     
     const isLoading = poLoading || fgLoading || rmLoading;
 
@@ -186,7 +203,7 @@ export default function ProductionPage() {
         const headers = ["ID", "Product Name", "Quantity", "Total Cost", "Unit Cost", "Status", "Start Date"];
         const csvRows = [
             headers.join(','),
-            ...filteredAndSortedProductionOrders.map(po => [po.id, `"${po.productName}"`, po.quantity, po.totalCost, po.unitCost, po.status, po.startDate].join(','))
+            ...sortedProductionOrders.map(po => [po.id, `"${po.productName}"`, po.quantity, po.totalCost, po.unitCost, po.status, po.startDate].join(','))
         ];
         const csvString = csvRows.join('\n');
         const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
@@ -252,11 +269,15 @@ export default function ProductionPage() {
                 </CardContent>
             </Card>
         </div>
-        <Card>
-        <CardHeader>
-            <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Production Orders</h2>
-                <div className="flex items-center gap-2">
+        <Tabs value={activeTab} onValueChange={(value) => {setActiveTab(value); setCurrentPage(1);}}>
+            <div className="flex items-center">
+                <TabsList>
+                    <TabsTrigger value="all">All</TabsTrigger>
+                    <TabsTrigger value="pending">Pending</TabsTrigger>
+                    <TabsTrigger value="in-progress">In Progress</TabsTrigger>
+                    <TabsTrigger value="completed">Completed</TabsTrigger>
+                </TabsList>
+                <div className="ml-auto flex items-center gap-2">
                     <div className="relative">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -279,136 +300,137 @@ export default function ProductionPage() {
                     </Button>
                 </div>
             </div>
-        </CardHeader>
-        <CardContent>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead onClick={() => requestSort('productName')}>
-                             <div className="flex items-center gap-2 cursor-pointer">Product <ArrowUpDown className="h-4 w-4" /></div>
-                        </TableHead>
-                        <TableHead onClick={() => requestSort('quantity')}>
-                             <div className="flex items-center gap-2 cursor-pointer">Quantity <ArrowUpDown className="h-4 w-4" /></div>
-                        </TableHead>
-                        <TableHead className="text-right" onClick={() => requestSort('totalCost')}>
-                             <div className="flex items-center justify-end gap-2 cursor-pointer">Total Cost <ArrowUpDown className="h-4 w-4" /></div>
-                        </TableHead>
-                        <TableHead className="text-right" onClick={() => requestSort('unitCost')}>
-                             <div className="flex items-center justify-end gap-2 cursor-pointer">Unit Cost <ArrowUpDown className="h-4 w-4" /></div>
-                        </TableHead>
-                        <TableHead onClick={() => requestSort('status')}>
-                             <div className="flex items-center gap-2 cursor-pointer">Status <ArrowUpDown className="h-4 w-4" /></div>
-                        </TableHead>
-                        <TableHead onClick={() => requestSort('startDate')}>
-                            <div className="flex items-center gap-2 cursor-pointer">Start Date <ArrowUpDown className="h-4 w-4" /></div>
-                        </TableHead>
-                        <TableHead>
-                            <span className="sr-only">Actions</span>
-                        </TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {isLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="h-24 text-center">Loading...</TableCell>
-                      </TableRow>
-                    ) : (
-                      paginatedProductionOrders.map(order => (
-                         <TableRow key={order.id}>
-                            <TableCell className="font-medium">{order.productName}</TableCell>
-                            <TableCell>{order.quantity.toLocaleString()}</TableCell>
-                            <TableCell className="text-right">{currencySymbol}{(order.totalCost || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
-                            <TableCell className="text-right">{currencySymbol}{(order.unitCost || 0).toFixed(2)}</TableCell>
-                             <TableCell>
-                                <Badge variant={order.status === 'Completed' ? 'secondary' : order.status === 'In Progress' ? 'default' : order.status === 'Cancelled' ? 'destructive' : 'outline'}>
-                                    {order.status}
-                                </Badge>
-                             </TableCell>
-                            <TableCell>{new Date(order.startDate).toLocaleDateString()}</TableCell>
-                            <TableCell className="text-right">
-                               <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                    <Button aria-haspopup="true" size="icon" variant="ghost">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                        <span className="sr-only">Toggle menu</span>
-                                    </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                        <DropdownMenuItem disabled>View Details</DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem
-                                            onClick={() => handleUpdateStatus(order.id, 'Completed')}
-                                            disabled={order.status === 'Completed' || order.status === 'Cancelled'}
-                                        >
-                                            Mark as Complete
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem 
-                                            className="text-destructive"
-                                            onClick={() => setOrderToCancel(order)}
-                                            disabled={order.status === 'Completed' || order.status === 'Cancelled'}
-                                        >
-                                            Cancel Order
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </TableCell>
-                         </TableRow>
-                      ))
-                    )}
-                </TableBody>
-            </Table>
-        </CardContent>
-        <CardFooter className="flex items-center justify-between">
-                <div className="text-xs text-muted-foreground">
-                    Showing <strong>{paginatedProductionOrders.length}</strong> of <strong>{filteredAndSortedProductionOrders.length}</strong> orders
-                </div>
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                         <p className="text-xs font-medium">Rows per page</p>
-                         <Select
-                            value={`${rowsPerPage}`}
-                            onValueChange={(value) => {
-                            setRowsPerPage(Number(value));
-                            setCurrentPage(1);
-                            }}
-                        >
-                            <SelectTrigger className="h-8 w-[70px]">
-                            <SelectValue placeholder={rowsPerPage} />
-                            </SelectTrigger>
-                            <SelectContent side="top">
-                            {[10, 20, 30, 40, 50].map((pageSize) => (
-                                <SelectItem key={pageSize} value={`${pageSize}`}>
-                                {pageSize}
-                                </SelectItem>
-                            ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="text-xs font-medium">
-                        Page {currentPage} of {totalPages}
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            disabled={currentPage === 1}
-                        >
-                            Previous
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages}
-                        >
-                            Next
-                        </Button>
-                    </div>
-                </div>
-            </CardFooter>
-        </Card>
+            <Card className="mt-4">
+                <CardContent className="p-0">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead onClick={() => requestSort('productName')}>
+                                     <div className="flex items-center gap-2 cursor-pointer">Product <ArrowUpDown className="h-4 w-4" /></div>
+                                </TableHead>
+                                <TableHead onClick={() => requestSort('quantity')}>
+                                     <div className="flex items-center gap-2 cursor-pointer">Quantity <ArrowUpDown className="h-4 w-4" /></div>
+                                </TableHead>
+                                <TableHead className="text-right" onClick={() => requestSort('totalCost')}>
+                                     <div className="flex items-center justify-end gap-2 cursor-pointer">Total Cost <ArrowUpDown className="h-4 w-4" /></div>
+                                </TableHead>
+                                <TableHead className="text-right" onClick={() => requestSort('unitCost')}>
+                                     <div className="flex items-center justify-end gap-2 cursor-pointer">Unit Cost <ArrowUpDown className="h-4 w-4" /></div>
+                                </TableHead>
+                                <TableHead onClick={() => requestSort('status')}>
+                                     <div className="flex items-center gap-2 cursor-pointer">Status <ArrowUpDown className="h-4 w-4" /></div>
+                                </TableHead>
+                                <TableHead onClick={() => requestSort('startDate')}>
+                                    <div className="flex items-center gap-2 cursor-pointer">Start Date <ArrowUpDown className="h-4 w-4" /></div>
+                                </TableHead>
+                                <TableHead>
+                                    <span className="sr-only">Actions</span>
+                                </TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {isLoading ? (
+                              <TableRow>
+                                <TableCell colSpan={7} className="h-24 text-center">Loading...</TableCell>
+                              </TableRow>
+                            ) : (
+                              paginatedProductionOrders.map(order => (
+                                 <TableRow key={order.id}>
+                                    <TableCell className="font-medium">{order.productName}</TableCell>
+                                    <TableCell>{order.quantity.toLocaleString()}</TableCell>
+                                    <TableCell className="text-right">{currencySymbol}{(order.totalCost || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
+                                    <TableCell className="text-right">{currencySymbol}{(order.unitCost || 0).toFixed(2)}</TableCell>
+                                     <TableCell>
+                                        <Badge variant={order.status === 'Completed' ? 'secondary' : order.status === 'In Progress' ? 'default' : order.status === 'Cancelled' ? 'destructive' : 'outline'}>
+                                            {order.status}
+                                        </Badge>
+                                     </TableCell>
+                                    <TableCell>{new Date(order.startDate).toLocaleDateString()}</TableCell>
+                                    <TableCell className="text-right">
+                                       <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                                <span className="sr-only">Toggle menu</span>
+                                            </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                <DropdownMenuItem disabled>View Details</DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    onClick={() => handleUpdateStatus(order.id, 'Completed')}
+                                                    disabled={order.status === 'Completed' || order.status === 'Cancelled'}
+                                                >
+                                                    Mark as Complete
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem 
+                                                    className="text-destructive"
+                                                    onClick={() => setOrderToCancel(order)}
+                                                    disabled={order.status === 'Completed' || order.status === 'Cancelled'}
+                                                >
+                                                    Cancel Order
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                 </TableRow>
+                              ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+                <CardFooter className="flex items-center justify-between">
+                        <div className="text-xs text-muted-foreground">
+                            Showing <strong>{paginatedProductionOrders.length}</strong> of <strong>{sortedProductionOrders.length}</strong> orders
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                                 <p className="text-xs font-medium">Rows per page</p>
+                                 <Select
+                                    value={`${rowsPerPage}`}
+                                    onValueChange={(value) => {
+                                    setRowsPerPage(Number(value));
+                                    setCurrentPage(1);
+                                    }}
+                                >
+                                    <SelectTrigger className="h-8 w-[70px]">
+                                    <SelectValue placeholder={rowsPerPage} />
+                                    </SelectTrigger>
+                                    <SelectContent side="top">
+                                    {[10, 20, 30, 40, 50].map((pageSize) => (
+                                        <SelectItem key={pageSize} value={`${pageSize}`}>
+                                        {pageSize}
+                                        </SelectItem>
+                                    ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="text-xs font-medium">
+                                Page {currentPage} of {totalPages}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                >
+                                    Previous
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                    disabled={currentPage === totalPages}
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                        </div>
+                    </CardFooter>
+            </Card>
+        </Tabs>
     </div>
     <CreateProductionOrderDialog
         isOpen={isCreateDialogOpen}
