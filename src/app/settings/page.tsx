@@ -28,11 +28,6 @@ type ProfileSettings = {
     displayName: string;
 };
 
-type SystemSettings = {
-    language: string;
-    currency: 'BDT' | 'USD';
-};
-
 type BusinessSettings = {
     name: string;
     address: string;
@@ -52,7 +47,7 @@ export default function SettingsPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const { currencySymbol, setCurrency, businessSettings: contextBusinessSettings, setBusinessSettings: setContextBusinessSettings } = useSettings();
+  const { currencySymbol, businessSettings: contextBusinessSettings, setBusinessSettings: setContextBusinessSettings } = useSettings();
 
   // --- Profile State ---
   const salespersonDocRef = useMemoFirebase(() => user ? doc(firestore, 'salespeople', user.uid) : null, [user, firestore]);
@@ -62,7 +57,6 @@ export default function SettingsPage() {
 
 
   // --- Firestore References ---
-  const systemSettingsDocRef = useMemoFirebase(() => doc(firestore, 'settings', 'system'), [firestore]);
   const businessSettingsDocRef = useMemoFirebase(() => doc(firestore, 'settings', 'business'), [firestore]);
   
   const commissionsCollection = useMemoFirebase(() => collection(firestore, 'commissions'), [firestore]);
@@ -75,7 +69,6 @@ export default function SettingsPage() {
 
   
   // --- Data Hooks ---
-  const { data: systemSettingsData, isLoading: systemLoading } = useDoc<SystemSettings>(systemSettingsDocRef);
   const { data: businessSettingsData, isLoading: businessLoading } = useDoc<BusinessSettings>(businessSettingsDocRef);
   
   const { data: commissions, isLoading: commissionsLoading } = useCollection<Commission>(commissionsCollection);
@@ -92,11 +85,9 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const [systemSettings, setSystemSettings] = useState<SystemSettings>({ language: 'English', currency: 'BDT' });
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings>(contextBusinessSettings);
 
   const [isSavingPassword, setIsSavingPassword] = useState(false);
-  const [isSavingSystem, setIsSavingSystem] = useState(false);
   const [isSavingBusiness, setIsSavingBusiness] = useState(false);
 
   const [isCommissionRuleDialogOpen, setCommissionRuleDialogOpen] = useState(false);
@@ -133,13 +124,6 @@ export default function SettingsPage() {
 
 
   // --- Effects to sync state with data from hooks ---
-  useEffect(() => {
-    if (systemSettingsData) {
-      setSystemSettings(systemSettingsData);
-      setCurrency(systemSettingsData.currency || 'BDT');
-    }
-  }, [systemSettingsData, setCurrency]);
-
   useEffect(() => {
     setBusinessSettings(contextBusinessSettings);
   }, [contextBusinessSettings]);
@@ -192,19 +176,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSystemSave = async () => {
-    setIsSavingSystem(true);
-    try {
-        await setDoc(systemSettingsDocRef, systemSettings, { merge: true });
-        setCurrency(systemSettings.currency);
-        toast({ title: 'System Settings Updated', description: 'Your new system settings have been saved.' });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Error Saving Settings', description: error.message });
-    } finally {
-        setIsSavingSystem(false);
-    }
-  };
-
   const handleBusinessSave = async () => {
     setIsSavingBusiness(true);
     try {
@@ -217,10 +188,6 @@ export default function SettingsPage() {
         setIsSavingBusiness(false);
     }
   };
-
-    const handleSystemSettingsChange = (field: keyof SystemSettings, value: string) => {
-        setSystemSettings(prev => ({...prev, [field]: value as any}));
-    }
 
     const handleBusinessDetailsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
@@ -457,46 +424,6 @@ export default function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="system" className="mt-6 space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>System Configuration</CardTitle>
-                    <CardDescription>Manage system-wide preferences like localization.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                   <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="language">Language</Label>
-                            <Select value={systemSettings.language} onValueChange={(value) => handleSystemSettingsChange('language', value)}>
-                                <SelectTrigger id="language">
-                                    <SelectValue placeholder="Select Language" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="English">English</SelectItem>
-                                    <SelectItem value="Bengali" disabled>Bengali (Coming Soon)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="currency">Currency</Label>
-                            <Select value={systemSettings.currency} onValueChange={(value) => handleSystemSettingsChange('currency', value)}>
-                                <SelectTrigger id="currency">
-                                    <SelectValue placeholder="Select Currency" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="BDT">BDT (৳)</SelectItem>
-                                    <SelectItem value="USD">USD ($)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                </CardContent>
-                <CardFooter>
-                    <Button onClick={handleSystemSave} disabled={isSavingSystem}>
-                        {isSavingSystem ? 'Saving...' : 'Save System Settings'}
-                    </Button>
-                </CardFooter>
-            </Card>
-
             <Card>
                 <CardHeader>
                       <div className="flex items-center justify-between">

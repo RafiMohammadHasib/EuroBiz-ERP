@@ -14,14 +14,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useSettings } from '@/context/settings-context';
-import { useAuth } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
-import { PieChart, Search, Settings, LifeBuoy, LogOut } from 'lucide-react';
+import { PieChart, Settings, LifeBuoy, LogOut, Globe, Clock, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface HeaderProps {
     searchQuery: string;
@@ -29,9 +30,18 @@ interface HeaderProps {
 }
 
 export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
-  const { businessSettings } = useSettings();
+  const { businessSettings, currency, setCurrency } = useSettings();
+  const { user } = useUser();
   const auth = useAuth();
   const router = useRouter();
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleLogout = async () => {
     if (auth) {
@@ -43,53 +53,75 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm lg:px-6">
       <SidebarTrigger />
-      <div className="relative flex-1">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Search..."
-          className="w-full rounded-lg bg-card pl-8 md:w-[200px] lg:w-[320px]"
-          value={searchQuery ?? ''}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      </div>
-       <Link href="/reports">
-          <Button variant="ghost">
-            <PieChart className="h-5 w-5 mr-2" />
+      
+      <div className="flex items-center gap-4 ml-auto">
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Clock className="h-4 w-4" />
+            <span>{currentTime.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+            <span>{currentTime.toLocaleTimeString()}</span>
+        </div>
+        <Select value={currency} onValueChange={(value) => setCurrency(value as 'BDT' | 'USD')}>
+            <SelectTrigger className="w-[120px] h-9 text-sm">
+                <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" />
+                    <SelectValue />
+                </div>
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="BDT">BDT (৳)</SelectItem>
+                <SelectItem value="USD">USD ($)</SelectItem>
+            </SelectContent>
+        </Select>
+        <Select defaultValue="en">
+            <SelectTrigger className="w-[120px] h-9 text-sm">
+                 <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4" />
+                    <SelectValue />
+                </div>
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="bn" disabled>Bengali</SelectItem>
+            </SelectContent>
+        </Select>
+        <Link href="/reports" passHref>
+          <Button variant="ghost" size="sm">
+            <PieChart className="h-4 w-4 mr-2" />
             Report
           </Button>
         </Link>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <Avatar className="h-8 w-8">
-              {businessSettings.logoUrl && <AvatarImage src={businessSettings.logoUrl} alt={businessSettings.name} />}
-              <AvatarFallback>AD</AvatarFallback>
-            </Avatar>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>My Account</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <Link href="/settings" className='flex items-center'>
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Settings</span>
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/support" className='flex items-center'>
-              <LifeBuoy className="mr-2 h-4 w-4" />
-              <span>Support</span>
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Logout</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <Avatar className="h-8 w-8">
+                {user?.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || ''} />}
+                <AvatarFallback>{user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/settings" className='flex items-center'>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/support" className='flex items-center'>
+                <LifeBuoy className="mr-2 h-4 w-4" />
+                <span>Support</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Logout</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </header>
   );
 }
