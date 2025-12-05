@@ -23,7 +23,7 @@ import { Badge } from "@/components/ui/badge"
 import { DollarSign, CreditCard, Users, Truck, ShoppingCart, Building, Package, FileText, ArrowUp, ArrowDown, Boxes, User, Briefcase } from "lucide-react"
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
-import type { Invoice, Distributor, Supplier, PurchaseOrder, FinishedGood, ProductionOrder, SalesCommission, SalaryPayment, Expense } from "@/lib/data";
+import type { Invoice, Distributor, Supplier, PurchaseOrder, FinishedGood, ProductionOrder, SalesCommission, SalaryPayment, Expense, Payment } from "@/lib/data";
 import { useSettings } from "@/context/settings-context";
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { cn } from '@/lib/utils';
@@ -32,6 +32,7 @@ import BalanceChart from '@/components/dashboard/balance-chart';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { PreviewInvoiceDialog } from '@/components/invoices/preview-invoice-dialog';
 
 export default function Home() {
   const firestore = useFirestore();
@@ -41,6 +42,8 @@ export default function Home() {
     to: new Date(),
   });
   const router = useRouter();
+  const [invoiceToPreview, setInvoiceToPreview] = useState<Invoice | null>(null);
+
 
   const invoicesCollection = useMemoFirebase(() => collection(firestore, 'invoices'), [firestore]);
   const purchaseOrdersCollection = useMemoFirebase(() => collection(firestore, 'purchaseOrders'), [firestore]);
@@ -192,7 +195,35 @@ export default function Home() {
     );
   };
 
+  const previewInvoiceData = useMemo(() => {
+    if (!invoiceToPreview) return null;
+    
+    const subTotal = invoiceToPreview.items.reduce((acc, item) => acc + item.total, 0);
+    const derivedDiscount = subTotal - invoiceToPreview.totalAmount;
+    
+    const payments: Payment[] = [];
+    if (invoiceToPreview.paidAmount > 0) {
+        payments.push({
+            amount: invoiceToPreview.paidAmount,
+            date: new Date(invoiceToPreview.date), 
+            method: 'Bank Transfer'
+        });
+    }
+
+    return {
+      invoice: invoiceToPreview,
+      distributor: distributors?.find(d => d.name === invoiceToPreview.customer),
+      subTotal: subTotal,
+      discount: derivedDiscount < 0 ? -derivedDiscount : 0,
+      tax: 0,
+      notes: "Thank you for your business!",
+      terms: "The origins of the first constellations date back to their beliefs experiences",
+      payments: payments
+    }
+  }, [invoiceToPreview, distributors]);
+
   return (
+    <>
     <div className="flex flex-col gap-6">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
@@ -300,7 +331,7 @@ export default function Home() {
                         </div>
                     ) : (
                         filteredInvoices.slice(0, 5).map((invoice) => (
-                        <div key={invoice.id} onClick={() => router.push(`/sales/${invoice.id}`)} className="flex items-center p-4 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors">
+                        <div key={invoice.id} onClick={() => setInvoiceToPreview(invoice)} className="flex items-center p-4 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors">
                             <Avatar className="h-10 w-10">
                                 <AvatarFallback>{invoice.customer.charAt(0)}</AvatarFallback>
                             </Avatar>
@@ -339,5 +370,20 @@ export default function Home() {
             </CardContent>
         </Card>
     </div>
+    {previewInvoiceData && (
+        <PreviewInvoiceDialog
+            isOpen={!!invoiceToPreview}
+            onOpenChange={() => setInvoiceToPreview(null)}
+            invoice={previewInvoiceData.invoice}
+            distributor={previewInvoiceData.distributor}
+            subTotal={previewInvoiceData.subTotal}
+            discount={previewInvoiceData.discount}
+            tax={previewInvoiceData.tax}
+            notes={previewInvoiceData.notes}
+            terms={previewInvoiceData.terms}
+            payments={previewInvoiceData.payments}
+        />
+    )}
+    </>
   )
 }
