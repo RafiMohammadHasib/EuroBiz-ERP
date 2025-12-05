@@ -24,6 +24,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const loginIllustration = placeholder.placeholderImages.find(p => p.id === 'login-illustration') as ImagePlaceholder | undefined;
+  const logo = placeholder.placeholderImages.find(p => p.id === 'eurobiz-logo') as ImagePlaceholder | undefined;
 
   const handleLogin = async () => {
     setIsLoading(true);
@@ -51,7 +52,17 @@ export default function LoginPage() {
   return (
     <div className="w-full h-screen lg:grid lg:grid-cols-2 font-sans relative">
       <div className="hidden lg:flex flex-col items-center justify-center p-12 relative overflow-hidden bg-gradient-to-br from-primary/20 via-white to-primary/10">
-        <div className='absolute top-10 left-10 flex items-center gap-3 text-2xl font-bold text-primary'>
+        <div className='absolute top-10 left-10 flex items-center gap-3 text-2xl font-bold text-[#4A4A4A]'>
+             {logo && (
+              <Image
+                src={logo.imageUrl}
+                alt="EuroBiz Logo"
+                width="40"
+                height="40"
+                data-ai-hint={logo.imageHint}
+                priority
+              />
+            )}
             EuroBiz <span className='font-light text-gray-700'>ERP</span>
         </div>
         <div className="text-left w-full max-w-md">

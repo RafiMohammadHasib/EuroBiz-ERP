@@ -46,6 +46,9 @@ import { useAuth, useUser } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useMemo } from "react";
 import { useSettings } from "@/context/settings-context";
+import Image from "next/image";
+import placeholder from '@/lib/placeholder-images.json';
+import type { ImagePlaceholder } from '@/lib/placeholder-images';
 
 interface NavItem {
     href: string;
@@ -103,6 +106,7 @@ export default function SidebarNav({ searchQuery }: SidebarNavProps) {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const router = useRouter();
+  const logo = placeholder.placeholderImages.find(p => p.id === 'eurobiz-logo') as ImagePlaceholder | undefined;
 
   const handleLogout = async () => {
     if (auth) {
@@ -139,8 +143,17 @@ export default function SidebarNav({ searchQuery }: SidebarNavProps) {
     <>
       <SidebarHeader>
         <Link href="/" className="flex items-center gap-2.5">
-          <Landmark className="h-7 w-7 text-primary" />
-          <span className="font-bold text-xl whitespace-nowrap group-data-[collapsible=icon]:hidden">
+          {logo && (
+            <Image
+                src={logo.imageUrl}
+                alt="EuroBiz Logo"
+                width={32}
+                height={32}
+                data-ai-hint={logo.imageHint}
+                priority
+              />
+          )}
+          <span className="font-bold text-xl whitespace-nowrap group-data-[collapsible=icon]:hidden text-[#4A4A4A]">
             EuroBiz
           </span>
         </Link>
