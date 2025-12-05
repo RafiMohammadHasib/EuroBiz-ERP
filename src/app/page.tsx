@@ -29,6 +29,7 @@ import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { cn } from '@/lib/utils';
 import ProductPerformanceChart from '@/components/reports/product-performance-chart';
 import BalanceChart from '@/components/dashboard/balance-chart';
+import Link from 'next/link';
 
 export default function Home() {
   const firestore = useFirestore();
@@ -139,24 +140,26 @@ export default function Home() {
     }
   }
 
-  const GrowthCard = ({ title, value, growth, formatAsCurrency = false, icon: Icon }: { title: string, value: number, growth: number, formatAsCurrency?: boolean, icon: React.ElementType }) => {
+  const GrowthCard = ({ title, value, growth, formatAsCurrency = false, icon: Icon, href }: { title: string, value: number, growth: number, formatAsCurrency?: boolean, icon: React.ElementType, href: string }) => {
     const isPositive = growth >= 0;
     return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{title}</CardTitle>
-                <Icon className={cn("h-4 w-4", isPositive ? "text-green-500" : "text-red-500")} />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">
-                    {formatAsCurrency && currencySymbol}
-                    {value.toLocaleString(undefined, { maximumFractionDigits: formatAsCurrency ? 2 : 0 })}
-                </div>
-                <p className={cn("text-xs", isPositive ? "text-green-600" : "text-red-600")}>
-                    {isPositive ? '+' : ''}{growth.toFixed(1)}% from previous period
-                </p>
-            </CardContent>
-        </Card>
+        <Link href={href}>
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">{title}</CardTitle>
+                    <Icon className={cn("h-4 w-4", isPositive ? "text-green-500" : "text-red-500")} />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">
+                        {formatAsCurrency && currencySymbol}
+                        {value.toLocaleString(undefined, { maximumFractionDigits: formatAsCurrency ? 2 : 0 })}
+                    </div>
+                    <p className={cn("text-xs", isPositive ? "text-green-600" : "text-red-600")}>
+                        {isPositive ? '+' : ''}{growth.toFixed(1)}% from previous period
+                    </p>
+                </CardContent>
+            </Card>
+        </Link>
     );
   };
 
@@ -171,9 +174,9 @@ export default function Home() {
       </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <GrowthCard title="Revenue" value={currentPeriodStats.totalRevenue} growth={growth.revenue} formatAsCurrency icon={DollarSign} />
-          <GrowthCard title="New Customers" value={currentPeriodStats.uniqueCustomers} growth={growth.customers} icon={Users} />
-          <GrowthCard title="Sales Volume" value={currentPeriodStats.salesVolume} growth={growth.salesVolume} icon={ShoppingCart} />
+          <GrowthCard title="Revenue" value={currentPeriodStats.totalRevenue} growth={growth.revenue} formatAsCurrency icon={DollarSign} href="/sales" />
+          <GrowthCard title="New Customers" value={currentPeriodStats.uniqueCustomers} growth={growth.customers} icon={Users} href="/distributors" />
+          <GrowthCard title="Sales Volume" value={currentPeriodStats.salesVolume} growth={growth.salesVolume} icon={ShoppingCart} href="/sales" />
       </div>
       
       <Card>
@@ -188,46 +191,54 @@ export default function Home() {
 
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Outstanding Dues</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{currencySymbol}{outstandingDues.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Across all unpaid invoices</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Stock Value</CardTitle>
-            <Boxes className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{currencySymbol}{activeStockValue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Value of finished goods</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending POs</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{pendingPurchaseOrders}</div>
-            <p className="text-xs text-muted-foreground">Purchase orders awaiting completion</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Distributors</CardTitle>
-            <Truck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+{totalDistributors}</div>
-            <p className="text-xs text-muted-foreground">From your distributor network</p>
-          </CardContent>
-        </Card>
+        <Link href="/dues">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Outstanding Dues</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{currencySymbol}{outstandingDues.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Across all unpaid invoices</p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/finished-goods">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Stock Value</CardTitle>
+                <Boxes className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{currencySymbol}{activeStockValue.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">Value of finished goods</p>
+              </CardContent>
+            </Card>
+        </Link>
+        <Link href="/purchase-orders">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending POs</CardTitle>
+                <Package className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{pendingPurchaseOrders}</div>
+                <p className="text-xs text-muted-foreground">Purchase orders awaiting completion</p>
+              </CardContent>
+            </Card>
+        </Link>
+        <Link href="/distributors">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Distributors</CardTitle>
+                <Truck className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">+{totalDistributors}</div>
+                <p className="text-xs text-muted-foreground">From your distributor network</p>
+              </CardContent>
+            </Card>
+        </Link>
       </div>
 
         <div className="grid grid-cols-1 gap-6">
