@@ -1,4 +1,4 @@
-'use client';
+export const dynamic = "force-dynamic";
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
