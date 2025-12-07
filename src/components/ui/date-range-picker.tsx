@@ -2,8 +2,8 @@
 "use client"
 
 import * as React from "react"
-import { addDays, format } from "date-fns"
-import { Calendar as CalendarIcon } from "lucide-react"
+import { format } from "date-fns"
+import { Calendar as CalendarIcon, X } from "lucide-react"
 import { DateRange } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
@@ -14,9 +14,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { Separator } from "./separator"
 
 type DateRangePickerProps = React.HTMLAttributes<HTMLDivElement> & {
-    onUpdate: (values: { range: DateRange }) => void,
+    onUpdate: (values: { range?: DateRange }) => void,
     initialDateFrom?: Date | string,
     initialDateTo?: Date | string,
     align?: "start" | "center" | "end",
@@ -29,7 +30,6 @@ export function DateRangePicker({
     initialDateFrom,
     initialDateTo,
     align = "end",
-    locale = "en-US"
 }: DateRangePickerProps) {
 
     const [date, setDate] = React.useState<DateRange | undefined>({
@@ -39,9 +39,12 @@ export function DateRangePicker({
 
     const handleUpdate = (range: DateRange | undefined) => {
         setDate(range);
-        if (range) {
-            onUpdate({range});
-        }
+        onUpdate({range});
+    }
+
+    const handleReset = () => {
+        setDate(undefined);
+        onUpdate({range: undefined});
     }
 
   return (
@@ -52,7 +55,7 @@ export function DateRangePicker({
             id="date"
             variant={"outline"}
             className={cn(
-              "w-[300px] justify-start text-left font-normal",
+              "w-[260px] justify-start text-left font-normal",
               !date && "text-muted-foreground"
             )}
           >
@@ -80,6 +83,10 @@ export function DateRangePicker({
             onSelect={handleUpdate}
             numberOfMonths={2}
           />
+           <Separator />
+          <div className="p-2 flex justify-end">
+            <Button variant="ghost" size="sm" onClick={handleReset}><X className="mr-2 h-4 w-4" /> Reset</Button>
+          </div>
         </PopoverContent>
       </Popover>
     </div>

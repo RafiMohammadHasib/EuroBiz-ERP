@@ -34,7 +34,7 @@ export default function ReportsPage() {
                     An interactive overview of your business performance across all key areas.
                     </CardDescription>
                 </div>
-                <DateRangePicker onUpdate={(range) => setDateRange(range.range)} />
+                <DateRangePicker onUpdate={({ range }) => setDateRange(range)} />
             </CardHeader>
         </Card>
         <Tabs defaultValue="sales" className="grid grid-cols-1 gap-6">
