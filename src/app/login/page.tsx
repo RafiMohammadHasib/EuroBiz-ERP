@@ -25,7 +25,10 @@ export default function LoginPage() {
   const { toast } = useToast();
   const logo = placeholder.placeholderImages.find(p => p.id === 'eurobiz-logo') as ImagePlaceholder | undefined;
 
-  const handleLogin = async () => {
+  const handleLogin = async (e?: React.FormEvent<HTMLFormElement>) => {
+    if (e) {
+        e.preventDefault();
+    }
     setIsLoading(true);
     setError(null);
     try {
@@ -73,57 +76,59 @@ export default function LoginPage() {
           </div>
 
         <div className='bg-white/70 backdrop-blur-sm rounded-xl shadow-2xl shadow-primary/10 p-8'>
-            <div className="grid gap-6">
-                <div className="grid gap-2">
-                <Label htmlFor="email">Username</Label>
-                <div className='relative'>
-                    <User className='absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
-                    <Input
-                        id="email"
-                        type="email"
-                        placeholder="Enter Username"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        disabled={isLoading}
-                        className="pl-10 h-12"
-                    />
-                </div>
-                </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="password">Password</Label>
+            <form onSubmit={handleLogin}>
+                <div className="grid gap-6">
+                    <div className="grid gap-2">
+                    <Label htmlFor="email">Username</Label>
                     <div className='relative'>
-                        <Lock className='absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
-                        <Input 
-                            id="password" 
-                            type={showPassword ? 'text' : 'password'}
-                            required 
-                            placeholder='Enter Password'
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                        <User className='absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
+                        <Input
+                            id="email"
+                            type="email"
+                            placeholder="Enter Username"
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             disabled={isLoading}
                             className="pl-10 h-12"
                         />
-                        <button type='button' onClick={() => setShowPassword(!showPassword)} className='absolute right-3 top-1/2 -translate-y-1/2'>
-                            {showPassword ? <EyeOff className='h-5 w-5 text-gray-400' /> : <Eye className='h-5 w-5 text-gray-400' />}
-                        </button>
                     </div>
-                     <div className="flex items-center justify-end">
-                        <Link
-                        href="#"
-                        className="inline-block text-sm text-primary hover:underline"
-                        >
-                        Forgot Password?
-                        </Link>
                     </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="password">Password</Label>
+                        <div className='relative'>
+                            <Lock className='absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
+                            <Input 
+                                id="password" 
+                                type={showPassword ? 'text' : 'password'}
+                                required 
+                                placeholder='Enter Password'
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                disabled={isLoading}
+                                className="pl-10 h-12"
+                            />
+                            <button type='button' onClick={() => setShowPassword(!showPassword)} className='absolute right-3 top-1/2 -translate-y-1/2'>
+                                {showPassword ? <EyeOff className='h-5 w-5 text-gray-400' /> : <Eye className='h-5 w-5 text-gray-400' />}
+                            </button>
+                        </div>
+                         <div className="flex items-center justify-end">
+                            <Link
+                            href="#"
+                            className="inline-block text-sm text-primary hover:underline"
+                            >
+                            Forgot Password?
+                            </Link>
+                        </div>
+                    </div>
+                    {error && (
+                        <p className="text-sm text-destructive text-center">{error}</p>
+                    )}
+                    <Button type="submit" className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90" disabled={isLoading || !email || !password}>
+                    {isLoading ? 'Logging in...' : 'Login'}
+                    </Button>
                 </div>
-                {error && (
-                    <p className="text-sm text-destructive text-center">{error}</p>
-                )}
-                <Button type="submit" className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90" onClick={handleLogin} disabled={isLoading || !email || !password}>
-                {isLoading ? 'Logging in...' : 'Login'}
-                </Button>
-            </div>
+            </form>
         </div>
         <div className="text-center text-sm text-gray-500">
             Need an account? Please contact the admin.
